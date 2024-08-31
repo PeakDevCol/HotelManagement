@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.googleGmsGoogleServices)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
     kotlin("kapt")
 }
 
@@ -47,6 +49,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    //Dagger
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
 
     //fireBase
     implementation(platform(libs.firebase.bom))
