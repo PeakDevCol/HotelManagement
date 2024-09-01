@@ -77,4 +77,11 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore.ktx)
+
+    //Room
+    implementation(libs.room.lib)
+    // To use Kotlin Symbol Processing (KSP)
+    ksp(libs.room.compiler)
+    //Kotlin Extensions and Coroutines support for Room
+    implementation(libs.roomx)
 }
