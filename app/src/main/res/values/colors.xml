@@ -1,5 +1,7 @@
 <resources>
 
+    <color name="ic_launcher_background">#F4FBFA</color>
+
     <color name="md_theme_primary">#00696D</color>
     <color name="md_theme_onPrimary">#FFFFFF</color>
     <color name="md_theme_primaryContainer">#9CF1F5</color>
