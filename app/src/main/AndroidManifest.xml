@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".HotelManagementApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -15,8 +16,9 @@
         android:theme="@style/Theme.HotelManagement"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".ui.FirstScreenActivity"
+            android:exported="true"
+            android:theme="@style/Theme.HotelManagement.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

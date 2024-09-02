@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <!-- Base application theme. -->
     <style name="Base.Theme.HotelManagement" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/md_theme_primary</item>
@@ -50,4 +50,28 @@
     </style>
 
     <style name="Theme.HotelManagement" parent="Base.Theme.HotelManagement" />
+
+
+    <!--Splash for android >= 12.-->
+    <style name="Theme.HotelManagement.Starting" parent="Base.Theme.HotelManagement">
+        <!--Set the splash screen background, animated icon, and animation duration.-->
+        <item name="windowSplashScreenBackground">@color/md_theme_background</item>
+
+        <!--Use windowSplashScreenAnimatedIcon to add either a drawable or an-->
+        <!--animated drawable. One of these is required.-->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/hotel</item>
+        <item name="windowSplashScreenAnimationDuration">200</item>
+        <!--Required for animated icons-->
+
+        <!--Set the theme of the Activity that directly follows your splash screen.-->
+        <item name="postSplashScreenTheme">@style/Theme.HotelManagement</item>
+        <!--Required.-->
+    </style>
+
+    <!--Splash for android < 12.-->
+    <style name="Theme.HotelManagement.Splash" parent="Base.Theme.HotelManagement">
+        <item name="android:windowBackground">@drawable/splash_bg</item>
+    </style>
+
+
 </resources>
