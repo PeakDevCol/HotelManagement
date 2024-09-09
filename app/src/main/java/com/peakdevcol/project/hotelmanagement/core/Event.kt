@@ -6,7 +6,7 @@ package com.peakdevcol.project.hotelmanagement.core
  * only occur once. For example when the screen is turn to other orientation you can be sure that
  * the observers don't reload again
  *
- * T is any type of data that you require
+ * T is any provider of data that you require
  */
 
 open class Event<out T>(private val content: T) {
