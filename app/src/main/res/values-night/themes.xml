@@ -71,4 +71,19 @@
         <item name="android:windowBackground">@drawable/splash_bg</item>
     </style>
 
+    <!-- Dialog Loading Style -->
+    <style name="TransparentDialog" parent="ThemeOverlay.MaterialComponents.Dialog">
+        <item name="android:backgroundDimAmount">0.65</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+
+    <!-- Buttons -->
+    <style name="PrimaryButton" parent="Theme.HotelManagement">
+        <item name="android:textSize">12sp</item>
+        <item name="textAllCaps">true</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
 </resources>

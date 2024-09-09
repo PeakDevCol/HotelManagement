@@ -1,3 +1,35 @@
 <resources>
     <string name="app_name">HotelManagement</string>
+
+
+    <!--     Introduction buttons     !-->
+    <string name="crear_cuenta">Crear Cuenta</string>
+    <string name="iniciar_sesion">Iniciar Sesion</string>
+
+    <!--     Login and signIn screen     !-->
+    <string name="password">Contraseña</string>
+    <string name="email">Email</string>
+    <string name="forgot_password">Olvidaste la contraseña</string>
+    <string name="confirm_password">Confirma contraseña</string>
+    <string name="full_name">Nombre completo</string>
+    <string name="wrong_email">Estructura de email no valida</string>
+    <string name="wrong_password">Contraseña minimo de 6 caracteres</string>
+
+    <!--     Dialog error Login      !-->
+    <string name="accept_login">Aceptar</string>
+    <string name="title_login">¡Ups!</string>
+    <string name="supporting_text_login">Verifica los datos y vuelve a intentarlo :)</string>
+
+    <!--     Dialog error SignIn      !-->
+    <string name="accept_sign_in">Aceptar</string>
+    <string name="title_sign_in">¡Ups!</string>
+    <string name="supporting_text_sign_in">Este correo ya esta registrado</string>
+
+    <!--     TextInput Error     !-->
+    <string name="full_name_error">El nombre debe tener almenos 6 caracteres</string>
+    <string name="email_error">Email no valido, verifica la estrcutura</string>
+    <string name="password_error">Las contraseñas no coinciden</string>
+    <string name="confirm_password_error">Las contraseñas no coinciden</string>
+
+
 </resources>
