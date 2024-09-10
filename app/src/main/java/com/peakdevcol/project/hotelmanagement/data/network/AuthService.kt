@@ -40,12 +40,10 @@ class AuthService(
             }
         }.toLoginResult()
 
-    override suspend fun logOut(): Boolean {
+    override suspend fun logOut() {
         if (firebaseAuth.currentUser != null) {
             firebaseAuth.signOut()
-            return true
         }
-        return false
     }
 
     override suspend fun createAccount(email: String, password: String): LoginResult = runCatching {

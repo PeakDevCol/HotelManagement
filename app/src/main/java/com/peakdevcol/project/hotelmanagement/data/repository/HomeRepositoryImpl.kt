@@ -5,8 +5,8 @@ import javax.inject.Inject
 
 class HomeRepositoryImpl @Inject constructor(private val remote: RemoteDataSource) :
     HomeRepository {
-    override suspend fun logOut(): Boolean {
-         return remote.logOut()
+    override suspend fun logOut() {
+        remote.logOut()
     }
 
 

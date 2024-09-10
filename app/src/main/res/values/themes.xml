@@ -86,6 +86,7 @@
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
         <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/md_theme_onPrimary</item>
     </style>
 
 </resources>

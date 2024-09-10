@@ -1,5 +1,5 @@
 package com.peakdevcol.project.hotelmanagement.data.repository
 
 interface HomeRepository {
-    suspend fun logOut():Boolean
+    suspend fun logOut()
 }
