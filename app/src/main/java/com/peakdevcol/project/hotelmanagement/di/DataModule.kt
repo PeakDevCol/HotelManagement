@@ -1,5 +1,7 @@
 package com.peakdevcol.project.hotelmanagement.di
 
+import com.peakdevcol.project.hotelmanagement.data.repository.HomeRepository
+import com.peakdevcol.project.hotelmanagement.data.repository.HomeRepositoryImpl
 import com.peakdevcol.project.hotelmanagement.data.repository.LoginRepository
 import com.peakdevcol.project.hotelmanagement.data.repository.LoginRepositoryImpl
 import com.peakdevcol.project.hotelmanagement.data.repository.SignInRepository
@@ -18,5 +20,7 @@ internal interface DataModule {
 
     @Binds
     fun bindsSignInRepository(signInRepositoryImpl: SignInRepositoryImpl): SignInRepository
+    @Binds
+    fun bindsHomeRepository(homeRepositoryImpl: HomeRepositoryImpl): HomeRepository
 
 }
