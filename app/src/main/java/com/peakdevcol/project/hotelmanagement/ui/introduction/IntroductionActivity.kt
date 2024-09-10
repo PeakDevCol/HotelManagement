@@ -15,6 +15,7 @@ import com.peakdevcol.project.hotelmanagement.R
 import com.peakdevcol.project.hotelmanagement.core.dialog.BasicDialog
 import com.peakdevcol.project.hotelmanagement.core.dialog.LoadingDialog
 import com.peakdevcol.project.hotelmanagement.databinding.ActivityIntroductionBinding
+import com.peakdevcol.project.hotelmanagement.ui.home.HomeActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -43,10 +44,11 @@ class IntroductionActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        //if (authUser != null)
-        //NAVEGAR PARA HOME
-        val authUser = intent.extras?.getBoolean("auth")
-
+        val authUser = intent.extras?.getBoolean("auth") ?: false
+        if (authUser){
+            startActivity(HomeActivity.create(this))
+            finishAffinity()
+        }
         initUi()
     }
 

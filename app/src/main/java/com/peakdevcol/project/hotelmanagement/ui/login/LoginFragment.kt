@@ -17,6 +17,7 @@ import com.peakdevcol.project.hotelmanagement.core.ex.dismissKeyboard
 import com.peakdevcol.project.hotelmanagement.core.ex.loseFocusAfterAction
 import com.peakdevcol.project.hotelmanagement.core.ex.onTextChanged
 import com.peakdevcol.project.hotelmanagement.databinding.FragmentLoginBinding
+import com.peakdevcol.project.hotelmanagement.ui.home.HomeActivity
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionViewModel
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionViewState
 import dagger.hilt.android.AndroidEntryPoint
@@ -127,8 +128,8 @@ class LoginFragment : Fragment() {
     }
 
     private fun goToHome() {
-        //startActivity(HomeActivity.create(requireActivity()))
-        introductionViewModel.setViewState(null)
+        startActivity(HomeActivity.create(requireActivity()))
+        requireActivity().finishAffinity()
     }
 
 }

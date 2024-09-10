@@ -19,6 +19,7 @@ import com.peakdevcol.project.hotelmanagement.core.ex.onTextChanged
 import com.peakdevcol.project.hotelmanagement.databinding.FragmentSignInBinding
 import com.peakdevcol.project.hotelmanagement.domain.ProviderLogin
 import com.peakdevcol.project.hotelmanagement.domain.ProviderTypeUser
+import com.peakdevcol.project.hotelmanagement.ui.home.HomeActivity
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionViewModel
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionViewState
 import com.peakdevcol.project.hotelmanagement.ui.signin.model.FullUserSignIn
@@ -143,6 +144,7 @@ class SignInFragment : Fragment() {
     }
 
     private fun goToHome() {
-        //startActivity(HomeActivity.create(requireActivity()))
+        startActivity(HomeActivity.create(requireActivity()))
+        requireActivity().finishAffinity()
     }
 }
