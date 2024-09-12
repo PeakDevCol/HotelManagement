@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import com.peakdevcol.project.hotelmanagement.R
 import com.peakdevcol.project.hotelmanagement.core.NavigationEvent
 import com.peakdevcol.project.hotelmanagement.databinding.FragmentHomeBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -31,6 +32,7 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        homeViewModel.setTopAppBarTitle(getString(R.string.top_bar_menu))
         initUi()
     }
 
@@ -41,15 +43,21 @@ class HomeFragment : Fragment() {
     private fun initListeners() {
         binding.balanceBtn.setOnClickListener {
             homeViewModel.navigate(HomeViewState.Navigate(NavigationEvent.NavigationToBalance))
+            homeViewModel.setTopAppBarTitle(getString(R.string.top_bar_balance))
         }
         binding.inventoryBtn.setOnClickListener {
             homeViewModel.navigate(HomeViewState.Navigate(NavigationEvent.NavigationToInventory))
+            homeViewModel.setTopAppBarTitle(getString(R.string.top_bar_inventory))
+
         }
         binding.addOrderBtn.setOnClickListener {
             homeViewModel.navigate(HomeViewState.Navigate(NavigationEvent.NavigationToAddOrders))
+            homeViewModel.setTopAppBarTitle(getString(R.string.top_bar_add_order))
+
         }
         binding.currentOrderBtn.setOnClickListener {
             homeViewModel.navigate(HomeViewState.Navigate(NavigationEvent.NavigationToCurrentOrders))
+            homeViewModel.setTopAppBarTitle(getString(R.string.top_bar_current_order))
         }
     }
 

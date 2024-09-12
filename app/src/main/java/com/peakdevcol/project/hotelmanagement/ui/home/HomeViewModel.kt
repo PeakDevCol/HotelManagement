@@ -28,4 +28,8 @@ class HomeViewModel @Inject constructor(private val homeRepository: HomeReposito
         _viewState.value = navigate
     }
 
+    fun setTopAppBarTitle(title: String) {
+        _viewState.value = HomeViewState.TopBarTitle(titleTopBar = title)
+    }
+
 }

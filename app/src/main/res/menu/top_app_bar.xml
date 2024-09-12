@@ -7,6 +7,7 @@
         android:contentDescription="@string/perfil"
         android:icon="@drawable/account_circle"
         android:title="@string/perfil"
+        android:visible="false"
         app:showAsAction="ifRoom" />
 
 

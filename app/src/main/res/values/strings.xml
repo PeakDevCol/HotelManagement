@@ -42,4 +42,13 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
+    <!--     Top bar Titles     !-->
+    <string name="top_bar_menu">Menú Principal</string>
+    <string name="top_bar_balance">Balance</string>
+    <string name="top_bar_inventory">Inventario</string>
+    <string name="top_bar_add_order">Crear pedido</string>
+    <string name="top_bar_current_order">Pedidos en curso</string>
+
+
+
 </resources>

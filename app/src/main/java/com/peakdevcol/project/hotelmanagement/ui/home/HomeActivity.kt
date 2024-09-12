@@ -44,7 +44,8 @@ class HomeActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        navController = (supportFragmentManager.findFragmentById(R.id.fragment_home_container) as NavHostFragment).navController
+        navController =
+            (supportFragmentManager.findFragmentById(R.id.fragment_home_container) as NavHostFragment).navController
         initUi()
     }
 
@@ -68,7 +69,11 @@ class HomeActivity : AppCompatActivity() {
             HomeViewState.Error -> {}
             HomeViewState.Loading -> {}
             is HomeViewState.Navigate -> {
-                handleNavigation(viewState.navigationEvent)
+                handleNavigation(viewState.destination)
+            }
+
+            is HomeViewState.TopBarTitle -> {
+                binding.topAppBar.title = viewState.titleTopBar
             }
         }
 
