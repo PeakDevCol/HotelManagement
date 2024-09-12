@@ -31,7 +31,7 @@
 
 
     <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragment_container"
+        android:id="@+id/fragment_home_container"
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"

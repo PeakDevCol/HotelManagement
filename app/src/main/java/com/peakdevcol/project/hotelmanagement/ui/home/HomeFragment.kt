@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import com.peakdevcol.project.hotelmanagement.core.NavigationEvent
 import com.peakdevcol.project.hotelmanagement.databinding.FragmentHomeBinding
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -28,6 +29,28 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        initUi()
+    }
 
+    private fun initUi() {
+        initListeners()
+    }
+
+    private fun initListeners() {
+        binding.balanceBtn.setOnClickListener {
+            homeViewModel.navigate(HomeViewState.Navigate(NavigationEvent.NavigationToBalance))
+        }
+        binding.inventoryBtn.setOnClickListener {
+            homeViewModel.navigate(HomeViewState.Navigate(NavigationEvent.NavigationToInventory))
+        }
+        binding.addOrderBtn.setOnClickListener {
+            homeViewModel.navigate(HomeViewState.Navigate(NavigationEvent.NavigationToAddOrders))
+        }
+        binding.currentOrderBtn.setOnClickListener {
+            homeViewModel.navigate(HomeViewState.Navigate(NavigationEvent.NavigationToCurrentOrders))
+        }
+    }
 
 }

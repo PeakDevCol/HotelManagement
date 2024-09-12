@@ -39,5 +39,7 @@
     <string name="accept_close_session">Aceptar</string>
     <string name="title_close_session">Cerrar sesion</string>
     <string name="supporting_text_close_session">¿Estas seguro de cerrar sesion?</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>
