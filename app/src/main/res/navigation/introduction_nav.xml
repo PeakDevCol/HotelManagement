@@ -10,13 +10,21 @@
         android:id="@+id/introductionFragment"
         android:name="com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionFragment"
         android:label="fragment_introduction"
-        tools:layout="@layout/fragment_introduction" >
+        tools:layout="@layout/fragment_introduction">
         <action
             android:id="@+id/action_introductionFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
+            app:destination="@id/loginFragment"
+            app:enterAnim="@anim/right_enter_anim"
+            app:exitAnim="@anim/right_exit_anim"
+            app:popEnterAnim="@anim/right_pop_enter_anim"
+            app:popExitAnim="@anim/right_pop_exit_anim" />
         <action
             android:id="@+id/action_introductionFragment_to_signInFragment"
-            app:destination="@id/signInFragment" />
+            app:destination="@id/signInFragment"
+            app:enterAnim="@anim/right_enter_anim"
+            app:exitAnim="@anim/right_exit_anim"
+            app:popEnterAnim="@anim/right_pop_enter_anim"
+            app:popExitAnim="@anim/right_pop_exit_anim" />
     </fragment>
     <fragment
         android:id="@+id/signInFragment"

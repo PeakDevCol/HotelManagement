@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">HotelManagement</string>
+    <string name="app_name">Hotel Management</string>
 
 
     <!--     Introduction buttons     !-->
@@ -30,6 +30,25 @@
     <string name="email_error">Email no valido, verifica la estrcutura</string>
     <string name="password_error">Las contraseñas no coinciden</string>
     <string name="confirm_password_error">Las contraseñas no coinciden</string>
+
+    <!--     Top app bar options    !-->
+    <string name="perfil">Perfil</string>
+    <string name="cerrar_sesion">cerrar sesion</string>
+
+    <!--     Dialog Close Session      !-->
+    <string name="accept_close_session">Aceptar</string>
+    <string name="title_close_session">Cerrar sesion</string>
+    <string name="supporting_text_close_session">¿Estas seguro de cerrar sesion?</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!--     Top bar Titles     !-->
+    <string name="top_bar_menu">Menú Principal</string>
+    <string name="top_bar_balance">Balance</string>
+    <string name="top_bar_inventory">Inventario</string>
+    <string name="top_bar_add_order">Crear pedido</string>
+    <string name="top_bar_current_order">Pedidos en curso</string>
+
 
 
 </resources>

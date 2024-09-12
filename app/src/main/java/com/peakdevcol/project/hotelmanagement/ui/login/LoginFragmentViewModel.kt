@@ -28,10 +28,6 @@ class LoginFragmentViewModel @Inject constructor(val loginUseCase: LoginUseCase)
     val navigateToForgotPassword: LiveData<Event<Boolean>>
         get() = _navigateToForgotPassword
 
-    private val _navigateToVerifyAccount = MutableLiveData<Event<Boolean>>()
-    val navigateToVerifyAccount: LiveData<Event<Boolean>>
-        get() = _navigateToVerifyAccount
-
     private val _viewState = MutableStateFlow(LoginViewState())
     val viewState: StateFlow<LoginViewState>
         get() = _viewState
@@ -89,6 +85,7 @@ class LoginFragmentViewModel @Inject constructor(val loginUseCase: LoginUseCase)
 
                 is LoginResult.Success -> {
                     _navigateToHome.value = Event(true)
+                    baseStateLoading.invoke(null)
                 }
             }
         }
