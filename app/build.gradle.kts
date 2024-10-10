@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.googleGmsGoogleServices)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.crashlytics)
     kotlin("kapt")
 }
 
@@ -77,6 +78,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.crashlytics)
 
     //Room
     implementation(libs.room.lib)

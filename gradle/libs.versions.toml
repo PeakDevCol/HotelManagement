@@ -7,26 +7,28 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
-activity = "1.9.1"
+activity = "1.9.2"
 constraintlayout = "2.1.4"
 hilt = "2.51.1"
 hiltAndroid = "2.51.1"
 coreSplashscreen = "1.0.1"
-fragmentKtx = "1.8.2"
-lifecycleLivedataKtx = "2.8.4"
-lifecycleViewmodelKtx = "2.8.4"
-navigationFragmentKtx = "2.7.7"
+fragmentKtx = "1.8.4"
+lifecycleLivedataKtx = "2.8.6"
+lifecycleViewmodelKtx = "2.8.6"
+navigationFragmentKtx = "2.8.2"
 room = "2.6.1"
 
 googleGmsGoogleServices = "4.4.2"
-firebaseBom = "33.2.0"
+firebaseBom = "33.4.0"
 firebaseAuth = "23.0.0"
+crashlytics = "3.0.2"
 
 ksp = "1.9.24-1.0.20"
 
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -56,6 +58,7 @@ roomx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 googleGmsGoogleServices = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
+crashlytics = {id= "com.google.firebase.crashlytics", version.ref = "crashlytics"}
 hilt = { id = 'com.google.dagger.hilt.android', version.ref = "hilt" }
 ksp = { id = 'com.google.devtools.ksp', version.ref = "ksp" }
 
