@@ -13,6 +13,10 @@ object HotelManagementConstants {
     //Full User sign in
     const val PASSWORD = "password"
     const val PASSWORD_CONFIRMATION = "passwordConfirmation"
+    //Type Product
+    const val ROOM = "Habitación"
+    const val TABLE = "Mesa"
+    const val OTHER = "Otro"
 
     const val USER_COLLECTION = "Users"
 
