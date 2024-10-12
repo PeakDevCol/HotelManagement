@@ -35,8 +35,6 @@ class AddOrderFragment : Fragment() {
 
     private lateinit var addOrderAdapter: AddOrderAdapter
 
-    private lateinit var product: Product
-
     private var addOrderDialog: AddOrderDialog? = null
 
     override fun onCreateView(
@@ -90,72 +88,6 @@ class AddOrderFragment : Fragment() {
 
     private fun initListeners() {
         with(binding) {
-            /*     etNum.loseFocusAfterAction(EditorInfo.IME_ACTION_DONE)
-                 etNum.onTextChanged {
-                     enableAddOrderButton()
-                 }
-
-                 actvSearchProduct.loseFocusAfterAction(EditorInfo.IME_ACTION_NEXT)
-                 actvSearchProduct.onTextChanged {
-                     enableAddOrderButton()
-                 }
-
-
-                 etTypeOrder.loseFocusAfterAction(EditorInfo.IME_ACTION_DONE)
-                 etTypeOrder.onTextChanged {
-                     enableAddOrderButton()
-                 }*/
-
-
-            /*            val lista = listOf(
-                            Product(
-                                idEmployee = "1234",
-                                productName = "binding.actvSearchProduct.text.toString()",
-                                productQuantity = "binding.etNum.text.toString()",
-                                typeOrder = ProviderTypeOrder.Room(2),
-                                dateOrder = "13/09/2024",
-                                state = OrderState.CLOSE,
-                                totalPayAmount = "2000"
-                            ), Product(
-                                idEmployee = "1224",
-                                productName = "binding.actvSearchProduct.text.toString()",
-                                productQuantity = "binding.etNum.text.toString()",
-                                typeOrder = ProviderTypeOrder.Room(2),
-                                dateOrder = "13/09/2024",
-                                state = OrderState.CLOSE,
-                                totalPayAmount = "2000"
-                            ),
-                            Product(
-                                idEmployee = "1224",
-                                productName = "binding.actvSearchProduct.text.toString()",
-                                productQuantity = "binding.etNum.text.toString()",
-                                typeOrder = ProviderTypeOrder.Room(2),
-                                dateOrder = "13/09/2024",
-                                state = OrderState.CLOSE,
-                                totalPayAmount = "2000"
-                            ),
-                            Product(
-                                idEmployee = "1224",
-                                productName = "binding.actvSearchProduct.text.toString()",
-                                productQuantity = "binding.etNum.text.toString()",
-                                typeOrder = ProviderTypeOrder.Room(2),
-                                dateOrder = "13/09/2024",
-                                state = OrderState.CLOSE,
-                                totalPayAmount = "2000"
-                            ),
-                            Product(
-                                idEmployee = "1224",
-                                productName = "binding.actvSearchProduct.text.toString()",
-                                productQuantity = "binding.etNum.text.toString()",
-                                typeOrder = ProviderTypeOrder.Room(2),
-                                dateOrder = "13/09/2024",
-                                state = OrderState.CLOSE,
-                                totalPayAmount = "$2000"
-                            )
-                        )*/
-            //addOrderAdapter.updateList(lista)
-            // recyclerView.visibility = View.VISIBLE
-
             addActionButton.setOnClickListener {
                 if (addOrderDialog == null) {
                     addOrderDialog = AddOrderDialog.create(requireContext())
@@ -215,7 +147,7 @@ class AddOrderFragment : Fragment() {
 
     private fun setUpAdapter(orders: List<Product>) {
         addOrderAdapter = AddOrderAdapter(orders) {
-            //ELIMINAR ITEM
+            addOrderViewModel.removeProductList(it)
         }
         binding.recyclerView.adapter = addOrderAdapter
     }

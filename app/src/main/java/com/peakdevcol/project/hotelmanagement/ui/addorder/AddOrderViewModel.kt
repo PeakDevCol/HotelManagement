@@ -35,16 +35,20 @@ class AddOrderViewModel @Inject constructor() : ViewModel() {
     }
 
     fun saveProduct(selectedProduct: Product) {
-        setCurrentProducList(selectedProduct, currentProductList.value ?: listOf())
+        setCurrentProductList(selectedProduct, currentProductList.value ?: listOf())
     }
 
-    private fun setCurrentProducList(selectedProduct: Product?, preProductsOrder: List<Product>?) {
+    fun removeProductList(product: Product) {
+        val list = _currentProductList.value ?: return
+        _currentProductList.value = list.minus(product)
+    }
+
+    private fun setCurrentProductList(selectedProduct: Product?, preProductsOrder: List<Product>?) {
         var currentList = preProductsOrder ?: listOf()
         if (selectedProduct != null)
             currentList = currentList.plus(selectedProduct)
         _currentProductList.value = currentList
 
     }
-
 
 }
