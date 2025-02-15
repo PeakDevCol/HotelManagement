@@ -2,7 +2,7 @@ package com.peakdevcol.project.hotelmanagement.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.peakdevcol.project.hotelmanagement.data.repository.HomeRepository
+import com.peakdevcol.project.hotelmanagement.domain.HomeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

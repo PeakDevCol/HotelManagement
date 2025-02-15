@@ -3,6 +3,7 @@ package com.peakdevcol.project.hotelmanagement.data.repository
 import android.util.Log
 import com.peakdevcol.project.hotelmanagement.data.RemoteDataSource
 import com.peakdevcol.project.hotelmanagement.data.response.LoginResult
+import com.peakdevcol.project.hotelmanagement.domain.SignInRepository
 import com.peakdevcol.project.hotelmanagement.ui.signin.model.BaseUserSignIn
 import com.peakdevcol.project.hotelmanagement.ui.signin.model.FullUserSignIn
 import com.peakdevcol.project.hotelmanagement.utils.HotelManagementConstants.EMAIL

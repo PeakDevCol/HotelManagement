@@ -1,4 +1,4 @@
-package com.peakdevcol.project.hotelmanagement.data.repository
+package com.peakdevcol.project.hotelmanagement.domain
 
 import com.peakdevcol.project.hotelmanagement.data.response.LoginResult
 

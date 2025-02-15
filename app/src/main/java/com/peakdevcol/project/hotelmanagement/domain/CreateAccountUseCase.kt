@@ -1,6 +1,5 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
-import com.peakdevcol.project.hotelmanagement.data.repository.SignInRepository
 import com.peakdevcol.project.hotelmanagement.ui.signin.model.BaseUserSignIn
 import javax.inject.Inject
 

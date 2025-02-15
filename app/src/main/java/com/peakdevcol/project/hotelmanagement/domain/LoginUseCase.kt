@@ -1,7 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
 
-import com.peakdevcol.project.hotelmanagement.data.repository.LoginRepository
 import com.peakdevcol.project.hotelmanagement.data.response.LoginResult
 import javax.inject.Inject
 

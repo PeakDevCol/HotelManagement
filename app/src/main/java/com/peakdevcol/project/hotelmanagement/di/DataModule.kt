@@ -1,10 +1,10 @@
 package com.peakdevcol.project.hotelmanagement.di
 
-import com.peakdevcol.project.hotelmanagement.data.repository.HomeRepository
+import com.peakdevcol.project.hotelmanagement.domain.HomeRepository
 import com.peakdevcol.project.hotelmanagement.data.repository.HomeRepositoryImpl
-import com.peakdevcol.project.hotelmanagement.data.repository.LoginRepository
+import com.peakdevcol.project.hotelmanagement.domain.LoginRepository
 import com.peakdevcol.project.hotelmanagement.data.repository.LoginRepositoryImpl
-import com.peakdevcol.project.hotelmanagement.data.repository.SignInRepository
+import com.peakdevcol.project.hotelmanagement.domain.SignInRepository
 import com.peakdevcol.project.hotelmanagement.data.repository.SignInRepositoryImpl
 import dagger.Binds
 import dagger.Module
