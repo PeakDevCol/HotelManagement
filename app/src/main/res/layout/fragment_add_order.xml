@@ -51,7 +51,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_margin="16dp"
-            android:text="Destino del pedido"
+            android:text="@string/order_destination_default"
             android:textColor="@color/md_theme_onPrimaryContainer"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -88,7 +88,7 @@
             android:layout_gravity="center_vertical"
             android:layout_margin="16dp"
             android:layout_weight="1"
-            android:text="Total: $30.000"
+            tools:text="Total: $30.000"
             android:textColor="@color/md_theme_onPrimaryContainer"
             android:textSize="18sp" />
 
@@ -101,7 +101,7 @@
             android:layout_margin="16dp"
             android:layout_weight="1"
             android:enabled="false"
-            android:text="Confrmar" />
+            android:text="@string/order_confirm" />
 
     </LinearLayout>
 

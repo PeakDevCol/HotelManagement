@@ -13,7 +13,6 @@ class SelectTypeOrderDialog(private val context: Context) {
 
     private var dialog: AlertDialog? = null
     private var radioSelected = false
-    private lateinit var typeOrder : ProviderTypeOrder
 
     private fun acceptButtonEnabled(binding: SelectTypeOrderDialogBinding) {
         val number = binding.tilTypeOrder.text.toString()
@@ -22,7 +21,7 @@ class SelectTypeOrderDialog(private val context: Context) {
 
     private fun setupListeners(
         binding: SelectTypeOrderDialogBinding,
-        destinationOrder: (String) -> Unit
+        destinationOrder: (ProviderTypeOrder) -> Unit
     ) {
         with(binding) {
             radioGroup.setOnCheckedChangeListener { _, checkedId ->
@@ -51,10 +50,20 @@ class SelectTypeOrderDialog(private val context: Context) {
             }
 
             acceptBtn.setOnClickListener {
-                destinationOrder.invoke("${etTypeOrder.hint}:  ${tilTypeOrder.text}")
+                selectedTypeOrder(binding)?.let { destinationOrder.invoke(it) }
             }
         }
 
+    }
+
+    private fun selectedTypeOrder(binding: SelectTypeOrderDialogBinding): ProviderTypeOrder? {
+        val number = binding.tilTypeOrder.text.toString().toIntOrNull()
+        return when (binding.radioGroup.checkedRadioButtonId) {
+            binding.radioButtonHab.id -> number?.let { ProviderTypeOrder.Room(it) }
+            binding.radioButtonTable.id -> number?.let { ProviderTypeOrder.Table(it) }
+            binding.radioButtonOther.id -> ProviderTypeOrder.Other
+            else -> null
+        }
     }
 
     private fun configureEditText(binding: SelectTypeOrderDialogBinding, hint: String) {
@@ -66,7 +75,7 @@ class SelectTypeOrderDialog(private val context: Context) {
         radioSelected = true
     }
 
-    fun show(destinationOrder: (String) -> Unit) {
+    fun show(destinationOrder: (ProviderTypeOrder) -> Unit) {
         if (dialog?.isShowing == true) return
 
         val binding = SelectTypeOrderDialogBinding.inflate(LayoutInflater.from(context))

@@ -1,8 +1,16 @@
 package com.peakdevcol.project.hotelmanagement.ui.addorder
 
-sealed class AddOrderViewState() {
-    data object Loading : AddOrderViewState()
-    data object Error : AddOrderViewState()
-    data class ButtonEnable(val addButtonEnable: Boolean = false, val confirmButtonEnable: Boolean = false) : AddOrderViewState()
+import com.peakdevcol.project.hotelmanagement.domain.Product
+import com.peakdevcol.project.hotelmanagement.domain.ProviderTypeOrder
+import com.peakdevcol.project.hotelmanagement.domain.totalAmount
 
+data class AddOrderViewState(
+    val products: List<Product> = emptyList(),
+    val typeOrder: ProviderTypeOrder? = null,
+    val isLoading: Boolean = false,
+) {
+    val totalAmount: Long get() = products.totalAmount()
+
+    val confirmButtonEnable: Boolean
+        get() = products.isNotEmpty() && typeOrder != null && !isLoading
 }

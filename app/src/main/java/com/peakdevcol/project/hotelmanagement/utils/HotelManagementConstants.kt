@@ -20,4 +20,21 @@ object HotelManagementConstants {
 
     const val USER_COLLECTION = "Users"
 
+    //Orders
+    const val ORDER_COLLECTION = "Orders"
+    const val ORDER_ID = "id"
+    const val ORDER_EMPLOYEE_ID = "idEmployee"
+    const val ORDER_PRODUCTS = "products"
+    const val ORDER_TYPE = "typeOrder"
+    const val ORDER_TYPE_NUMBER = "typeOrderNumber"
+    const val ORDER_DATE = "dateOrder"
+    const val ORDER_STATE = "state"
+    const val ORDER_TOTAL = "totalPayAmount"
+    //Order products
+    const val PRODUCT_ID = "productId"
+    const val PRODUCT_NAME = "productName"
+    const val PRODUCT_QUANTITY = "quantity"
+    const val PRODUCT_AMOUNT = "unitAmount"
+    const val PRODUCT_TOTAL = "totalAmount"
+
 }

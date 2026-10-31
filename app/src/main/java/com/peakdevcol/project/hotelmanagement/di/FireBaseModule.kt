@@ -4,8 +4,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.peakdevcol.project.hotelmanagement.data.OrderRemoteDataSource
 import com.peakdevcol.project.hotelmanagement.data.RemoteDataSource
 import com.peakdevcol.project.hotelmanagement.data.network.AuthService
+import com.peakdevcol.project.hotelmanagement.data.network.OrderService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,6 +33,13 @@ object FireBaseModule {
         firebaseAuth: FirebaseAuth,
         fireStore: FirebaseFirestore
     ): RemoteDataSource = AuthService(firebaseAuth, fireStore)
+
+    @Provides
+    @Singleton
+    fun providerOrderRemoteSource(
+        firebaseAuth: FirebaseAuth,
+        fireStore: FirebaseFirestore
+    ): OrderRemoteDataSource = OrderService(firebaseAuth, fireStore)
 
 
 }

@@ -13,6 +13,13 @@ interface RemoteDataSource {
 
 }
 
+interface OrderRemoteDataSource {
+
+    fun currentUserId(): String?
+    suspend fun saveOrder(orderId: String, order: Map<String, Any?>): Boolean
+
+}
+
 interface LocalDataSource {
 //TODO IMPLEMENT THE LOCAL METHODS calls from the API
 }

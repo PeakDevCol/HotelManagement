@@ -4,6 +4,8 @@ import com.peakdevcol.project.hotelmanagement.domain.HomeRepository
 import com.peakdevcol.project.hotelmanagement.data.repository.HomeRepositoryImpl
 import com.peakdevcol.project.hotelmanagement.domain.LoginRepository
 import com.peakdevcol.project.hotelmanagement.data.repository.LoginRepositoryImpl
+import com.peakdevcol.project.hotelmanagement.domain.OrderRepository
+import com.peakdevcol.project.hotelmanagement.data.repository.OrderRepositoryImpl
 import com.peakdevcol.project.hotelmanagement.domain.SignInRepository
 import com.peakdevcol.project.hotelmanagement.data.repository.SignInRepositoryImpl
 import dagger.Binds
@@ -22,5 +24,8 @@ internal interface DataModule {
     fun bindsSignInRepository(signInRepositoryImpl: SignInRepositoryImpl): SignInRepository
     @Binds
     fun bindsHomeRepository(homeRepositoryImpl: HomeRepositoryImpl): HomeRepository
+
+    @Binds
+    fun bindsOrderRepository(orderRepositoryImpl: OrderRepositoryImpl): OrderRepository
 
 }

@@ -49,6 +49,14 @@
     <string name="top_bar_add_order">Crear pedido</string>
     <string name="top_bar_current_order">Pedidos en curso</string>
 
-
+    <!-- Add order -->
+    <string name="order_destination_default">Destino del pedido</string>
+    <string name="order_total">Total: $%1$s</string>
+    <string name="order_confirm">Confirmar</string>
+    <string name="title_order_saved">Pedido confirmado</string>
+    <string name="supporting_text_order_saved">El pedido se guardó correctamente.</string>
+    <string name="title_order_error">No se pudo guardar el pedido</string>
+    <string name="supporting_text_order_error">Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="accept_order">Aceptar</string>
 
 </resources>
