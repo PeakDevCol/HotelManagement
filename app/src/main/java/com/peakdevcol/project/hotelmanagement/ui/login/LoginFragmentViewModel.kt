@@ -55,11 +55,15 @@ class LoginFragmentViewModel @Inject constructor(val loginUseCase: LoginUseCase)
         baseStateLoading: (loading: IntroductionViewState?) -> Unit
     ) {
         if (isValidOrEmptyEmail(email) && isValidPassword(password)) {
-            loginUser(email, password, {
-                baseStateError.invoke()
-            }, {
-                baseStateLoading.invoke(it)
-            })
+            loginUser(
+                email = email,
+                password = password,
+                baseStateError = {
+                    baseStateError.invoke()
+                },
+                baseStateLoading = {
+                    baseStateLoading.invoke(it)
+                })
         } else {
             onFieldsChanged(email, password)
         }
