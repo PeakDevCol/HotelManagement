@@ -1,16 +1,44 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
+# --- Gradle / build ---
+.gradle/
+build/
 /captures
-google-services.json
 .externalNativeBuild
 .cxx
+.kotlin/
+
+# --- Android Studio / IntelliJ ---
+# Machine-specific IDE settings; Gradle is the source of truth for the build.
+*.iml
+.idea/*
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+
+# --- Local config & secrets ---
 local.properties
+google-services.json
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+*.pem
+*.p12
+.env
+.env.*
+
+# --- Build outputs ---
+*.apk
+*.aab
+*.ap_
+*.dex
+/release/
+output-metadata.json
+mapping.txt
+
+# --- Logs / OS junk ---
+*.log
+*.hprof
+.DS_Store
+Thumbs.db
+
+# --- Claude Code local settings ---
+.claude/settings.local.json
