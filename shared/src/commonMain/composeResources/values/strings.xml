@@ -1,8 +1,42 @@
 <resources>
     <string name="app_name">Hotel Management</string>
-    <string name="start_running_on">Ejecutando en %1$s</string>
-    <string name="start_firebase_not_configured">Firebase no está configurado en esta plataforma.</string>
-    <string name="start_logged_out">Firebase conectado. No hay una sesión iniciada.</string>
-    <string name="start_logged_in">Sesión iniciada: %1$s</string>
-    <string name="start_error">Error al consultar la sesión: %1$s</string>
+    <string name="running_on">Ejecutando en %1$s</string>
+    <string name="firebase_not_configured">Firebase no está configurado en esta plataforma.</string>
+    <string name="session_error">Error al consultar la sesión: %1$s</string>
+
+    <!-- Hotel header and footer -->
+    <string name="hotel_name">HOTEL JUAN MAJESTIC</string>
+    <string name="footer_hotel">Hotel Juan Majestic</string>
+    <string name="footer_since">Desde 2014</string>
+
+    <!-- Login and sign up -->
+    <string name="login">Iniciar sesión</string>
+    <string name="create_account">Crear cuenta</string>
+    <string name="back">Atrás</string>
+    <string name="full_name">Nombre completo</string>
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="confirm_password">Confirma la contraseña</string>
+
+    <!-- Field errors -->
+    <string name="error_full_name">El nombre debe tener al menos 6 caracteres</string>
+    <string name="error_email">Correo no válido, verifica su estructura</string>
+    <string name="error_password_length">La contraseña debe tener mínimo 6 caracteres</string>
+    <string name="error_password_mismatch">Las contraseñas no coinciden</string>
+
+    <!-- Request errors -->
+    <string name="dialog_title_oops">¡Ups!</string>
+    <string name="dialog_accept">Aceptar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="error_invalid_credentials">Verifica los datos y vuelve a intentarlo.</string>
+    <string name="error_email_in_use">Este correo ya está registrado.</string>
+    <string name="error_weak_password">La contraseña es demasiado débil.</string>
+    <string name="error_network">No hay conexión. Revisa tu internet e inténtalo de nuevo.</string>
+    <string name="error_unknown">Ocurrió un error inesperado. Inténtalo de nuevo.</string>
+
+    <!-- Home -->
+    <string name="home_title">Menú principal</string>
+    <string name="home_coming_soon">Próximamente: crear pedido, pedidos en curso, inventario y balance.</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="logout_message">¿Estás seguro de cerrar sesión?</string>
 </resources>
