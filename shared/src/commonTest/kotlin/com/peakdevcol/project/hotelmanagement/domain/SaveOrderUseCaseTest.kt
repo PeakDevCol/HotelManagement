@@ -1,15 +1,12 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
-import com.peakdevcol.project.hotelmanagement.domain.model.NewUser
 import com.peakdevcol.project.hotelmanagement.domain.model.Order
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
-import com.peakdevcol.project.hotelmanagement.domain.repository.AuthRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
 import com.peakdevcol.project.hotelmanagement.domain.usecase.OrderError
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -67,14 +64,6 @@ class SaveOrderUseCaseTest {
 
         assertEquals(error, result.exceptionOrNull())
     }
-}
-
-private class FakeAuthRepository(private val userId: String?) : AuthRepository {
-    override val session: Flow<String?> = flowOf(userId)
-    override fun currentUserId(): String? = userId
-    override suspend fun login(email: String, password: String) = Result.success(Unit)
-    override suspend fun createAccount(user: NewUser, password: String) = Result.success(Unit)
-    override suspend fun logOut() = Unit
 }
 
 private class FakeOrderRepository(
