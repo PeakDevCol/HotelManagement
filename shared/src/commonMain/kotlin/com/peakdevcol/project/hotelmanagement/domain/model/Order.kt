@@ -14,12 +14,15 @@ data class Order(
 
     companion object {
         /** Builds a new confirmed order. The creation date is set by the server when saved. */
+        /** A new random order id. Reusing it when retrying a save overwrites the same document. */
         @OptIn(ExperimentalUuidApi::class)
+        fun newId(): String = Uuid.random().toString()
+
         fun create(
             employeeId: String,
             products: List<Product>,
             destination: OrderDestination,
-            id: String = Uuid.random().toString(),
+            id: String = newId(),
         ): Order = Order(
             id = id,
             employeeId = employeeId,

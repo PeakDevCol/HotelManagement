@@ -1,12 +1,11 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
-import com.peakdevcol.project.hotelmanagement.domain.model.Order
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
-import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
 import com.peakdevcol.project.hotelmanagement.domain.usecase.OrderError
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
+import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -53,6 +52,16 @@ class SaveOrderUseCaseTest {
     }
 
     @Test
+    fun usesTheGivenOrderId() = runTest {
+        val orders = FakeOrderRepository()
+        val useCase = SaveOrderUseCase(FakeAuthRepository(userId = "uid-1"), orders)
+
+        useCase(listOf(product), OrderDestination.Other, orderId = "draft-1")
+
+        assertEquals("draft-1", orders.saved.single().id)
+    }
+
+    @Test
     fun propagatesRepositoryErrors() = runTest {
         val error = IllegalStateException("offline")
         val useCase = SaveOrderUseCase(
@@ -63,15 +72,5 @@ class SaveOrderUseCaseTest {
         val result = useCase(listOf(product), OrderDestination.Other)
 
         assertEquals(error, result.exceptionOrNull())
-    }
-}
-
-private class FakeOrderRepository(
-    private val result: Result<Unit> = Result.success(Unit),
-) : OrderRepository {
-    val saved = mutableListOf<Order>()
-    override suspend fun saveOrder(order: Order): Result<Unit> {
-        if (result.isSuccess) saved += order
-        return result
     }
 }

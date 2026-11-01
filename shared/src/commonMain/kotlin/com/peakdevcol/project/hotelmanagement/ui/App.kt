@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.peakdevcol.project.hotelmanagement.platformName
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.app_name
@@ -27,7 +28,10 @@ import com.peakdevcol.project.hotelmanagement.resources.firebase_not_configured
 import com.peakdevcol.project.hotelmanagement.resources.running_on
 import com.peakdevcol.project.hotelmanagement.resources.session_error
 import com.peakdevcol.project.hotelmanagement.ui.components.AuthFrame
+import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
+import com.peakdevcol.project.hotelmanagement.ui.home.ComingSoonScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeScreen
+import com.peakdevcol.project.hotelmanagement.ui.home.HomeSection
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionScreen
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginScreen
 import com.peakdevcol.project.hotelmanagement.ui.signup.SignUpScreen
@@ -48,6 +52,13 @@ data object SignUpRoute
 
 @Serializable
 data object HomeRoute
+
+@Serializable
+data object AddOrderRoute
+
+/** A menu section that is not migrated yet. */
+@Serializable
+data class ComingSoonRoute(val section: HomeSection)
 
 @Composable
 fun App() {
@@ -96,7 +107,20 @@ private fun AuthNavigation() {
 private fun HomeNavigation() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = HomeRoute) {
-        composable<HomeRoute> { HomeScreen() }
+        composable<HomeRoute> {
+            HomeScreen(onSectionClick = { section ->
+                when (section) {
+                    HomeSection.AddOrder -> navController.navigate(AddOrderRoute)
+                    else -> navController.navigate(ComingSoonRoute(section))
+                }
+            })
+        }
+        composable<AddOrderRoute> {
+            AddOrderScreen(onBack = { navController.popBackStack() })
+        }
+        composable<ComingSoonRoute> { entry ->
+            ComingSoonScreen(section = entry.toRoute<ComingSoonRoute>().section, onBack = { navController.popBackStack() })
+        }
     }
 }
 
