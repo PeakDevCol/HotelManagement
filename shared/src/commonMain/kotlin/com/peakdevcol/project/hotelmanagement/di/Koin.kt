@@ -10,7 +10,10 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoginUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveSessionUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
-import com.peakdevcol.project.hotelmanagement.ui.start.StartViewModel
+import com.peakdevcol.project.hotelmanagement.ui.AppViewModel
+import com.peakdevcol.project.hotelmanagement.ui.home.HomeViewModel
+import com.peakdevcol.project.hotelmanagement.ui.login.LoginViewModel
+import com.peakdevcol.project.hotelmanagement.ui.signup.SignUpViewModel
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
@@ -36,7 +39,10 @@ private val domainModule = module {
 }
 
 private val uiModule = module {
-    viewModelOf(::StartViewModel)
+    viewModelOf(::AppViewModel)
+    viewModelOf(::LoginViewModel)
+    viewModelOf(::SignUpViewModel)
+    viewModelOf(::HomeViewModel)
 }
 
 fun initKoin(config: AppConfig, appDeclaration: KoinAppDeclaration = {}) {
