@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Hotel Management</string>
+    <string name="start_running_on">Ejecutando en %1$s</string>
+    <string name="start_firebase_not_configured">Firebase no está configurado en esta plataforma.</string>
+    <string name="start_logged_out">Firebase conectado. No hay una sesión iniciada.</string>
+    <string name="start_logged_in">Sesión iniciada: %1$s</string>
+    <string name="start_error">Error al consultar la sesión: %1$s</string>
+</resources>
