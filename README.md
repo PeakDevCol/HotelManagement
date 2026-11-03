@@ -1,7 +1,9 @@
 # Hotel Management
 
-App para tomar y gestionar pedidos de un hotel (habitaciones, mesas, piscina, bar).
+App interna del Hotel Juan Majestic: pedidos, balance, asistencia, reservas, limpieza y mantenimiento.
 Kotlin Multiplatform + Compose Multiplatform para **Android, iOS y escritorio**, con Firebase como backend.
+
+El alcance, los requisitos y la hoja de ruta están en el [PRD](docs/PRD.md).
 
 ## Módulos
 
@@ -11,7 +13,7 @@ Kotlin Multiplatform + Compose Multiplatform para **Android, iOS y escritorio**,
 | `androidApp` | Punto de entrada Android (`MainActivity`). |
 | `desktopApp` | Punto de entrada de escritorio (JVM): macOS, Windows y Linux. |
 | `iosApp` | Proyecto de Xcode (no es un módulo de Gradle). Firebase iOS se añade con Swift Package Manager. |
-| `app` | **Legacy.** App Android original (XML + Hilt). Se elimina cuando todas las pantallas estén migradas a `shared`. |
+| `app` | **Legacy.** App Android original (XML + Hilt). Se elimina en el hito M1 (ver el [PRD](docs/PRD.md)). |
 
 Dentro de `shared/src/commonMain`:
 
@@ -24,7 +26,7 @@ ui/       tema, navegación y pantallas
 
 ## Requisitos
 
-- Android Studio reciente (JDK 17 o superior). Gradle 9.6.1 y AGP 9.5.
+- Android Studio reciente (JDK 17 o superior). Gradle 9.6.1 y AGP 9.4.
 - Xcode 26 o superior para iOS.
 
 ## Configuración de Firebase
@@ -64,3 +66,4 @@ Para un dispositivo físico, pon tu `TEAM_ID` en `iosApp/Configuration/Config.xc
 - `feature/<nombre>`: sale de `develop` y vuelve a `develop` mediante un Pull Request.
 - `release/x.y.z`: sale de `develop` y se fusiona en `main` y `develop`, con el tag `vX.Y.Z`.
 - `hotfix/<nombre>`: sale de `main` y se fusiona en `main` y `develop`.
+- `task/<nombre>`: trabajo que no es código, como la documentación. Sale de `develop` y vuelve a `develop` mediante un Pull Request.
