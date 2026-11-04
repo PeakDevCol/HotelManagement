@@ -1,22 +1,24 @@
 package com.peakdevcol.project.hotelmanagement.data.firebase.dto
 
 import com.peakdevcol.project.hotelmanagement.domain.model.NewUser
+import dev.gitlive.firebase.firestore.BaseTimestamp
+import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.serialization.Serializable
 
-/** User profile stored in Firestore. Passwords are handled only by Firebase Auth. */
+/**
+ * Profile stored at `Users/{uid}`. Passwords are handled only by Firebase Auth.
+ * `area` and `active` arrive in M2 with the Firestore rules, and `createdBy` in M6.
+ */
 @Serializable
 internal data class UserDto(
-    val userId: String,
     val fullName: String,
     val email: String,
-    val provider: String,
     val type: String,
+    val createdAt: BaseTimestamp = Timestamp.ServerTimestamp,
 )
 
-internal fun NewUser.toDto(userId: String, provider: String) = UserDto(
-    userId = userId,
+internal fun NewUser.toDto() = UserDto(
     fullName = fullName,
     email = email,
-    provider = provider,
     type = type.name.lowercase(),
 )
