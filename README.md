@@ -13,7 +13,6 @@ El alcance, los requisitos y la hoja de ruta están en el [PRD](docs/PRD.md).
 | `androidApp` | Punto de entrada Android (`MainActivity`). |
 | `desktopApp` | Punto de entrada de escritorio (JVM): macOS, Windows y Linux. |
 | `iosApp` | Proyecto de Xcode (no es un módulo de Gradle). Firebase iOS se añade con Swift Package Manager. |
-| `app` | **Legacy.** App Android original (XML + Hilt). Se elimina en el hito M1 (ver el [PRD](docs/PRD.md)). |
 
 Dentro de `shared/src/commonMain`:
 
@@ -36,7 +35,7 @@ Descárgalos desde la consola de Firebase del proyecto `hotelmanagementpdc`:
 
 | Plataforma | Archivo | Ubicación |
 |---|---|---|
-| Android | `google-services.json` | `androidApp/` (y `app/` para la app legacy) |
+| Android | `google-services.json` | `androidApp/` |
 | Escritorio | El mismo `google-services.json` | Se lee de `androidApp/` al compilar. Las opciones se generan en `desktopApp/build/`. |
 | iOS | `GoogleService-Info.plist` (app iOS con bundle id `com.peakdevcol.project.hotelmanagement`) | `iosApp/iosApp/` |
 

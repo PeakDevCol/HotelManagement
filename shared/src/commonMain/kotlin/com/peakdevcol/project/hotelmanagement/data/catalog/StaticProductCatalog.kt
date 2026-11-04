@@ -3,10 +3,7 @@ package com.peakdevcol.project.hotelmanagement.data.catalog
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.repository.ProductCatalogRepository
 
-/**
- * The fixed product list used by the legacy app. The inventory feature replaces it
- * with products stored in Firestore.
- */
+/** Fixed product list until the catalog comes from Firestore (RF-ORD-07, M4). */
 class StaticProductCatalog : ProductCatalogRepository {
     override suspend fun getProducts(): Result<List<Product>> = Result.success(PRODUCTS)
 

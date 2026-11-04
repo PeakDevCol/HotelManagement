@@ -29,10 +29,6 @@ dependencyResolutionManagement {
     }
 }
 
-// Multiplatform
 include(":shared")
 include(":androidApp")
 include(":desktopApp")
-
-// Legacy Android app (XML + Hilt). Removed once every screen lives in :shared.
-include(":app")

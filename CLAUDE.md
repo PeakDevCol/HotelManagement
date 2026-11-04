@@ -22,7 +22,6 @@ App interna de gestión hotelera del Hotel Juan Majestic: pedidos, balance, asis
 | `androidApp` | Punto de entrada Android |
 | `desktopApp` | Punto de entrada de escritorio (JVM) |
 | `iosApp` | Proyecto de Xcode |
-| `app` | **Legacy** (XML y Hilt). No lo modifiques. Se elimina en el hito M1. |
 
 ## Arquitectura: Clean Architecture + MVI
 Capas dentro de `shared`, con las dependencias apuntando hacia el dominio: `presentation` → `domain` ← `data`. El dominio no depende de nadie.
@@ -104,5 +103,4 @@ iOS se compila desde Xcode (`iosApp/`) en macOS. Si no estás en macOS, dilo en 
 - Hacer push directo a `main` o `develop`, forzar un push o reescribir el historial.
 - Agregar una dependencia sin preguntar. Si se aprueba, tiene que soportar Android, iOS y JVM.
 - Usar Cloud Functions, Cloud Storage u otro servicio que exija el plan Blaze.
-- Modificar el módulo legacy `app`.
 - Guardar contraseñas en Firestore, o coordenadas de la ubicación de los empleados.

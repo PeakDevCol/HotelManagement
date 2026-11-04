@@ -12,8 +12,7 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        // Same id as the legacy :app so it uses the same Firebase app (google-services.json).
-        // Both apps cannot be installed at the same time on one device.
+        // Must match the Android app registered in Firebase, or google-services.json does not apply.
         applicationId = "com.peakdevcol.project.hotelmanagement"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
