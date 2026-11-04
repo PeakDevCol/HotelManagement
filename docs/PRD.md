@@ -985,7 +985,6 @@ flowchart TD
         taskList["Lista de tareas<br/>limpieza y mantenimiento ven las de su área<br/>recepción y administración ven todas"] --> taskDetail["Detalle de la tarea<br/>iniciar, devolver, terminar y lista de chequeo"]
         reportDamage["Reportar un daño · todos"]
         lostItems["Objetos olvidados<br/>todos registran; recepción y administración entregan"]
-        roomHistory["Historial por habitación · rol por definir"]
     end
 
     subgraph administration ["Administración · solo administradores"]
@@ -998,11 +997,9 @@ flowchart TD
         authorizedComputers["Computadores autorizados · solo escritorio · v1.1"]
         roomSetup["Habitaciones y tipos · v1.2"]
         maintenancePlans["Planes preventivos y listas de chequeo · v1.3"]
-    end
-
-    subgraph reports ["Reportes · rol por definir"]
-        hoursReport["Reporte de horas · v1.1 · RF-ASI-08"]
-        taskReports["Reportes de limpieza y mantenimiento · v1.3 · RF-TAR-09"]
+        hoursReport["Reporte de horas · v1.1"]
+        taskReports["Reportes de limpieza y mantenimiento · v1.3"]
+        roomHistory["Historial por habitación · v1.3"]
     end
 
     menu --> orders
@@ -1010,7 +1007,6 @@ flowchart TD
     menu --> roomsAndReservations
     menu --> roomTasks
     menu --> administration
-    menu --> reports
 ```
 
 ### 16.6 Flujo de un pedido
