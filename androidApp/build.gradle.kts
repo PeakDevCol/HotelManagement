@@ -4,7 +4,13 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.googleGmsGoogleServices)
+}
+
+// google-services.json is a secret kept out of the repo. Builds without it, like CI, still
+// compile, and the app starts with Firebase disabled, as the desktop app does.
+val firebaseConfigured = file("google-services.json").exists()
+if (firebaseConfigured) {
+    apply(plugin = libs.plugins.googleGmsGoogleServices.get().pluginId)
 }
 
 android {
@@ -18,6 +24,10 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("boolean", "FIREBASE_CONFIGURED", firebaseConfigured.toString())
+    }
+    buildFeatures {
+        buildConfig = true
     }
     packaging {
         resources {

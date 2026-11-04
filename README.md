@@ -39,8 +39,7 @@ Descárgalos desde la consola de Firebase del proyecto `hotelmanagementpdc`:
 | Escritorio | El mismo `google-services.json` | Se lee de `androidApp/` al compilar. Las opciones se generan en `desktopApp/build/`. |
 | iOS | `GoogleService-Info.plist` (app iOS con bundle id `com.peakdevcol.project.hotelmanagement`) | `iosApp/iosApp/` |
 
-Sin el archivo, las apps de escritorio e iOS arrancan igual pero con Firebase desactivado.
-En Android, el plugin de Google Services lo exige para compilar.
+Sin el archivo, las apps compilan y arrancan igual, pero con Firebase desactivado. Así compila el CI.
 
 ## Ejecutar
 
