@@ -61,11 +61,13 @@ Capas dentro de `shared`, con las dependencias apuntando hacia el dominio: `pres
 # Compilar
 ./gradlew :androidApp:assembleDebug
 ./gradlew :desktopApp:assemble
+./gradlew :shared:linkDebugFrameworkIosSimulatorArm64   # código común para iOS, solo en macOS
 
 # Ejecutar la app de escritorio
 ./gradlew :desktopApp:run
 ```
-iOS se compila desde Xcode (`iosApp/`) en macOS. Si no estás en macOS, dilo en vez de asumir que compila.
+La app iOS completa se compila desde Xcode (`iosApp/`) en macOS. Si no estás en macOS, dilo en vez de asumir que compila.
+El CI (`.github/workflows/ci.yml`) corre los tests y compila Android y escritorio en cada PR hacia `develop`, sin `google-services.json`.
 
 ## Convenciones
 - Código e identificadores en inglés. Textos que ve el usuario en español de Colombia.
