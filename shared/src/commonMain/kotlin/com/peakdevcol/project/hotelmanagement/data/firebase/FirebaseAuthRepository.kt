@@ -43,10 +43,8 @@ internal class FirebaseAuthRepository(
         withContext(NonCancellable) {
             firestore.value
                 .collection(FirestorePaths.USERS)
-                .document(FirestorePaths.PROVIDER_BASIC)
-                .collection(FirestorePaths.USERS)
                 .document(userId)
-                .set(user.toDto(userId, FirestorePaths.PROVIDER_BASIC))
+                .set(user.toDto())
         }
     }
 

@@ -7,7 +7,7 @@ import com.peakdevcol.project.hotelmanagement.di.initKoin
 class HotelManagementApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        // On Android, Firebase starts automatically from google-services.json.
-        initKoin(AppConfig(firebaseEnabled = true))
+        // Firebase starts automatically only when the build had google-services.json.
+        initKoin(AppConfig(firebaseEnabled = BuildConfig.FIREBASE_CONFIGURED))
     }
 }

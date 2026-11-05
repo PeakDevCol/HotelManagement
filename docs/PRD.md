@@ -91,6 +91,7 @@ Las cuentas las crea solo un administrador, y el primer administrador se crea a 
 | Ver datos personales de huéspedes | ❌ | ✅ | ✅ |
 | Hacer el cierre de caja | ❌ | ❌ | ✅ |
 | Ver el balance | ❌ | ❌ | ✅ |
+| Ver el reporte de horas, los reportes de limpieza y mantenimiento y el historial por habitación ([P37](#12-preguntas-abiertas)) | ❌ | ❌ | ✅ |
 | Administrar productos, impuestos, habitaciones, tarifas, parámetros y planes preventivos | ❌ | ❌ | ✅ |
 | Crear empleados, asignar rol, área y horario, y autorizar computadores | ❌ | ❌ | ✅ |
 | Corregir marcaciones de asistencia y exportar respaldos | ❌ | ❌ | ✅ |
@@ -125,7 +126,6 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | `androidApp` | Punto de entrada Android | En uso |
 | `desktopApp` | Punto de entrada de escritorio (JVM) | En uso |
 | `iosApp` | Proyecto de Xcode | En uso. Falta registrar la app iOS en Firebase, cuando se necesite ([P22](#12-preguntas-abiertas)). |
-| `app` | App Android original (XML y Hilt) | **Legacy.** Se elimina en [M1](#10-hoja-de-ruta), porque no hay usuarios productivos ([P9](#12-preguntas-abiertas)). |
 
 ### Funciones
 | Función | Estado | Notas |
@@ -134,16 +134,16 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Registro abierto | ✅ Migrado | Se quita en M2: las cuentas las crea el administrador (P1) |
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
 | Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`) |
-| Pedidos en curso | ⬜ Pendiente | En el legacy solo hay una pantalla vacía |
-| Inventario | ⬜ Pendiente | En el legacy solo hay una pantalla vacía |
-| Balance | ⬜ Pendiente | En el legacy solo hay una pantalla vacía |
+| Pedidos en curso | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M3. |
+| Inventario | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M4. |
+| Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
 | Recuperar contraseña | ⬜ Pendiente | |
 | Roles y permisos | ⬜ Pendiente | `UserType` existe pero no se usa |
 | Turnos y asistencia | ⬜ Nuevo | v1.1 |
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 34 tests en `commonTest` (dominio y ViewModels), y pasan en JVM y en Android.
+Hay 36 tests en `commonTest` (dominio, datos y ViewModels), y pasan en JVM y en Android.
 
 ## 5. Alcance por versión
 
@@ -324,7 +324,7 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-ASI-05 | Marcación sin conexión | En el celular, la ubicación funciona sin internet, así que la marcación se valida igual. Se guarda con la hora del dispositivo y queda "por revisar", porque la hora del servidor solo se conoce al sincronizar. | ⬜ |
 | RF-ASI-06 | Salida olvidada | Una entrada abierta por más horas de las del parámetro queda como "salida pendiente" para el administrador | ⬜ |
 | RF-ASI-07 | Correcciones | El administrador corrige una marcación con un motivo. Se conservan los valores originales. | ⬜ |
-| RF-ASI-08 | Reporte de horas | Por empleado y rango de fechas: horas programadas y trabajadas, llegadas tarde (según la tolerancia) y turnos sin marcación. No calcula nómina ni recargos. | ⬜ |
+| RF-ASI-08 | Reporte de horas | Por empleado y rango de fechas: horas programadas y trabajadas, llegadas tarde (según la tolerancia) y turnos sin marcación. No calcula nómina ni recargos. Solo lo ve el administrador ([P37](#12-preguntas-abiertas)). | ⬜ |
 | RF-ASI-09 | Quién está trabajando | Recepción y administración ven qué empleados tienen una entrada abierta | ⬜ |
 | RF-ASI-10 | Zona del hotel | El administrador fija la ubicación del hotel, el radio y la precisión mínima. Se acepta la marcación si el celular está dentro del radio con esa precisión; si no, pide intentar de nuevo o marcar en recepción. Rechaza ubicaciones simuladas, que Android permite detectar (V5). Solo se guardan la distancia y la precisión, no las coordenadas, y no hay rastreo fuera del momento de marcar. | ⬜ |
 | RF-ASI-11 | Computadores autorizados | El administrador autoriza el computador de recepción desde la app de escritorio, y puede revocarlo. Solo un computador autorizado muestra la opción de marcar asistencia. El empleado se identifica con su cuenta y marca, sin cerrar la sesión del computador (V1). | ⬜ |
@@ -438,8 +438,8 @@ pending o in_progress ──cancelar (solo administradores, con motivo)──▶
 | RF-TAR-05 | Sin conexión | Iniciar, terminar, devolver, marcar la lista de chequeo, reportar daños y registrar objetos se puede sin conexión y se sincroniza después. Tomar, asignar y bloquear necesitan conexión. | ⬜ |
 | RF-TAR-06 | Cancelar | Solo administradores, con un motivo | ⬜ |
 | RF-TAR-07 | Fotos ([P34](#12-preguntas-abiertas)) | Una foto opcional por tarea u objeto olvidado, comprimida al tamaño máximo del parámetro y guardada en Firestore, aparte de la tarea, para que solo se cargue al abrir el detalle (V7). Se borra pasados los días del parámetro después de cerrar la tarea. | ⬜ |
-| RF-TAR-08 | Historial por habitación | Todas las tareas de limpieza y mantenimiento de una habitación, para detectar problemas que se repiten | ⬜ |
-| RF-TAR-09 | Reportes | Limpieza: tareas por persona y por tipo, tiempo promedio y pendientes al cierre del día. Mantenimiento: tareas abiertas por prioridad y antigüedad, porcentaje que empezó a tiempo, noches bloqueadas por habitación y costos por mes. | ⬜ |
+| RF-TAR-08 | Historial por habitación | Todas las tareas de limpieza y mantenimiento de una habitación, para detectar problemas que se repiten. Solo lo ve el administrador ([P37](#12-preguntas-abiertas)). | ⬜ |
+| RF-TAR-09 | Reportes | Limpieza: tareas por persona y por tipo, tiempo promedio y pendientes al cierre del día. Mantenimiento: tareas abiertas por prioridad y antigüedad, porcentaje que empezó a tiempo, noches bloqueadas por habitación y costos por mes. Solo los ve el administrador ([P37](#12-preguntas-abiertas)). | ⬜ |
 
 ### 6.12 Limpieza (`LIM`, v1.3)
 | Tipo | Código | Cuándo se crea |
@@ -497,7 +497,7 @@ El check-out, el repaso del día y el fin de un mantenimiento dejan la habitaci�
 | RNF-06 | Calidad | El dominio y los ViewModels tienen tests en `commonTest`. Cada PR pasa `./gradlew :shared:allTests :shared:testAndroidHostTest`. |
 | RNF-07 | CI | Una GitHub Action en cada PR hacia `develop` corre los tests y compila Android y escritorio. |
 | RNF-08 | Accesibilidad | Los íconos tienen descripción, los botones miden al menos 48 dp y hay modo claro y oscuro. Las pantallas de tareas se usan con una mano y con botones grandes. |
-| RNF-09 | Compatibilidad de datos | Ya no aplica al legacy: no hay datos productivos ([P9](#12-preguntas-abiertas)) y el legacy se elimina en M1. Desde el piloto (M7), todo cambio de esquema incluye su migración. |
+| RNF-09 | Compatibilidad de datos | Ya no aplica al legacy: no hay datos productivos ([P9](#12-preguntas-abiertas)) y el legacy se eliminó en M1. Desde el piloto (M7), todo cambio de esquema incluye su migración. |
 | RNF-10 | Fechas y zona horaria | Las fechas se guardan con la hora del servidor y se muestran y agrupan en hora de Colombia (`America/Bogota`, UTC−5) en cualquier dispositivo, por día operativo. |
 | RNF-11 | Auditoría | Pedidos, pagos, reservas, marcaciones y tareas no se borran. Cada cambio guarda quién y cuándo, y una anulación o corrección conserva el motivo. |
 | RNF-12 | Costos | Todo el alcance funciona en el plan gratuito Spark ([P34](#12-preguntas-abiertas)), según la tabla de abajo. Los listeners en tiempo real se limitan a lo abierto, y los reportes consultan solo el rango elegido. El uso real se mide en el piloto (V4). |
@@ -524,7 +524,7 @@ En Spark, si un día se pasa la cuota, Firestore deja de responder hasta que se 
 ## 8. Modelo de datos (Firestore)
 
 ### Actual
-**`Orders/{id}`**, que escriben el legacy y `shared`:
+**`Orders/{id}`**, que escribe `shared`:
 
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -537,10 +537,10 @@ En Spark, si un día se pasa la cuota, Firestore deja de responder hasta que se 
 | `state` | string | `confirm`, `close` o `pay` |
 | `totalPayAmount` | long | Total en pesos |
 
-**`Users/basic/Users/{uid}`**: `userId`, `fullName`, `email`, `provider` y `type` (`basic` o `admin`).
-Los documentos que creó el legacy también tienen `password` y `passwordConfirmation` en texto plano (ver la [sección 9](#9-seguridad-y-deuda-técnica)).
+**`Users/{uid}`**, desde M1: `fullName`, `email`, `type` (`basic` o `admin`) y `createdAt`.
+La ruta anterior, `Users/basic/Users/{uid}`, ya no se usa. Sus documentos, con contraseñas en texto plano, se borraron con los datos de prueba (S1).
 
-Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo reemplaza al actual sin migración: en M1 se borran los datos de prueba.
+Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo reemplaza al actual sin migración. Los datos de prueba se borraron en M0 (S1).
 
 ### Modelo objetivo
 
@@ -548,7 +548,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
-| `Users/{uid}` | `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area` (`service`, `reception`, `housekeeping`, `maintenance` o `management`), `active`, `createdAt`, `createdBy` | Reemplaza a `Users/basic/Users/{uid}` (P9). Sin campos de contraseña. | M1 |
+| `Users/{uid}` | `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area` (`service`, `reception`, `housekeeping`, `maintenance` o `management`), `active`, `createdAt`, `createdBy` | Reemplaza a `Users/basic/Users/{uid}` (P9). Sin campos de contraseña. M1 crea la ruta con `fullName`, `email`, `type` y `createdAt`; M2 agrega `area`, `active` y el rol `reception`, y M6, `createdBy`. | M1, M2 y M6 |
 | `Orders/{id}` | Los actuales, más `closedAt/By`, `paidAt/By`, `paymentMethod`, `tipAmount`, `taxAmount` y, al cancelar, `cancelReason` y `cancelledAt/By` | `state`: `in_progress`, `closed`, `paid` o `cancelled`. `typeOrder`: `room`, `table`, `pool`, `bar` u `other`. Cada línea tiene su propio id, `taxRate` y `taxAmount`. Las líneas se agregan con `arrayUnion` y el total con `increment`, para que dos dispositivos agreguen productos a la vez, incluso sin conexión, sin pisarse (RF-CUR-13, V6). | M3 |
 | `Orders/{id}/events/{id}` | `type`, `by`, `at` y el detalle del cambio | Historial (RF-CUR-11) | M3 |
 | `Payments/{id}` | `amount`, `tipAmount`, `method` (`cash` o `transfer`), `source` (`order` o `reservation`), `sourceId`, `receivedBy`, `receivedAt` | Un registro por cada pago recibido. El balance y el cierre de caja salen de aquí. El cierre toma los pagos por `receivedAt` entre su `from` y su `to`, así que un pago nunca se edita. | M3 |
@@ -614,11 +614,11 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 
 | # | Tema | Acción | Hito |
 |---|---|---|---|
-| S1 | El legacy guarda contraseñas en texto plano en `Users` | Como no hay datos productivos, una persona borra todos los datos de prueba de Firestore antes de publicar este PRD, porque el repo es público. Al eliminar el legacy (M1) se revisa que no queden. | M0 |
+| S1 | El legacy guarda contraseñas en texto plano en `Users` | Como no hay datos productivos, una persona borra todos los datos de prueba de Firestore antes de publicar este PRD, porque el repo es público. Al eliminar el legacy (M1) se revisa que no queden. | M0 ✅ |
 | S2 | La API key de `google-services.json` está en el historial público del repo | Se decidió mitigar sin reescribir el historial: reglas de Firestore estrictas y la key restringida al paquete y a la SHA-1 de Android. Como con esa key se pueden crear cuentas de Auth por la API REST, RF-AUTH-07 es obligatorio. | M2 |
 | S3 | Las reglas de Firestore no se sabe si están desplegadas | Versionar las reglas en el repo (`firestore.rules`) y desplegarlas | M2 |
 | S4 | Protección adicional | Secret scanning y push protection en GitHub. Firebase App Check en modo de monitoreo: no se puede exigir mientras la app de escritorio use Firestore directamente, porque no tiene proveedor de App Check (V3). | M7 |
-| S5 | Módulo legacy `app` duplicado | Eliminarlo en M1: ya no quedan pantallas por migrar desde ahí ni usuarios que lo usen | M1 |
+| S5 | Módulo legacy `app` duplicado | Eliminarlo en M1: ya no quedan pantallas por migrar desde ahí ni usuarios que lo usen | M1 ✅ |
 | S6 | Primer administrador | Crearlo a mano en Firebase Auth y en `Users/{uid}` antes de desplegar las reglas (P1) | M2 |
 | S7 | Las reglas nuevas pueden bloquear a todos o dejar huecos | Tests de las reglas en el emulador de Firebase para cada rol y cada cambio de estado, y despliegue en un horario de poca operación | M2 |
 | S8 | Registro abierto | Quitar la pantalla (RF-AUTH-02) y exigir documento activo en las reglas (RF-AUTH-07) | M2 |
@@ -721,6 +721,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | P34 | ¿Se pasa Firebase al plan Blaze? | Lo ideal es no hacerlo. La validación de la sección 7 muestra que el alcance cerrado funciona en Spark. |
 | P35 | ¿Cómo se paga una reserva de varias habitaciones? | No es una función: cada habitación es su propia reserva, aunque sea del mismo huésped y las mismas fechas |
 | P36 | ¿Quién mueve el estado de una tarea a cargo de un proveedor externo? | Recepción o administración: inician, devuelven y terminan la tarea |
+| P37 | ¿Quién ve el reporte de horas, los reportes de limpieza y mantenimiento y el historial por habitación? | Por ahora, solo el administrador |
 
 ## 13. Registro de decisiones
 
@@ -759,6 +760,12 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-02 | Borrar los datos de prueba de Firestore (S1) antes de publicar este PRD | El repo es público y este documento describe los riesgos que siguen abiertos hasta M2 |
 | 2026-11-02 | Clean Architecture con MVI en `shared`. Las reglas de código están en `CLAUDE.md`. | Una base común y fácil de probar para todo el código que viene |
 | 2026-11-02 | Las tareas a cargo de un proveedor externo las mueven recepción o administración | Respuesta a P36 |
+| 2026-11-03 | Empezar M1 sin esperar los diagramas de M0, que avanzan en paralelo en su propia rama | Los diagramas son documentación y no bloquean el código |
+| 2026-11-03 | En M1, `Users/{uid}` guarda solo `fullName`, `email`, `type` y `createdAt`. `area`, `active` y el rol `reception` llegan en M2 con las reglas, y `createdBy` en M6. | Mientras el registro siga abierto, no hay quién asigne el área ni quién figure como creador |
+| 2026-11-03 | El CI no usa secretos: Android aplica el plugin de Google Services solo si existe `google-services.json` y, sin él, arranca sin Firebase, como escritorio | No hay que guardar la configuración de Firebase en GitHub |
+| 2026-11-03 | El CI usa el caché básico de Gradle (`actions/cache`) y no el caché propietario que `setup-gradle` trae por defecto | Es abierto y sigue siendo gratis si el repo deja de ser público |
+| 2026-11-03 | El código común de iOS se verifica con `./gradlew :shared:linkDebugFrameworkIosSimulatorArm64`, en macOS. El CI solo compila Android y escritorio (RNF-07). | La definición de terminado exige que iOS compile, y no había un comando para comprobarlo |
+| 2026-11-03 | Por ahora, solo el administrador ve el reporte de horas (RF-ASI-08), los reportes de limpieza y mantenimiento (RF-TAR-09) y el historial por habitación (RF-TAR-08) | Respuesta a P37 |
 
 ## 14. Riesgos
 
@@ -814,7 +821,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | TRA | Tarjeta de Registro de Alojamiento del MinCIT, para todos los huéspedes. |
 | SIRE | Sistema de Información para el Reporte de Extranjeros, de Migración Colombia. |
 | Empleado activo | Usuario con `active: true`. Solo los activos pueden usar la app. |
-| Legacy | El módulo `app`, la app Android original en XML y Hilt, que se elimina en M1. |
+| Legacy | El módulo `app`, la app Android original en XML y Hilt, que se eliminó en M1. |
 
 ## 16. Diagramas
 

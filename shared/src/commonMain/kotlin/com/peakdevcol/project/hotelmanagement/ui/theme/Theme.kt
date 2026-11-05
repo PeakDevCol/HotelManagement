@@ -7,7 +7,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Same palette as the legacy app (res/values/colors.xml and res/values-night/colors.xml).
 private val LightColors = lightColorScheme(
     primary = Color(0xFF00696D),
     onPrimary = Color(0xFFFFFFFF),

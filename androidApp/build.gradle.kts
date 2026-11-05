@@ -4,7 +4,13 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.googleGmsGoogleServices)
+}
+
+// google-services.json is a secret kept out of the repo. Builds without it, like CI, still
+// compile, and the app starts with Firebase disabled, as the desktop app does.
+val firebaseConfigured = file("google-services.json").exists()
+if (firebaseConfigured) {
+    apply(plugin = libs.plugins.googleGmsGoogleServices.get().pluginId)
 }
 
 android {
@@ -12,13 +18,16 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        // Same id as the legacy :app so it uses the same Firebase app (google-services.json).
-        // Both apps cannot be installed at the same time on one device.
+        // Must match the Android app registered in Firebase, or google-services.json does not apply.
         applicationId = "com.peakdevcol.project.hotelmanagement"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("boolean", "FIREBASE_CONFIGURED", firebaseConfigured.toString())
+    }
+    buildFeatures {
+        buildConfig = true
     }
     packaging {
         resources {
