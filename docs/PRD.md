@@ -825,20 +825,409 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 
 ## 16. Diagramas
 
-Pendientes. Llegan en un PR aparte, que cierra M0. Se escriben en Mermaid dentro de este archivo, porque GitHub los muestra como imagen y quedan versionados con el PRD. Los wireframes se enlazan aparte.
+Se escriben en Mermaid dentro de este archivo, porque GitHub los muestra como imagen y quedan versionados con el PRD.
+Resumen las secciones 6 y 8: si un diagrama y el texto no coinciden, manda el texto, y el diagrama se corrige en el mismo PR.
+Los wireframes de las pantallas pendientes se enlazarán aparte.
 
-| Diagrama | Qué muestra | Secciones |
-|---|---|---|
-| Ciclo de vida del pedido | Estados, transiciones y quién puede hacer cada una | 3, 6.3, 8 |
-| Estado de la habitación | Ocupación, limpieza y bloqueo, y qué los cambia | 6.8, 6.11 a 6.13 |
-| Ciclo de vida de la reserva | Estados de una reserva | 6.9, 6.10 |
-| Ciclo de vida de una tarea de habitación | Estados, asignar o tomar, y su efecto en la habitación | 6.11 a 6.13 |
-| Mapa de navegación | Pantallas de la app y cómo se llega a cada una según el rol y el área | 3, 6 |
-| Flujo de un pedido | Pasos desde tomar el pedido hasta registrar el pago | 6.2, 6.3 |
-| Flujo de check-in y check-out | Pasos de recepción con y sin reserva | 6.9, 6.10 |
-| Día de limpieza | Desde la creación de tareas hasta dejar las habitaciones disponibles | 6.12 |
-| Flujo de asistencia | Marcación con ubicación o en recepción, olvidos y correcciones | 6.7 |
-| Modelo de datos | Colecciones de Firestore y sus relaciones | 8 |
-| Arquitectura | Módulos KMP, capas de `shared` y servicios de Firebase | 1, 4 |
-| Hoja de ruta | Hitos, versiones y dependencias | 10 |
-| Wireframes | Pantallas pendientes: pedidos en curso, inventario, balance, empleados, parámetros, asistencia, tablero de habitaciones, calendario, check-in, check-out y tareas | 6 |
+### 16.1 Ciclo de vida del pedido
+Estados, transiciones y quién puede hacer cada una (secciones 3, 6.3 y 8).
+
+```mermaid
+stateDiagram-v2
+    state "En curso · in_progress" as in_progress
+    state "Cerrado · closed" as closed
+    state "Pagado · paid" as paid
+    state "Cancelado · cancelled" as cancelled
+
+    [*] --> in_progress: confirmar el pedido, cualquier empleado (RF-ORD-04)
+    in_progress --> in_progress: agregar o quitar productos (RF-CUR-06)
+    in_progress --> closed: cerrar la cuenta, cualquier empleado (RF-CUR-04)
+    closed --> in_progress: reabrir para editar, cualquier empleado (RF-CUR-10)
+    closed --> paid: registrar el pago, cualquier empleado (RF-CUR-05)
+    in_progress --> cancelled: cancelar con motivo, solo administradores (RF-CUR-07)
+    closed --> cancelled: cancelar con motivo, solo administradores (RF-CUR-07)
+    paid --> [*]
+    cancelled --> [*]
+
+    note right of in_progress
+        Agregar productos funciona sin conexión (RF-CUR-13).
+        Quitar productos y cambiar de estado necesitan conexión (RF-CUR-12, RF-CUR-13).
+    end note
+    note right of paid
+        Crea el registro en Payments en la misma transacción.
+        Ya no se modifica.
+    end note
+```
+
+### 16.2 Estado de la habitación
+Las tres partes del estado y qué cambia cada una (secciones 6.8 y 6.11 a 6.13).
+
+```mermaid
+flowchart LR
+    subgraph occupancy ["Ocupación"]
+        vacant["Libre · vacant"] -->|"check-in · RF-EST-01"| occupied["Ocupada · occupied"]
+        occupied -->|"check-out o cambio de habitación · RF-EST-07, RF-EST-06"| vacant
+    end
+    subgraph housekeeping ["Limpieza"]
+        dirty["Por limpiar · dirty"] -->|"iniciar la limpieza · RF-LIM-03"| cleaning["En limpieza · cleaning"]
+        cleaning -->|"terminar la limpieza"| clean["Limpia · clean"]
+        clean -->|"check-out, cambio de habitación, repaso del día o fin de un mantenimiento"| dirty
+        dirty -.->|"solo en la v1.2: cualquier empleado la marca limpia"| clean
+    end
+    subgraph roomBlock ["Bloqueo"]
+        unblocked["Sin bloqueo"] -->|"bloquear entre dos fechas · RF-MAN-03"| blocked["En mantenimiento"]
+        blocked -->|"terminar el mantenimiento · RF-MAN-05"| unblocked
+    end
+```
+
+Cómo se combinan las tres partes en el único estado que muestra el tablero (RF-HAB-04):
+
+```mermaid
+flowchart TD
+    hasBlock{"¿Tiene un bloqueo vigente hoy?"} -->|"Sí"| shownMaintenance["En mantenimiento"]
+    hasBlock -->|"No"| isOccupied{"¿Está occupied?"}
+    isOccupied -->|"Sí"| shownOccupied["Ocupada<br/>con el estado de su repaso del día"]
+    isOccupied -->|"No"| cleaningState{"¿Cómo está la limpieza?"}
+    cleaningState -->|"cleaning"| shownCleaning["En limpieza"]
+    cleaningState -->|"dirty"| shownDirty["Por limpiar"]
+    cleaningState -->|"clean"| shownAvailable["Disponible"]
+```
+
+### 16.3 Ciclo de vida de la reserva
+Estados de una reserva (secciones 6.9 y 6.10). Todas las acciones las hacen recepción o administración, con conexión.
+
+```mermaid
+stateDiagram-v2
+    state "Confirmada · confirmed" as confirmed
+    state "Hospedado · checked_in" as checked_in
+    state "Finalizada · checked_out" as checked_out
+    state "Cancelada · cancelled" as cancelled
+    state "No llegó · no_show" as no_show
+
+    [*] --> confirmed: crear la reserva (RF-RES-02)
+    [*] --> checked_in: check-in sin reserva (RF-EST-02)
+    confirmed --> confirmed: modificar fechas, ocupantes o habitación (RF-RES-05)
+    confirmed --> checked_in: check-in (RF-EST-01)
+    checked_in --> checked_in: pagos, extender o acortar, cambio de habitación (RF-EST-09, RF-EST-05, RF-EST-06)
+    checked_in --> checked_out: check-out con saldo en cero o autorizado por un administrador (RF-EST-07)
+    confirmed --> cancelled: cancelar con motivo (RF-RES-06)
+    confirmed --> no_show: no llegó (RF-RES-07)
+    checked_out --> [*]
+    cancelled --> [*]
+    no_show --> [*]
+
+    note right of confirmed
+        Crear, modificar, cancelar y no show apartan
+        o liberan noches en RoomNights, en la misma
+        transacción (RF-RES-03).
+    end note
+```
+
+### 16.4 Ciclo de vida de una tarea de habitación
+Estados, asignar o tomar, y su efecto en la habitación (secciones 6.11 a 6.13).
+
+```mermaid
+stateDiagram-v2
+    state "Pendiente · pending" as pending
+    state "En curso · in_progress" as in_progress
+    state "Terminada · done" as done
+    state "No realizada · not_done" as not_done
+    state "Cancelada · cancelled" as cancelled
+
+    [*] --> pending: la app (tareas automáticas) o un reporte de daño
+    pending --> pending: asignar, recepción o administración (RF-TAR-02)
+    pending --> pending: tomar, empleado del área, en transacción (RF-TAR-03)
+    pending --> in_progress: iniciar, quien la tiene
+    in_progress --> pending: devolver con una nota
+    in_progress --> done: terminar
+    pending --> not_done: no molestar o servicio rechazado, solo limpieza (RF-LIM-05)
+    in_progress --> not_done: no molestar o servicio rechazado, solo limpieza (RF-LIM-05)
+    pending --> cancelled: cancelar con motivo, solo administradores (RF-TAR-06)
+    in_progress --> cancelled: cancelar con motivo, solo administradores (RF-TAR-06)
+    done --> [*]
+    not_done --> [*]
+    cancelled --> [*]
+
+    note right of in_progress
+        Limpieza: la habitación pasa a cleaning.
+        Mantenimiento: se puede bloquear la habitación (RF-MAN-03).
+        Si la tiene un proveedor, la mueven recepción o administración (RF-MAN-04).
+    end note
+    note right of done
+        Limpieza: la habitación pasa a clean.
+        Mantenimiento: se levanta el bloqueo, la habitación
+        queda dirty y se crea un retoque de limpieza (RF-MAN-05).
+    end note
+```
+
+### 16.5 Mapa de navegación
+Pantallas de la app y quién llega a cada una según el rol y el área (secciones 3 y 6). Es el destino de la v1.3: la pantalla de registro desaparece en M2 (RF-AUTH-02).
+
+```mermaid
+flowchart TD
+    intro["Introducción"] --> login["Iniciar sesión · RF-AUTH-01"]
+    login -.-> forgotPassword["Recuperar contraseña · RF-AUTH-04"]
+    login -->|"cuenta con documento activo en Users · RF-AUTH-07"| menu["Menú principal<br/>secciones según el rol, ordenadas según el área<br/>RF-AUTH-05, RF-EMP-05"]
+
+    subgraph orders ["Pedidos · v1.0 · todos"]
+        newOrder["Crear pedido"]
+        currentOrders["Pedidos en curso"] --> orderDetail["Detalle del pedido<br/>editar, cerrar, reabrir y pagar"]
+        orderDetail -.->|"solo administradores"| cancelOrder["Cancelar con motivo"]
+    end
+
+    subgraph attendance ["Asistencia · v1.1"]
+        clockInOut["Marcar entrada y salida · todos"]
+        mySchedule["Mi horario · todos"]
+        whoIsWorking["Quién está trabajando<br/>recepción y administración"]
+    end
+
+    subgraph roomsAndReservations ["Habitaciones y reservas · v1.2"]
+        roomBoard["Tablero de habitaciones · todos<br/>sin datos de huéspedes para basic"]
+        reservationCalendar["Calendario y reservas<br/>recepción y administración"]
+        arrivalsAndDepartures["Llegadas y salidas del día<br/>recepción y administración"] --> checkIn["Check-in"]
+        guestsInHouse["Huéspedes en casa<br/>recepción y administración"] --> checkOut["Check-out y pagos de la estadía"]
+    end
+
+    subgraph roomTasks ["Tareas de habitación · v1.3"]
+        taskList["Lista de tareas<br/>limpieza y mantenimiento ven las de su área<br/>recepción y administración ven todas"] --> taskDetail["Detalle de la tarea<br/>iniciar, devolver, terminar y lista de chequeo"]
+        reportDamage["Reportar un daño · todos"]
+        lostItems["Objetos olvidados<br/>todos registran; recepción y administración entregan"]
+    end
+
+    subgraph administration ["Administración · solo administradores"]
+        balance["Balance y cierre de caja · v1.0"]
+        inventory["Productos, categorías e impuestos · v1.0"]
+        employees["Empleados · v1.0"]
+        settings["Parámetros · v1.0"]
+        backup["Respaldo · solo escritorio · v1.0"]
+        shifts["Horarios y correcciones de asistencia · v1.1"]
+        authorizedComputers["Computadores autorizados · solo escritorio · v1.1"]
+        roomSetup["Habitaciones y tipos · v1.2"]
+        maintenancePlans["Planes preventivos y listas de chequeo · v1.3"]
+        hoursReport["Reporte de horas · v1.1"]
+        taskReports["Reportes de limpieza y mantenimiento · v1.3"]
+        roomHistory["Historial por habitación · v1.3"]
+    end
+
+    menu --> orders
+    menu --> attendance
+    menu --> roomsAndReservations
+    menu --> roomTasks
+    menu --> administration
+```
+
+### 16.6 Flujo de un pedido
+Pasos desde tomar el pedido hasta registrar el pago (secciones 6.2 y 6.3).
+
+```mermaid
+flowchart TD
+    guestOrders(["El huésped pide"]) --> chooseDestination["Elegir destino: habitación, mesa, piscina, bar u otro<br/>RF-ORD-03, RF-ORD-08"]
+    chooseDestination --> addProducts["Agregar productos del catálogo<br/>RF-ORD-01, RF-ORD-02"]
+    addProducts --> confirmOrder["Confirmar · RF-ORD-04"]
+    confirmOrder --> isOnline{"¿Hay conexión?"}
+    isOnline -->|"Sí"| inProgress["Pedido En curso en Firestore"]
+    isOnline -->|"No"| pendingToSend["Guardado en el dispositivo como pendiente de enviar<br/>RF-ORD-09"]
+    pendingToSend -->|"vuelve la conexión, sin duplicarse"| inProgress
+    inProgress --> wantsMore{"¿Pide algo más?"}
+    wantsMore -->|"Sí"| addMore["Agregar productos al mismo pedido<br/>también sin conexión · RF-CUR-13"]
+    addMore --> wantsMore
+    wantsMore -->|"No, pide la cuenta"| closeBill["Cerrar la cuenta · RF-CUR-04<br/>necesita conexión"]
+    closeBill --> moreAfterClosing{"¿Pide algo más antes de pagar?"}
+    moreAfterClosing -->|"Sí"| reopen["Reabrir · RF-CUR-10"]
+    reopen --> addMore
+    moreAfterClosing -->|"No"| registerPayment["Registrar el pago: efectivo o transferencia, con propina opcional<br/>RF-CUR-05 · crea el registro en Payments"]
+    registerPayment --> paidOrder(["Pagado: sale de la lista de pedidos en curso"])
+```
+
+### 16.7 Flujo de check-in y check-out
+Pasos de recepción con y sin reserva (secciones 6.9 y 6.10).
+
+```mermaid
+flowchart TD
+    guestArrives(["Llega el huésped"]) --> hasReservation{"¿Tiene reserva?"}
+    hasReservation -->|"Sí"| findReservation["Buscarla en las llegadas del día · RF-RES-09"]
+    hasReservation -->|"No"| walkIn["Buscar habitación libre y crear la reserva<br/>RF-EST-02, con la validación de RF-RES-03"]
+    findReservation --> isAvailable{"¿La habitación está Disponible?"}
+    walkIn --> isAvailable
+    isAvailable -->|"No"| notReady{"¿Qué hace recepción?"}
+    notReady -->|"cambia la habitación"| isAvailable
+    notReady -->|"un administrador la entrega igual, con motivo"| guestData
+    isAvailable -->|"Sí"| guestData["Confirmar documento, acompañantes y autorización de datos<br/>RF-EST-01"]
+    guestData --> checkedIn["Reserva checked_in y habitación occupied<br/>con la salida prevista"]
+    checkedIn --> stay["Durante la estadía: pagos, extender o acortar y cambio de habitación<br/>RF-EST-09, RF-EST-05, RF-EST-06"]
+    stay --> checkOut["Check-out · RF-EST-07"]
+    checkOut --> unpaidOrders{"¿Hay pedidos sin pagar con destino a la habitación?"}
+    unpaidOrders -->|"Sí"| warnOrders["La app avisa; se cobran aparte · P16"]
+    warnOrders --> zeroBalance
+    unpaidOrders -->|"No"| zeroBalance{"¿El saldo está en cero?"}
+    zeroBalance -->|"No"| settleBalance["Registrar el pago del saldo,<br/>o un administrador autoriza con motivo"]
+    settleBalance --> checkedOut
+    zeroBalance -->|"Sí"| checkedOut(["Reserva checked_out y habitación vacant y dirty<br/>desde la v1.3 se crea la tarea de salida"])
+```
+
+### 16.8 Día de limpieza
+Desde la creación de las tareas hasta dejar las habitaciones disponibles (sección 6.12).
+
+```mermaid
+flowchart TD
+    firstDevice(["El primer dispositivo del día operativo abre una pantalla de tareas"]) --> dailyTasks["Crea los repasos de las habitaciones ocupadas, que quedan dirty,<br/>y las limpiezas profundas que tocan · RF-LIM-01<br/>id fijo roomId_fecha_tipo, así nunca se duplican"]
+    guestChecksOut(["Check-out durante el día"]) --> departureTask["Crea la tarea de salida al instante"]
+    dailyTasks --> taskList["Lista por prioridad: llegada hoy, salidas y repasos · RF-LIM-02"]
+    departureTask --> taskList
+    taskList --> howAssigned{"¿Quién la hace?"}
+    howAssigned -->|"recepción o administración la asigna · RF-TAR-02"| startCleaning
+    howAssigned -->|"un empleado de limpieza la toma, en transacción · RF-TAR-03"| startCleaning["Iniciar · la habitación pasa a cleaning"]
+    startCleaning --> canClean{"¿No molestar o servicio rechazado?"}
+    canClean -->|"Sí"| notDone["No realizada, con motivo · RF-LIM-05<br/>si fue no molestar, vuelve a aparecer pasadas las horas del parámetro (2 h)"]
+    canClean -->|"No"| checklist["Lista de chequeo con puntos obligatorios · RF-LIM-04"]
+    checklist --> findings{"¿Encuentra algo?"}
+    findings -->|"un daño"| reportDamage["Reporta el daño: tarea de mantenimiento · RF-LIM-06"]
+    findings -->|"un objeto"| registerLostItem["Registra el objeto olvidado · RF-LIM-07"]
+    reportDamage --> finishCleaning
+    registerLostItem --> finishCleaning
+    findings -->|"nada"| finishCleaning["Terminar · la habitación pasa a clean"]
+    finishCleaning --> roomResult(["Disponible si está libre y sin bloqueo<br/>Ocupada con el repaso hecho si tiene huésped"])
+```
+
+### 16.9 Flujo de asistencia
+Marcación con ubicación o en recepción, olvidos y correcciones (sección 6.7).
+
+```mermaid
+flowchart TD
+    employeeArrives(["El empleado llega o se va"]) --> where{"¿Dónde marca?"}
+    where -->|"en su celular"| askLocation["Pide la ubicación solo al marcar · S10"]
+    askLocation --> hasLocation{"¿El celular da ubicación?"}
+    hasLocation -->|"No"| goToReception["La app indica que marque en recepción"]
+    goToReception --> authorizedComputer
+    hasLocation -->|"Sí"| insideZone{"¿Ubicación real, dentro del radio<br/>y con la precisión mínima? · RF-ASI-10"}
+    insideZone -->|"No"| retry["Intentar de nuevo o marcar en recepción"]
+    insideZone -->|"Sí"| hasOpenEntry
+    where -->|"en el computador autorizado de recepción"| authorizedComputer["Se identifica con su cuenta, sin cerrar<br/>la sesión del computador · RF-ASI-11"]
+    authorizedComputer --> hasOpenEntry{"¿Tiene una entrada abierta?"}
+    hasOpenEntry -->|"No"| clockIn["Entrada con la hora del servidor · RF-ASI-03<br/>guarda distancia y precisión, nunca coordenadas"]
+    hasOpenEntry -->|"Sí"| clockOut["Salida: cierra la entrada y muestra<br/>las horas trabajadas · RF-ASI-04"]
+    clockIn -.->|"sin conexión en el celular · RF-ASI-05"| needsReview["Guarda la hora del dispositivo<br/>y queda por revisar"]
+    clockOut -.->|"sin conexión en el celular · RF-ASI-05"| needsReview
+    clockIn -.->|"pasan las horas máximas del parámetro (16 h) sin salida · RF-ASI-06"| missingClockOut["Salida pendiente"]
+    needsReview --> correction["El administrador corrige con motivo<br/>y se conservan los valores originales · RF-ASI-07"]
+    missingClockOut --> correction
+```
+
+### 16.10 Modelo de datos
+Colecciones de Firestore y sus relaciones (sección 8). Los campos de cada colección están en las tablas de esa sección.
+
+```mermaid
+erDiagram
+    Users ||--o{ Orders : "idEmployee"
+    Orders ||--o{ OrderEvents : "subcolección events"
+    Orders ||--o| Payments : "source order"
+    Reservations ||--o{ Payments : "source reservation"
+    Users ||--o{ Payments : "receivedBy"
+    CashClosings |o--o{ Payments : "receivedAt entre from y to"
+    Users ||--o{ CashClosings : "closedBy"
+    Orders }o--o{ Products : "líneas con productId y precio copiado"
+    Products }o--o| Taxes : "taxId"
+    Users ||--o{ Shifts : "employeeId"
+    Users ||--o{ Attendance : "employeeId"
+    Devices |o--o{ Attendance : "deviceId"
+    RoomTypes ||--o{ Rooms : "roomTypeId"
+    RoomTypes }o--o| Taxes : "taxId"
+    Guests ||--o{ Reservations : "guestId"
+    Rooms ||--o{ Reservations : "roomId"
+    Rooms ||--o{ RoomNights : "roomId_date"
+    Reservations |o--o{ RoomNights : "reservationId"
+    RoomBlocks |o--o{ RoomNights : "blockId"
+    Rooms ||--o{ RoomBlocks : "roomId"
+    Rooms ||--o{ RoomTasks : "roomId"
+    Users |o--o{ RoomTasks : "assignedTo"
+    RoomTasks |o--o| RoomBlocks : "blockId y taskId"
+    MaintenancePlans |o--o{ RoomTasks : "planId"
+    ChecklistTemplates |o--o{ RoomTasks : "checklist por tipo de limpieza"
+    RoomTasks |o--o| Photos : "photoId"
+    LostItems |o--o| Photos : "photoId"
+    Rooms ||--o{ LostItems : "roomId"
+    Settings {
+        string id "hotel"
+        string updatedBy
+        timestamp updatedAt
+    }
+```
+
+### 16.11 Arquitectura
+Módulos de Kotlin Multiplatform, capas de `shared` y servicios de Firebase (secciones 1 y 4). Las flechas apuntan hacia la dependencia.
+
+```mermaid
+flowchart TB
+    subgraph entryPoints ["Puntos de entrada"]
+        androidApp["androidApp · Android"]
+        desktopApp["desktopApp · JVM: macOS, Windows y Linux"]
+        iosApp["iosApp · Xcode"]
+    end
+
+    subgraph shared ["shared · Kotlin Multiplatform"]
+        presentation["presentation, en el paquete ui<br/>Compose Multiplatform y MVI: State, Intent, Effect y ViewModel"]
+        domain["domain · Kotlin puro<br/>entidades, casos de uso e interfaces de repositorio"]
+        data["data<br/>repositorios con GitLive firebase-kotlin-sdk, DTOs y mappers"]
+        platform["expect/actual<br/>ubicación y archivos locales"]
+        koin["Koin<br/>enlaza las implementaciones"]
+    end
+
+    subgraph firebase ["Firebase · plan Spark"]
+        authentication["Authentication"]
+        firestore["Cloud Firestore<br/>reglas e índices versionados en el repo"]
+    end
+
+    entryPoints --> shared
+    presentation --> domain
+    data --> domain
+    platform --> domain
+    koin -.-> presentation
+    koin -.-> data
+    data --> authentication
+    data --> firestore
+```
+
+### 16.12 Hoja de ruta
+Hitos, versiones y dependencias (sección 10).
+
+```mermaid
+flowchart LR
+    M0["M0 · PRD y diagramas"]
+
+    subgraph v10 ["v1.0 · pedidos, balance y administración"]
+        M1["M1 · Quitar el legacy y CI"]
+        M2["M2 · Seguridad base"]
+        M3["M3 · Pedidos en curso"]
+        M4["M4 · Inventario"]
+        M5["M5 · Balance"]
+        M6["M6 · Roles y administración"]
+        M7["M7 · Release 1.0.0 y piloto"]
+    end
+
+    subgraph v11 ["v1.1 · asistencia"]
+        M8["M8 · Asistencia"]
+        M9["M9 · Release 1.1.0"]
+    end
+
+    subgraph v12 ["v1.2 · reservas y estadías"]
+        M10["M10 · Habitaciones"]
+        M11["M11 · Reservas"]
+        M12["M12 · Estadías"]
+        M13["M13 · Release 1.2.0"]
+    end
+
+    subgraph v13 ["v1.3 · limpieza y mantenimiento"]
+        M14["M14 · Mantenimiento y tareas"]
+        M15["M15 · Limpieza"]
+        M16["M16 · Release 1.3.0"]
+    end
+
+    M0 --> M1 --> M2
+    M2 --> M3 & M4 & M6
+    M3 & M4 --> M5
+    M3 & M4 & M5 & M6 --> M7
+    M7 --> M8 --> M9
+    M7 --> M10 --> M11 --> M12
+    M9 & M12 --> M13
+    M13 --> M14 --> M15 --> M16
+```
