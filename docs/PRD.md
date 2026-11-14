@@ -68,8 +68,7 @@ Lo que se dejó para más adelante está en la columna "Después" de la [secció
 
 ## 3. Usuarios y roles
 
-El modelo tiene dos tipos de usuario, `UserType.ADMIN` y `UserType.BASIC` (en `shared/.../domain/model/User.kt`), pero hoy la app no los usa.
-Se agrega `RECEPTION` ([P23](#12-preguntas-abiertas)).
+El modelo tiene tres roles, `UserType.BASIC`, `UserType.RECEPTION` ([P23](#12-preguntas-abiertas)) y `UserType.ADMIN` (en `shared/.../domain/model/User.kt`). Desde M2 la app y las reglas exigen un perfil activo (RF-AUTH-07); mostrar u ocultar secciones según el rol llega en M6 (RF-AUTH-05).
 El **rol** define los permisos. Además, cada empleado tiene un **área** (servicio, recepción, limpieza, mantenimiento o administración), que define qué tareas ve y qué aparece primero en su menú (RF-EMP-05). No hay un rol de supervisión ([P31](#12-preguntas-abiertas)).
 Las cuentas las crea solo un administrador, y el primer administrador se crea a mano en la consola de Firebase ([P1](#12-preguntas-abiertas)).
 
@@ -96,8 +95,7 @@ Las cuentas las crea solo un administrador, y el primer administrador se crea a 
 | Crear empleados, asignar rol, área y horario, y autorizar computadores | ❌ | ❌ | ✅ |
 | Corregir marcaciones de asistencia y exportar respaldos | ❌ | ❌ | ✅ |
 
-> **Riesgo actual:** el registro está abierto, así que cualquiera que instale la app puede crear una cuenta y escribir pedidos.
-> Se cierra en M2 con RF-AUTH-02 y RF-AUTH-07.
+> **Riesgo hasta publicar las reglas de M2:** la app ya no tiene registro (RF-AUTH-02) y solo deja entrar a cuentas con perfil activo (RF-AUTH-07), pero una cuenta creada por la API REST podría escribir pedidos mientras `firestore.rules` no esté publicado (S3).
 
 ### Escenarios de uso
 Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el piloto.
@@ -131,19 +129,19 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Función | Estado | Notas |
 |---|---|---|
 | Introducción, login y cerrar sesión | ✅ Migrado | La sesión de Firebase decide qué navegación se muestra |
-| Registro abierto | ✅ Migrado | Se quita en M2: las cuentas las crea el administrador (P1) |
+| Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
 | Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`) |
 | Pedidos en curso | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M3. |
 | Inventario | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M4. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
 | Recuperar contraseña | ⬜ Pendiente | |
-| Roles y permisos | ⬜ Pendiente | `UserType` existe pero no se usa |
+| Roles y permisos | 🔄 En parte | Desde M2 solo entra quien tiene perfil activo, y las reglas distinguen al administrador. Las secciones según el rol llegan en M6. |
 | Turnos y asistencia | ⬜ Nuevo | v1.1 |
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 36 tests en `commonTest` (dominio, datos y ViewModels), y pasan en JVM y en Android.
+Hay 47 tests en `commonTest` (dominio, datos y ViewModels), y pasan en JVM y en Android.
 
 ## 5. Alcance por versión
 
@@ -194,12 +192,12 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
 | RF-AUTH-01 | Iniciar sesión con correo y contraseña | Un error de credenciales o de red muestra un mensaje claro. Al entrar se abre el menú. | ✅ |
-| RF-AUTH-02 | Quitar el registro abierto ([P1](#12-preguntas-abiertas)) | La pantalla de registro desaparece. Las cuentas se crean desde RF-EMP-04. | 🔄 |
+| RF-AUTH-02 | Quitar el registro abierto ([P1](#12-preguntas-abiertas)) | La pantalla de registro desaparece. Las cuentas se crean desde RF-EMP-04. | ✅ |
 | RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve a la introducción. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | 🔄 |
 | RF-AUTH-04 | Recuperar contraseña | "¿Olvidaste la contraseña?" envía el correo de restablecimiento de Firebase | ⬜ |
 | RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | ⬜ |
 | RF-AUTH-06 | ~~Cuentas nuevas pendientes de aprobación~~ | Descartado por P1: ya no hay registro abierto | — |
-| RF-AUTH-07 | Sin documento, sin acceso | Una cuenta de Firebase Auth sin documento activo en `Users` no lee ni escribe nada, aunque se haya creado por fuera de la app | ⬜ |
+| RF-AUTH-07 | Sin documento, sin acceso | Una cuenta de Firebase Auth sin documento activo en `Users` no lee ni escribe nada, aunque se haya creado por fuera de la app. La app muestra "Tu cuenta no está activa" y solo deja cerrar sesión. | 🔄 Hecho en la app y en `firestore.rules`; falta que una persona publique las reglas (S3) |
 
 ### 6.2 Crear pedido (`ORD`)
 | ID | Requisito | Criterios de aceptación | Estado |
@@ -537,7 +535,7 @@ En Spark, si un día se pasa la cuota, Firestore deja de responder hasta que se 
 | `state` | string | `confirm`, `close` o `pay` |
 | `totalPayAmount` | long | Total en pesos |
 
-**`Users/{uid}`**, desde M1: `fullName`, `email`, `type` (`basic` o `admin`) y `createdAt`.
+**`Users/{uid}`**, desde M2: `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area`, `active` y `createdAt`. La app solo lo lee; hasta M6 los perfiles se crean a mano en la consola (S6).
 La ruta anterior, `Users/basic/Users/{uid}`, ya no se usa. Sus documentos, con contraseñas en texto plano, se borraron con los datos de prueba (S1).
 
 Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo reemplaza al actual sin migración. Los datos de prueba se borraron en M0 (S1).
@@ -616,7 +614,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 |---|---|---|---|
 | S1 | El legacy guarda contraseñas en texto plano en `Users` | Como no hay datos productivos, una persona borra todos los datos de prueba de Firestore antes de publicar este PRD, porque el repo es público. Al eliminar el legacy (M1) se revisa que no queden. | M0 ✅ |
 | S2 | La API key de `google-services.json` está en el historial público del repo | Se decidió mitigar sin reescribir el historial: reglas de Firestore estrictas y una key por plataforma. La de Android (la expuesta) se restringe al paquete y a la SHA-1, y la de iOS, al bundle id. Escritorio se registra como app Web con su propia key, limitada por API, que se lee de `desktopApp/firebase.properties` (fuera del repo). Como la key de escritorio se puede extraer del instalador y con ella se pueden crear cuentas de Auth por la API REST, RF-AUTH-07 es obligatorio. Las keys quedaron restringidas el 2026-11-14; faltan las reglas (S3). | M2 |
-| S3 | Las reglas de Firestore no se sabe si están desplegadas | Versionar las reglas en el repo (`firestore.rules`) y desplegarlas | M2 |
+| S3 | Las reglas de Firestore no se sabe si están desplegadas | Versionar las reglas en el repo (`firestore.rules`) y desplegarlas. Versionadas el 2026-11-14 para `Users` y `Orders`; falta que una persona las publique, después de S6 y de la revisión de S7. | M2 |
 | S4 | Protección adicional | Secret scanning y push protection en GitHub. Firebase App Check en modo de monitoreo: no se puede exigir mientras la app de escritorio use Firestore directamente, porque no tiene proveedor de App Check (V3). | M7 |
 | S5 | Módulo legacy `app` duplicado | Eliminarlo en M1: ya no quedan pantallas por migrar desde ahí ni usuarios que lo usen | M1 ✅ |
 | S6 | Primer administrador | Crearlo a mano en Firebase Auth y en `Users/{uid}` antes de desplegar las reglas (P1) | M2 |
@@ -768,6 +766,8 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-03 | Por ahora, solo el administrador ve el reporte de horas (RF-ASI-08), los reportes de limpieza y mantenimiento (RF-TAR-09) y el historial por habitación (RF-TAR-08) | Respuesta a P37 |
 | 2026-11-14 | Una API key por plataforma (S2). Escritorio deja de usar el `google-services.json` de Android: se registra como app Web en Firebase y lee su configuración de `desktopApp/firebase.properties`, que no se sube al repo. | Una key restringida al paquete y a la SHA-1 de Android no funciona desde un programa JVM, y así cada key se puede rotar sin afectar a las demás plataformas |
 | 2026-11-14 | No se escriben tests automáticos de las reglas con el emulador de Firebase (S7). Las reglas se revisan a mano con el simulador de la consola antes de publicarlas. | Decisión del negocio: no instalar Node ni mantener otro conjunto de tests. Se acepta que un error en las reglas se detecte más tarde (R3). |
+| 2026-11-14 | En M2 las reglas cubren solo `Users` y `Orders` con el modelo actual, y niegan todo lo demás. Cada hito agrega las reglas de sus colecciones. Hasta M3, quien creó un pedido puede volver a escribirlo mientras siga en `confirm`. | No escribir reglas para datos que aún no existen. Confirmar de nuevo tras un tiempo límite reescribe el mismo pedido con el mismo id. |
+| 2026-11-14 | Una cuenta sin perfil activo ve una pantalla que lo explica y solo puede cerrar sesión. El perfil se observa en tiempo real, así que desactivar a un empleado le quita el acceso de inmediato. | RF-AUTH-07 y el escenario 6 de la sección 3 |
 | 2026-11-14 | Registrar la app iOS en Firebase ahora, con su propia key restringida al bundle id | Poder probar iOS con Firebase desde M2. La distribución sigue para cuando se necesite (P22). |
 
 ## 14. Riesgos

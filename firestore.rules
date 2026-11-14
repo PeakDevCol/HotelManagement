@@ -1,0 +1,70 @@
+rules_version = '2';
+
+// Firestore security rules (PRD, section 8 and S3). A person publishes them; nothing here deploys itself.
+// Anything without a match below is denied. Each milestone adds the rules of its own collections.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath() {
+      return /databases/$(database)/documents/Users/$(request.auth.uid);
+    }
+
+    // RF-AUTH-07: an account created outside the app has no profile, so it reads and writes nothing.
+    // Spark has no custom claims, so the role comes from the profile. Each check costs one read.
+    function isActiveEmployee() {
+      return signedIn() && exists(profilePath()) && get(profilePath()).data.active == true;
+    }
+
+    function isAdmin() {
+      return isActiveEmployee() && get(profilePath()).data.type == 'admin';
+    }
+
+    function isValidProfile(profile) {
+      return profile.keys().hasAll(['fullName', 'email', 'type', 'area', 'active'])
+        && profile.keys().hasOnly(['fullName', 'email', 'type', 'area', 'active', 'createdAt', 'createdBy'])
+        && profile.fullName is string
+        && profile.email is string
+        && profile.type in ['basic', 'reception', 'admin']
+        && profile.area in ['service', 'reception', 'housekeeping', 'maintenance', 'management']
+        && profile.active is bool;
+    }
+
+    match /Users/{userId} {
+      // Everyone reads their own profile, even when inactive: the app needs it to explain why it denies access.
+      allow get: if signedIn() && (request.auth.uid == userId || isActiveEmployee());
+      allow list: if isActiveEmployee();
+      // The allowed keys leave no room for password fields.
+      allow create, update: if isAdmin() && isValidProfile(request.resource.data);
+      // Employees are deactivated, never deleted.
+      allow delete: if false;
+    }
+
+    // Orders keep the current model (confirm, close, pay) until M3 brings the new states and their transitions.
+    match /Orders/{orderId} {
+      function isOwnConfirmedOrder(order) {
+        return order.id == orderId
+          && order.idEmployee == request.auth.uid
+          && order.state == 'confirm'
+          && order.products is list
+          && order.products.size() > 0
+          && order.totalPayAmount is int
+          && order.totalPayAmount >= 0
+          && order.dateOrder == request.time;
+      }
+
+      allow read: if isActiveEmployee();
+      allow create: if isActiveEmployee() && isOwnConfirmedOrder(request.resource.data);
+      // Confirming again after a timeout rewrites the same order (same id), so its owner may overwrite it.
+      allow update: if isActiveEmployee()
+        && resource.data.idEmployee == request.auth.uid
+        && resource.data.state == 'confirm'
+        && isOwnConfirmedOrder(request.resource.data);
+      // RNF-11: orders are cancelled, never deleted.
+      allow delete: if false;
+    }
+  }
+}
