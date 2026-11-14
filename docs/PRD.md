@@ -125,7 +125,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | `shared` | Dominio, datos (Firebase vía GitLive), Koin y UI en Compose | En uso |
 | `androidApp` | Punto de entrada Android | En uso |
 | `desktopApp` | Punto de entrada de escritorio (JVM) | En uso |
-| `iosApp` | Proyecto de Xcode | En uso. Falta registrar la app iOS en Firebase, cuando se necesite ([P22](#12-preguntas-abiertas)). |
+| `iosApp` | Proyecto de Xcode | En uso. La app iOS está registrada en Firebase desde el 2026-11-14; su distribución sigue pendiente ([P22](#12-preguntas-abiertas)). |
 
 ### Funciones
 | Función | Estado | Notas |
@@ -615,7 +615,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | # | Tema | Acción | Hito |
 |---|---|---|---|
 | S1 | El legacy guarda contraseñas en texto plano en `Users` | Como no hay datos productivos, una persona borra todos los datos de prueba de Firestore antes de publicar este PRD, porque el repo es público. Al eliminar el legacy (M1) se revisa que no queden. | M0 ✅ |
-| S2 | La API key de `google-services.json` está en el historial público del repo | Se decidió mitigar sin reescribir el historial: reglas de Firestore estrictas y la key restringida al paquete y a la SHA-1 de Android. Como con esa key se pueden crear cuentas de Auth por la API REST, RF-AUTH-07 es obligatorio. | M2 |
+| S2 | La API key de `google-services.json` está en el historial público del repo | Se decidió mitigar sin reescribir el historial: reglas de Firestore estrictas y una key por plataforma. La de Android (la expuesta) se restringe al paquete y a la SHA-1, y la de iOS, al bundle id. Escritorio se registra como app Web con su propia key, limitada por API, que se lee de `desktopApp/firebase.properties` (fuera del repo). Como la key de escritorio se puede extraer del instalador y con ella se pueden crear cuentas de Auth por la API REST, RF-AUTH-07 es obligatorio. | M2 |
 | S3 | Las reglas de Firestore no se sabe si están desplegadas | Versionar las reglas en el repo (`firestore.rules`) y desplegarlas | M2 |
 | S4 | Protección adicional | Secret scanning y push protection en GitHub. Firebase App Check en modo de monitoreo: no se puede exigir mientras la app de escritorio use Firestore directamente, porque no tiene proveedor de App Check (V3). | M7 |
 | S5 | Módulo legacy `app` duplicado | Eliminarlo en M1: ya no quedan pantallas por migrar desde ahí ni usuarios que lo usen | M1 ✅ |
@@ -766,6 +766,8 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-03 | El CI usa el caché básico de Gradle (`actions/cache`) y no el caché propietario que `setup-gradle` trae por defecto | Es abierto y sigue siendo gratis si el repo deja de ser público |
 | 2026-11-03 | El código común de iOS se verifica con `./gradlew :shared:linkDebugFrameworkIosSimulatorArm64`, en macOS. El CI solo compila Android y escritorio (RNF-07). | La definición de terminado exige que iOS compile, y no había un comando para comprobarlo |
 | 2026-11-03 | Por ahora, solo el administrador ve el reporte de horas (RF-ASI-08), los reportes de limpieza y mantenimiento (RF-TAR-09) y el historial por habitación (RF-TAR-08) | Respuesta a P37 |
+| 2026-11-14 | Una API key por plataforma (S2). Escritorio deja de usar el `google-services.json` de Android: se registra como app Web en Firebase y lee su configuración de `desktopApp/firebase.properties`, que no se sube al repo. | Una key restringida al paquete y a la SHA-1 de Android no funciona desde un programa JVM, y así cada key se puede rotar sin afectar a las demás plataformas |
+| 2026-11-14 | Registrar la app iOS en Firebase ahora, con su propia key restringida al bundle id | Poder probar iOS con Firebase desde M2. La distribución sigue para cuando se necesite (P22). |
 
 ## 14. Riesgos
 

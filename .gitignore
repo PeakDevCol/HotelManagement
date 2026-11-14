@@ -17,6 +17,7 @@ build/
 local.properties
 google-services.json
 GoogleService-Info.plist
+desktopApp/firebase.properties
 *.jks
 *.keystore
 keystore.properties

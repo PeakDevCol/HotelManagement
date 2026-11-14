@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -14,31 +15,31 @@ dependencies {
 }
 
 /*
- * The JVM Firebase SDK needs its options in code. They are generated from the same
- * google-services.json used by Android (gitignored), so no keys are committed to the repo.
+ * The JVM Firebase SDK needs its options in code. They are generated from
+ * desktopApp/firebase.properties (gitignored), which holds the Firebase Web app that the
+ * desktop registers as, with its own API key (S2): the Android key is restricted to the
+ * Android package and cannot be used from a JVM program.
  * Without the file the app still starts, with Firebase disabled.
  */
-val googleServicesJson = rootProject.layout.projectDirectory.file("androidApp/google-services.json").asFile
+val firebaseProperties = layout.projectDirectory.file("firebase.properties").asFile
 val generateFirebaseConfig by tasks.registering {
-    val jsonFile = googleServicesJson
+    val propertiesFile = firebaseProperties
     val outputDir = layout.buildDirectory.dir("generated/firebaseConfig/kotlin")
-    inputs.files(listOf(jsonFile).filter { it.exists() })
+    inputs.files(listOf(propertiesFile).filter { it.exists() })
     outputs.dir(outputDir)
     doLast {
         fun String.escape() = replace("\\", "\\\\").replace("\"", "\\\"").replace("$", "\\$")
-        val options = if (jsonFile.exists()) {
-            @Suppress("UNCHECKED_CAST")
-            val root = groovy.json.JsonSlurper().parse(jsonFile) as Map<String, Any?>
-            val project = root["project_info"] as Map<String, Any?>
-            val client = (root["client"] as List<Map<String, Any?>>).first()
-            val clientInfo = client["client_info"] as Map<String, Any?>
-            val apiKey = (client["api_key"] as List<Map<String, Any?>>).first()["current_key"] as String
+        val options = if (propertiesFile.exists()) {
+            val properties = Properties().apply { propertiesFile.inputStream().use { load(it) } }
+            fun required(name: String): String =
+                properties.getProperty(name)?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: throw GradleException("desktopApp/firebase.properties: '$name' is missing")
             """
             FirebaseOptions(
-                applicationId = "${(clientInfo["mobilesdk_app_id"] as String).escape()}",
-                apiKey = "${apiKey.escape()}",
-                projectId = "${(project["project_id"] as String).escape()}",
-                storageBucket = "${(project["storage_bucket"] as String? ?: "").escape()}",
+                applicationId = "${required("applicationId").escape()}",
+                apiKey = "${required("apiKey").escape()}",
+                projectId = "${required("projectId").escape()}",
+                storageBucket = "${properties.getProperty("storageBucket").orEmpty().trim().escape()}",
             )
             """.trimIndent()
         } else {
