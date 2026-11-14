@@ -620,9 +620,9 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | S4 | Protección adicional | Secret scanning y push protection en GitHub. Firebase App Check en modo de monitoreo: no se puede exigir mientras la app de escritorio use Firestore directamente, porque no tiene proveedor de App Check (V3). | M7 |
 | S5 | Módulo legacy `app` duplicado | Eliminarlo en M1: ya no quedan pantallas por migrar desde ahí ni usuarios que lo usen | M1 ✅ |
 | S6 | Primer administrador | Crearlo a mano en Firebase Auth y en `Users/{uid}` antes de desplegar las reglas (P1) | M2 |
-| S7 | Las reglas nuevas pueden bloquear a todos o dejar huecos | Tests de las reglas en el emulador de Firebase para cada rol y cada cambio de estado, y despliegue en un horario de poca operación | M2 |
+| S7 | Las reglas nuevas pueden bloquear a todos o dejar huecos | ~~Tests de las reglas en el emulador de Firebase~~: descartados el 2026-11-14 (sección 13). En su lugar, antes de publicar las reglas se revisan a mano, por rol y por cada cambio de estado, con el simulador de reglas de la consola de Firebase, y se despliegan en un horario de poca operación. | M2 |
 | S8 | Registro abierto | Quitar la pantalla (RF-AUTH-02) y exigir documento activo en las reglas (RF-AUTH-07) | M2 |
-| S9 | Datos personales de huéspedes | Reglas por rol probadas en el emulador. Los documentos de identidad no aparecen en logs, mensajes de error ni respaldos sin control. | M11 |
+| S9 | Datos personales de huéspedes | Reglas por rol revisadas con el simulador de reglas de la consola (S7). Los documentos de identidad no aparecen en logs, mensajes de error ni respaldos sin control. | M11 |
 | S10 | Ubicación de los empleados | Pedir el permiso solo al marcar, explicar para qué se usa y no guardar coordenadas (RF-ASI-10) | M8 |
 
 ## 10. Hoja de ruta
@@ -661,8 +661,8 @@ Un hito está terminado cuando:
 - [ ] Android, escritorio e iOS compilan.
 - [ ] Las pantallas nuevas se revisaron en modo claro y oscuro.
 - [ ] No se subieron secretos (`google-services.json`, `GoogleService-Info.plist`, keystores).
-- [ ] Si el hito cambia reglas o índices, `firestore.rules` y `firestore.indexes.json` se actualizaron y las reglas se probaron en el emulador.
-- [ ] Si el hito guarda datos personales o usa la ubicación, solo los roles autorizados pueden leerlos y los tests de reglas lo comprueban.
+- [ ] Si el hito cambia reglas o índices, `firestore.rules` y `firestore.indexes.json` se actualizaron y las reglas se revisaron con el simulador de reglas de la consola (S7).
+- [ ] Si el hito guarda datos personales o usa la ubicación, solo los roles autorizados pueden leerlos, y se comprobó con el simulador de reglas (S7).
 - [ ] El PR hacia `develop` cita los IDs de los requisitos que cubre.
 - [ ] Este PRD se actualizó: estado de cada requisito y decisiones nuevas.
 
@@ -767,6 +767,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-03 | El código común de iOS se verifica con `./gradlew :shared:linkDebugFrameworkIosSimulatorArm64`, en macOS. El CI solo compila Android y escritorio (RNF-07). | La definición de terminado exige que iOS compile, y no había un comando para comprobarlo |
 | 2026-11-03 | Por ahora, solo el administrador ve el reporte de horas (RF-ASI-08), los reportes de limpieza y mantenimiento (RF-TAR-09) y el historial por habitación (RF-TAR-08) | Respuesta a P37 |
 | 2026-11-14 | Una API key por plataforma (S2). Escritorio deja de usar el `google-services.json` de Android: se registra como app Web en Firebase y lee su configuración de `desktopApp/firebase.properties`, que no se sube al repo. | Una key restringida al paquete y a la SHA-1 de Android no funciona desde un programa JVM, y así cada key se puede rotar sin afectar a las demás plataformas |
+| 2026-11-14 | No se escriben tests automáticos de las reglas con el emulador de Firebase (S7). Las reglas se revisan a mano con el simulador de la consola antes de publicarlas. | Decisión del negocio: no instalar Node ni mantener otro conjunto de tests. Se acepta que un error en las reglas se detecte más tarde (R3). |
 | 2026-11-14 | Registrar la app iOS en Firebase ahora, con su propia key restringida al bundle id | Poder probar iOS con Firebase desde M2. La distribución sigue para cuando se necesite (P22). |
 
 ## 14. Riesgos
@@ -775,7 +776,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 |---|---|---|---|
 | R1 | Los empleados siguen anotando en papel y la app queda incompleta | Alto: el balance no cuadra (O1 y O3) | Piloto en un área, capacitación corta y O4 (pedido en menos de 1 minuto) como prioridad de diseño |
 | R2 | Varios empleados comparten una sola cuenta en el computador de la caja | Medio: no se sabe quién cobró | Cerrar sesión rápido en escritorio, y un usuario por empleado como regla del hotel |
-| R3 | Las reglas nuevas bloquean a todos o dejan huecos | Alto | S6, S7 y S8 |
+| R3 | Las reglas nuevas bloquean a todos o dejan huecos | Alto | S6, S8 y la revisión manual de S7. Sin tests automáticos, un error puede aparecer solo después de publicar. |
 | R4 | El alcance es grande y las versiones siguientes pueden retrasar la v1.0 | Medio | Versiones separadas y alcance cerrado: la v1.0 no espera a ninguna otra |
 | R5 | Pedidos guardados sin conexión que nunca se envían (celular perdido o sesión cerrada) | Medio | RF-ORD-09 y RF-AUTH-03: aviso visible, y no se cierra sesión con pedidos pendientes |
 | R6 | Un día se pasa la cuota gratuita y Firestore deja de responder | Alto si pasa en plena operación | Listeners limitados, medición en el piloto (V4) y Blaze como plan B con una decisión nueva |
