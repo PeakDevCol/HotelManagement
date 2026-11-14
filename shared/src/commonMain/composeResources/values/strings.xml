@@ -9,20 +9,15 @@
     <string name="footer_hotel">Hotel Juan Majestic</string>
     <string name="footer_since">Desde 2014</string>
 
-    <!-- Login and sign up -->
+    <!-- Login -->
     <string name="login">Iniciar sesión</string>
-    <string name="create_account">Crear cuenta</string>
     <string name="back">Atrás</string>
-    <string name="full_name">Nombre completo</string>
     <string name="email">Correo electrónico</string>
     <string name="password">Contraseña</string>
-    <string name="confirm_password">Confirma la contraseña</string>
 
     <!-- Field errors -->
-    <string name="error_full_name">El nombre debe tener al menos 6 caracteres</string>
     <string name="error_email">Correo no válido, verifica su estructura</string>
     <string name="error_password_length">La contraseña debe tener mínimo 6 caracteres</string>
-    <string name="error_password_mismatch">Las contraseñas no coinciden</string>
 
     <!-- Request errors -->
     <string name="dialog_title_oops">¡Ups!</string>

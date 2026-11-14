@@ -10,13 +10,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.peakdevcol.project.hotelmanagement.resources.Res
-import com.peakdevcol.project.hotelmanagement.resources.create_account
 import com.peakdevcol.project.hotelmanagement.resources.login
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun IntroductionScreen(onLoginClick: () -> Unit, onSignUpClick: () -> Unit) {
+fun IntroductionScreen(onLoginClick: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
@@ -25,11 +24,6 @@ fun IntroductionScreen(onLoginClick: () -> Unit, onSignUpClick: () -> Unit) {
         PrimaryButton(
             text = stringResource(Res.string.login),
             onClick = onLoginClick,
-            modifier = Modifier.widthIn(max = 480.dp),
-        )
-        PrimaryButton(
-            text = stringResource(Res.string.create_account),
-            onClick = onSignUpClick,
             modifier = Modifier.widthIn(max = 480.dp),
         )
     }

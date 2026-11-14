@@ -34,7 +34,6 @@ import com.peakdevcol.project.hotelmanagement.ui.home.HomeScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeSection
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionScreen
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginScreen
-import com.peakdevcol.project.hotelmanagement.ui.signup.SignUpScreen
 import com.peakdevcol.project.hotelmanagement.ui.theme.HotelManagementTheme
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.stringResource
@@ -46,9 +45,6 @@ data object IntroductionRoute
 
 @Serializable
 data object LoginRoute
-
-@Serializable
-data object SignUpRoute
 
 @Serializable
 data object HomeRoute
@@ -87,16 +83,10 @@ private fun AuthNavigation() {
     AuthFrame {
         NavHost(navController = navController, startDestination = IntroductionRoute) {
             composable<IntroductionRoute> {
-                IntroductionScreen(
-                    onLoginClick = { navController.navigate(LoginRoute) },
-                    onSignUpClick = { navController.navigate(SignUpRoute) },
-                )
+                IntroductionScreen(onLoginClick = { navController.navigate(LoginRoute) })
             }
             composable<LoginRoute> {
                 LoginScreen(onBack = { navController.popBackStack() })
-            }
-            composable<SignUpRoute> {
-                SignUpScreen(onBack = { navController.popBackStack() })
             }
         }
     }
