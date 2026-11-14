@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,11 +24,15 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.peakdevcol.project.hotelmanagement.platformName
 import com.peakdevcol.project.hotelmanagement.resources.Res
+import com.peakdevcol.project.hotelmanagement.resources.access_denied_message
+import com.peakdevcol.project.hotelmanagement.resources.access_denied_title
 import com.peakdevcol.project.hotelmanagement.resources.app_name
 import com.peakdevcol.project.hotelmanagement.resources.firebase_not_configured
+import com.peakdevcol.project.hotelmanagement.resources.logout
 import com.peakdevcol.project.hotelmanagement.resources.running_on
 import com.peakdevcol.project.hotelmanagement.resources.session_error
 import com.peakdevcol.project.hotelmanagement.ui.components.AuthFrame
+import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.ComingSoonScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeScreen
@@ -61,15 +66,17 @@ fun App() {
     HotelManagementTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             val appViewModel: AppViewModel = koinViewModel()
-            val session by appViewModel.sessionState.collectAsStateWithLifecycle()
+            val appState by appViewModel.state.collectAsStateWithLifecycle()
 
-            when (val state = session) {
-                SessionState.Loading -> LoadingScreen()
-                SessionState.LoggedOut -> AuthNavigation()
-                is SessionState.LoggedIn -> HomeNavigation()
-                SessionState.FirebaseNotConfigured ->
+            when (val state = appState) {
+                AppState.Loading -> LoadingScreen()
+                AppState.LoggedOut -> AuthNavigation()
+                is AppState.LoggedIn -> HomeNavigation()
+                AppState.AccessDenied ->
+                    AccessDeniedScreen(onLogOutClick = { appViewModel.onIntent(AppIntent.LogOut) })
+                AppState.FirebaseNotConfigured ->
                     MessageScreen(stringResource(Res.string.firebase_not_configured))
-                is SessionState.Error ->
+                is AppState.Error ->
                     MessageScreen(stringResource(Res.string.session_error, state.message))
             }
         }
@@ -118,6 +125,34 @@ private fun HomeNavigation() {
 private fun LoadingScreen() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
+    }
+}
+
+/** RF-AUTH-07: the account has a session but no active employee profile. */
+@Composable
+private fun AccessDeniedScreen(onLogOutClick: () -> Unit) {
+    AuthFrame {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(Res.string.access_denied_title),
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = stringResource(Res.string.access_denied_message),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+            PrimaryButton(
+                text = stringResource(Res.string.logout),
+                onClick = onLogOutClick,
+                modifier = Modifier.widthIn(max = 480.dp),
+            )
+        }
     }
 }
 

@@ -1,26 +1,47 @@
 package com.peakdevcol.project.hotelmanagement.data
 
-import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toDto
-import com.peakdevcol.project.hotelmanagement.domain.model.NewUser
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.UserDto
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toUser
+import com.peakdevcol.project.hotelmanagement.domain.model.User
+import com.peakdevcol.project.hotelmanagement.domain.model.UserArea
 import com.peakdevcol.project.hotelmanagement.domain.model.UserType
-import dev.gitlive.firebase.firestore.Timestamp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class UserDtoTest {
-    @Test
-    fun storesTheTypeWithTheLowercaseCodeOfThePrd() {
-        val dto = NewUser(fullName = "Ana Gómez", email = "ana@hotel.co", type = UserType.ADMIN).toDto()
+    private val dto = UserDto(
+        fullName = "Ana Gómez",
+        email = "ana@hotel.co",
+        type = "reception",
+        area = "housekeeping",
+        active = true,
+    )
 
-        assertEquals("Ana Gómez", dto.fullName)
-        assertEquals("ana@hotel.co", dto.email)
-        assertEquals("admin", dto.type)
+    @Test
+    fun readsTheRoleAndTheAreaFromTheLowercaseCodesOfThePrd() {
+        val expected = User(
+            id = "uid-1",
+            fullName = "Ana Gómez",
+            email = "ana@hotel.co",
+            type = UserType.RECEPTION,
+            area = UserArea.HOUSEKEEPING,
+            active = true,
+        )
+
+        assertEquals(expected, dto.toUser("uid-1"))
     }
 
     @Test
-    fun letsTheServerSetTheCreationDate() {
-        val dto = NewUser(fullName = "Ana Gómez", email = "ana@hotel.co").toDto()
+    fun aProfileWithAnUnknownRoleOrAreaIsNotValid() {
+        assertNull(dto.copy(type = "owner").toUser("uid-1"))
+        assertNull(dto.copy(area = "").toUser("uid-1"))
+    }
 
-        assertEquals(Timestamp.ServerTimestamp, dto.createdAt)
+    @Test
+    fun aProfileWithoutTheActiveFieldIsInactive() {
+        val incomplete = UserDto(fullName = "Ana Gómez", email = "ana@hotel.co", type = "basic", area = "service")
+
+        assertEquals(false, incomplete.toUser("uid-1")?.active)
     }
 }

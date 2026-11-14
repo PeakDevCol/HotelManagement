@@ -9,6 +9,10 @@
     <string name="footer_hotel">Hotel Juan Majestic</string>
     <string name="footer_since">Desde 2014</string>
 
+    <!-- Access (RF-AUTH-07) -->
+    <string name="access_denied_title">Tu cuenta no está activa</string>
+    <string name="access_denied_message">No puedes usar la aplicación con esta cuenta. Habla con el administrador del hotel.</string>
+
     <!-- Login -->
     <string name="login">Iniciar sesión</string>
     <string name="back">Atrás</string>
