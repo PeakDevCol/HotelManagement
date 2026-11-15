@@ -492,7 +492,7 @@ El check-out, el repaso del día y el fin de un mantenimiento dejan la habitaci�
 | RNF-03 | Seguridad | Los permisos se aplican en las **reglas de Firestore**, no solo en la UI. No se guardan contraseñas ni secretos en Firestore ni en el repo. |
 | RNF-04 | Conectividad | La app nunca se queda cargando indefinidamente. Sin conexión se pueden crear pedidos y agregarles productos, marcar asistencia en el celular, hacer tareas de habitación y reportar daños u objetos. Los cambios de estado de pedidos, los pagos, las reservas, los check-in y check-out, y tomar, asignar o bloquear necesitan conexión, para no cobrar dos veces ni cruzar reservas. |
 | RNF-05 | Tiempo real | Los cambios de un pedido, una habitación o una tarea se ven en los demás dispositivos en menos de 5 s con conexión. |
-| RNF-06 | Calidad | El dominio y los ViewModels tienen tests en `commonTest`. Cada PR pasa `./gradlew :shared:allTests :shared:testAndroidHostTest`. |
+| RNF-06 | Calidad | El dominio y los ViewModels tienen tests en `commonTest`. Cada PR pasa `./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test`. |
 | RNF-07 | CI | Una GitHub Action en cada PR hacia `develop` corre los tests y compila Android y escritorio. |
 | RNF-08 | Accesibilidad | Los íconos tienen descripción, los botones miden al menos 48 dp y hay modo claro y oscuro. Las pantallas de tareas se usan con una mano y con botones grandes. |
 | RNF-09 | Compatibilidad de datos | Ya no aplica al legacy: no hay datos productivos ([P9](#12-preguntas-abiertas)) y el legacy se eliminó en M1. Desde el piloto (M7), todo cambio de esquema incluye su migración. |
@@ -632,7 +632,7 @@ Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza reso
 | M0 | — | `task/prd` | Este PRD (primer PR) y los diagramas de la [sección 16](#16-diagramas) (segundo PR). Borrar los datos de prueba (S1). | — |
 | M1 | v1.0 | `feature/remove-legacy` | Eliminar `app` (S5), revisar que no queden datos de prueba (S1), ruta `Users/{uid}` (P9) y CI (RNF-07). Va primero porque, sin usuarios productivos, es el momento más barato. | M0 |
 | M2 | v1.0 | `feature/security-baseline` | S2, S3, S6, S7 y S8. Roles, áreas y `active` en las reglas. RF-AUTH-02 y RF-AUTH-07. | M1 |
-| M3 | v1.0 | `feature/current-orders` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
+| M3 | v1.0 | `feature/current-orders-1`, `-2` y `-3` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
 | M4 | v1.0 | `feature/inventory` | RF-INV-01 a RF-INV-04, RF-INV-06, RF-INV-07 y RF-ORD-07 | M2 |
 | M5 | v1.0 | `feature/balance` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
 | M6 | v1.0 | `feature/roles-admin` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
@@ -655,7 +655,7 @@ M14 trae la base de tareas que usa la limpieza, por eso va antes que M15.
 Un hito está terminado cuando:
 - [ ] Los requisitos del hito cumplen sus criterios de aceptación.
 - [ ] Las validaciones del hito (sección 12) están resueltas y su resultado quedó en la sección 13.
-- [ ] Hay tests para la lógica nueva en `commonTest`, y `./gradlew :shared:allTests :shared:testAndroidHostTest` pasa.
+- [ ] Hay tests para la lógica nueva en `commonTest`, y `./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test` pasa.
 - [ ] Android, escritorio e iOS compilan.
 - [ ] Las pantallas nuevas se revisaron en modo claro y oscuro.
 - [ ] No se subieron secretos (`google-services.json`, `GoogleService-Info.plist`, keystores).
@@ -672,7 +672,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | # | Qué hay que comprobar | Si no se cumple | Afecta | Hito |
 |---|---|---|---|---|
 | V1 | Crear cuentas sin cerrar la sesión actual: con una segunda instancia de Firebase en GitLive, o con la API REST de Firebase Auth | Usar la otra opción; las dos funcionan en Spark | RF-EMP-04, RF-ASI-11 | M6 |
-| V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
+| V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio. **Resuelta en escritorio el 2026-11-14:** se cumple, una vez que la base local sale de la carpeta temporal (sección 13). En Android falta la prueba manual en modo avión. | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
 | V3 | Que App Check no tiene proveedor para la app de escritorio (JVM) | Si lo tuviera, exigirlo; si no, dejarlo en modo de monitoreo | S4, R12 | M7 |
 | V4 | Uso real de Firestore durante el piloto, contra la cuota diaria de Spark | Reducir listeners y lecturas. Pasar a Blaze solo con una decisión nueva. | RNF-12 | M7 |
 | V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 |
@@ -769,6 +769,8 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-14 | En M2 las reglas cubren solo `Users` y `Orders` con el modelo actual, y niegan todo lo demás. Cada hito agrega las reglas de sus colecciones. Hasta M3, quien creó un pedido puede volver a escribirlo mientras siga en `confirm`. | No escribir reglas para datos que aún no existen. Confirmar de nuevo tras un tiempo límite reescribe el mismo pedido con el mismo id. |
 | 2026-11-14 | Una cuenta sin perfil activo ve una pantalla que lo explica y solo puede cerrar sesión. El perfil se observa en tiempo real, así que desactivar a un empleado le quita el acceso de inmediato. | RF-AUTH-07 y el escenario 6 de la sección 3 |
 | 2026-11-14 | Registrar la app iOS en Firebase ahora, con su propia key restringida al bundle id | Poder probar iOS con Firebase desde M2. La distribución sigue para cuando se necesite (P22). |
+| 2026-11-14 | M3 se entrega en tres PR hacia `develop`: base (estados nuevos, destinos y pedidos sin conexión), lista y detalle, y acciones (cerrar, reabrir, pagar, cancelar y editar). | Son unos 20 requisitos, y cada parte se puede revisar y probar por separado |
+| 2026-11-14 | V2 en escritorio: la librería de Firebase para JVM guardaba su base local en la carpeta temporal del sistema, que el sistema operativo vacía. Ahora vive en la carpeta de datos de la aplicación del usuario. Con ese cambio, un pedido guardado sin conexión sobrevivió a matar el proceso y se envió al reabrir la app. | Sin el cambio, los pedidos pendientes de enviar se podían perder al reiniciar el computador. No hizo falta el archivo propio previsto como plan B. |
 
 ## 14. Riesgos
 

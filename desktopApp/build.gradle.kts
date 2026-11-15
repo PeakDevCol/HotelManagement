@@ -12,6 +12,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.gitlive.firebase.app)
+    testImplementation(kotlin("test"))
 }
 
 /*

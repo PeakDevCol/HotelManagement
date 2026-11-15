@@ -31,7 +31,7 @@ jobs:
           cache-provider: basic
 
       - name: Shared tests
-        run: ./gradlew :shared:allTests :shared:testAndroidHostTest
+        run: ./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test
 
       - name: Build Android and desktop
         run: ./gradlew :androidApp:assembleDebug :desktopApp:assemble
