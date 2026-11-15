@@ -13,6 +13,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoginUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveAccessUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.ui.AppViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
@@ -38,6 +39,7 @@ private val domainModule = module {
     factoryOf(::LoginUseCase)
     factoryOf(::LogOutUseCase)
     factoryOf(::ObserveAccessUseCase)
+    factoryOf(::ObservePendingOrderCountUseCase)
     factoryOf(::SaveOrderUseCase)
     factoryOf(::GetProductsUseCase)
 }

@@ -3,6 +3,7 @@ package com.peakdevcol.project.hotelmanagement.ui.addorder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakdevcol.project.hotelmanagement.domain.model.Order
+import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.model.totalAmount
@@ -15,15 +16,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** What happened when the employee confirmed the order. Shown once in a dialog. */
+/** What happened when the employee confirmed the order. Shown in a dialog until dismissed. */
 sealed interface SaveResult {
-    data object Saved : SaveResult
+    data object Sent : SaveResult
+
+    /** RF-ORD-09: there was no answer from the server, so the order waits on the device. */
+    data object SavedOnDevice : SaveResult
     data class Failed(val reason: SaveFailure) : SaveResult
 }
 
-enum class SaveFailure { NoSession, Timeout, Unknown }
+enum class SaveFailure { NoSession, Unknown }
 
-data class AddOrderUiState(
+data class AddOrderState(
     val catalog: List<Product> = emptyList(),
     val catalogFailed: Boolean = false,
     val products: List<Product> = emptyList(),
@@ -35,13 +39,22 @@ data class AddOrderUiState(
     val canConfirm: Boolean get() = products.isNotEmpty() && destination != null && !isSaving
 }
 
+sealed interface AddOrderIntent {
+    data object RetryCatalog : AddOrderIntent
+    data class AddProduct(val product: Product, val quantity: Int) : AddOrderIntent
+    data class RemoveProduct(val productId: String) : AddOrderIntent
+    data class SelectDestination(val destination: OrderDestination) : AddOrderIntent
+    data object Confirm : AddOrderIntent
+    data object DismissResult : AddOrderIntent
+}
+
 class AddOrderViewModel(
     private val getProducts: GetProductsUseCase,
     private val saveOrder: SaveOrderUseCase,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AddOrderUiState())
-    val uiState: StateFlow<AddOrderUiState> = _uiState.asStateFlow()
+    private val _state = MutableStateFlow(AddOrderState())
+    val state: StateFlow<AddOrderState> = _state.asStateFlow()
 
     // Kept between retries so a save that reached the server is overwritten, not duplicated.
     private var draftOrderId = Order.newId()
@@ -50,47 +63,56 @@ class AddOrderViewModel(
         loadCatalog()
     }
 
-    fun loadCatalog() {
+    fun onIntent(intent: AddOrderIntent) {
+        when (intent) {
+            AddOrderIntent.RetryCatalog -> loadCatalog()
+            is AddOrderIntent.AddProduct -> addProduct(intent.product, intent.quantity)
+            is AddOrderIntent.RemoveProduct -> removeProduct(intent.productId)
+            is AddOrderIntent.SelectDestination -> _state.update { it.copy(destination = intent.destination) }
+            AddOrderIntent.Confirm -> confirm()
+            AddOrderIntent.DismissResult -> _state.update { it.copy(saveResult = null) }
+        }
+    }
+
+    private fun loadCatalog() {
         viewModelScope.launch {
             getProducts()
-                .onSuccess { catalog -> _uiState.update { it.copy(catalog = catalog, catalogFailed = false) } }
-                .onFailure { _uiState.update { it.copy(catalogFailed = true) } }
+                .onSuccess { catalog -> _state.update { it.copy(catalog = catalog, catalogFailed = false) } }
+                .onFailure { _state.update { it.copy(catalogFailed = true) } }
         }
     }
 
     /** Adding a product that is already in the order increases its quantity. */
-    fun onAddProduct(product: Product, quantity: Int) {
+    private fun addProduct(product: Product, quantity: Int) {
         if (quantity <= 0) return
-        _uiState.update { state ->
-            val existing = state.products.firstOrNull { it.id == product.id }
-            val products = if (existing == null) {
-                state.products + product.copy(quantity = quantity)
-            } else {
+        _state.update { state ->
+            val alreadyInOrder = state.products.any { it.id == product.id }
+            val products = if (alreadyInOrder) {
                 state.products.map { if (it.id == product.id) it.copy(quantity = it.quantity + quantity) else it }
+            } else {
+                state.products + product.copy(quantity = quantity)
             }
             state.copy(products = products)
         }
     }
 
-    fun onRemoveProduct(productId: String) = _uiState.update { state ->
+    private fun removeProduct(productId: String) = _state.update { state ->
         state.copy(products = state.products.filterNot { it.id == productId })
     }
 
-    fun onDestinationSelected(destination: OrderDestination) = _uiState.update { it.copy(destination = destination) }
-
-    fun onConfirm() {
-        val state = _uiState.value
+    private fun confirm() {
+        val state = _state.value
         val destination = state.destination ?: return
         if (!state.canConfirm) return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
+            _state.update { it.copy(isSaving = true) }
             val result = saveOrder(state.products, destination, orderId = draftOrderId)
-            _uiState.update { current ->
+            _state.update { current ->
                 result.fold(
-                    onSuccess = {
+                    onSuccess = { delivery ->
                         draftOrderId = Order.newId()
-                        AddOrderUiState(catalog = current.catalog, saveResult = SaveResult.Saved)
+                        AddOrderState(catalog = current.catalog, saveResult = delivery.toSaveResult())
                     },
                     onFailure = { error ->
                         current.copy(isSaving = false, saveResult = SaveResult.Failed(error.toSaveFailure()))
@@ -100,11 +122,13 @@ class AddOrderViewModel(
         }
     }
 
-    fun onResultDismissed() = _uiState.update { it.copy(saveResult = null) }
+    private fun OrderDelivery.toSaveResult(): SaveResult = when (this) {
+        OrderDelivery.SENT -> SaveResult.Sent
+        OrderDelivery.PENDING -> SaveResult.SavedOnDevice
+    }
 
     private fun Throwable.toSaveFailure(): SaveFailure = when (this) {
         OrderError.NoSession -> SaveFailure.NoSession
-        OrderError.Timeout -> SaveFailure.Timeout
         else -> SaveFailure.Unknown
     }
 }

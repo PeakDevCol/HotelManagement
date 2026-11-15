@@ -19,10 +19,10 @@ class OrderTest {
     }
 
     @Test
-    fun createdOrderIsConfirmedAndSumsAllProducts() {
+    fun createdOrderIsInProgressAndSumsAllProducts() {
         val order = Order.create("employee", listOf(beer, pool), OrderDestination.Room(12))
 
-        assertEquals(OrderState.CONFIRM, order.state)
+        assertEquals(OrderState.IN_PROGRESS, order.state)
         assertEquals(14_000, order.totalAmount)
         assertEquals("employee", order.employeeId)
     }
