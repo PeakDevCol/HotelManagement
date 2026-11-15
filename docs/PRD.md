@@ -95,7 +95,7 @@ Las cuentas las crea solo un administrador, y el primer administrador se crea a 
 | Crear empleados, asignar rol, área y horario, y autorizar computadores | ❌ | ❌ | ✅ |
 | Corregir marcaciones de asistencia y exportar respaldos | ❌ | ❌ | ✅ |
 
-> **Riesgo hasta publicar las reglas de M2:** la app ya no tiene registro (RF-AUTH-02) y solo deja entrar a cuentas con perfil activo (RF-AUTH-07), pero una cuenta creada por la API REST podría escribir pedidos mientras `firestore.rules` no esté publicado (S3).
+> Desde M2 la app no tiene registro (RF-AUTH-02), y una cuenta sin perfil activo no lee ni escribe nada, aunque se cree por la API REST (RF-AUTH-07). Se comprobó contra las reglas publicadas el 2026-11-14.
 
 ### Escenarios de uso
 Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el piloto.
@@ -197,7 +197,7 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 | RF-AUTH-04 | Recuperar contraseña | "¿Olvidaste la contraseña?" envía el correo de restablecimiento de Firebase | ⬜ |
 | RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | ⬜ |
 | RF-AUTH-06 | ~~Cuentas nuevas pendientes de aprobación~~ | Descartado por P1: ya no hay registro abierto | — |
-| RF-AUTH-07 | Sin documento, sin acceso | Una cuenta de Firebase Auth sin documento activo en `Users` no lee ni escribe nada, aunque se haya creado por fuera de la app. La app muestra "Tu cuenta no está activa" y solo deja cerrar sesión. | 🔄 Hecho en la app y en `firestore.rules`; falta que una persona publique las reglas (S3) |
+| RF-AUTH-07 | Sin documento, sin acceso | Una cuenta de Firebase Auth sin documento activo en `Users` no lee ni escribe nada, aunque se haya creado por fuera de la app. La app muestra "Tu cuenta no está activa" y solo deja cerrar sesión. | ✅ |
 
 ### 6.2 Crear pedido (`ORD`)
 | ID | Requisito | Criterios de aceptación | Estado |
@@ -613,13 +613,13 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | # | Tema | Acción | Hito |
 |---|---|---|---|
 | S1 | El legacy guarda contraseñas en texto plano en `Users` | Como no hay datos productivos, una persona borra todos los datos de prueba de Firestore antes de publicar este PRD, porque el repo es público. Al eliminar el legacy (M1) se revisa que no queden. | M0 ✅ |
-| S2 | La API key de `google-services.json` está en el historial público del repo | Se decidió mitigar sin reescribir el historial: reglas de Firestore estrictas y una key por plataforma. La de Android (la expuesta) se restringe al paquete y a la SHA-1, y la de iOS, al bundle id. Escritorio se registra como app Web con su propia key, limitada por API, que se lee de `desktopApp/firebase.properties` (fuera del repo). Como la key de escritorio se puede extraer del instalador y con ella se pueden crear cuentas de Auth por la API REST, RF-AUTH-07 es obligatorio. Las keys quedaron restringidas el 2026-11-14; faltan las reglas (S3). | M2 |
-| S3 | Las reglas de Firestore no se sabe si están desplegadas | Versionar las reglas en el repo (`firestore.rules`) y desplegarlas. Versionadas el 2026-11-14 para `Users` y `Orders`; falta que una persona las publique, después de S6 y de la revisión de S7. | M2 |
+| S2 | La API key de `google-services.json` está en el historial público del repo | Se decidió mitigar sin reescribir el historial: reglas de Firestore estrictas y una key por plataforma. La de Android (la expuesta) se restringe al paquete y a la SHA-1, y la de iOS, al bundle id. Escritorio se registra como app Web con su propia key, limitada por API, que se lee de `desktopApp/firebase.properties` (fuera del repo). Como la key de escritorio se puede extraer del instalador y con ella se pueden crear cuentas de Auth por la API REST, RF-AUTH-07 es obligatorio. Las keys quedaron restringidas y las reglas publicadas el 2026-11-14. | M2 ✅ |
+| S3 | Las reglas de Firestore no se sabe si están desplegadas | Versionar las reglas en el repo (`firestore.rules`) y desplegarlas. Versionadas y publicadas el 2026-11-14 para `Users` y `Orders`. | M2 ✅ |
 | S4 | Protección adicional | Secret scanning y push protection en GitHub. Firebase App Check en modo de monitoreo: no se puede exigir mientras la app de escritorio use Firestore directamente, porque no tiene proveedor de App Check (V3). | M7 |
 | S5 | Módulo legacy `app` duplicado | Eliminarlo en M1: ya no quedan pantallas por migrar desde ahí ni usuarios que lo usen | M1 ✅ |
-| S6 | Primer administrador | Crearlo a mano en Firebase Auth y en `Users/{uid}` antes de desplegar las reglas (P1) | M2 |
-| S7 | Las reglas nuevas pueden bloquear a todos o dejar huecos | ~~Tests de las reglas en el emulador de Firebase~~: descartados el 2026-11-14 (sección 13). En su lugar, antes de publicar las reglas se revisan a mano, por rol y por cada cambio de estado, con el simulador de reglas de la consola de Firebase, y se despliegan en un horario de poca operación. | M2 |
-| S8 | Registro abierto | Quitar la pantalla (RF-AUTH-02) y exigir documento activo en las reglas (RF-AUTH-07) | M2 |
+| S6 | Primer administrador | Crearlo a mano en Firebase Auth y en `Users/{uid}` (P1). Creado el 2026-11-14. | M2 ✅ |
+| S7 | Las reglas nuevas pueden bloquear a todos o dejar huecos | ~~Tests de las reglas en el emulador de Firebase~~: descartados el 2026-11-14 (sección 13). En su lugar, antes de publicar las reglas se revisan a mano, por rol y por cada cambio de estado, con el simulador de reglas de la consola de Firebase, y se despliegan en un horario de poca operación. Las de M2 se comprobaron el 2026-11-14 con peticiones reales después de publicarlas: sin sesión, cuenta sin perfil y administrador. | M2 ✅ |
+| S8 | Registro abierto | Quitar la pantalla (RF-AUTH-02) y exigir documento activo en las reglas (RF-AUTH-07) | M2 ✅ |
 | S9 | Datos personales de huéspedes | Reglas por rol revisadas con el simulador de reglas de la consola (S7). Los documentos de identidad no aparecen en logs, mensajes de error ni respaldos sin control. | M11 |
 | S10 | Ubicación de los empleados | Pedir el permiso solo al marcar, explicar para qué se usa y no guardar coordenadas (RF-ASI-10) | M8 |
 
