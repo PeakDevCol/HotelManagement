@@ -131,7 +131,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Introducción, login y cerrar sesión | ✅ Migrado | La sesión de Firebase decide qué navegación se muestra |
 | Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
-| Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`) |
+| Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
 | Pedidos en curso | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M3. |
 | Inventario | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M4. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 47 tests en `commonTest` (dominio, datos y ViewModels), y pasan en JVM y en Android.
+Hay 67 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -193,7 +193,7 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 |---|---|---|---|
 | RF-AUTH-01 | Iniciar sesión con correo y contraseña | Un error de credenciales o de red muestra un mensaje claro. Al entrar se abre el menú. | ✅ |
 | RF-AUTH-02 | Quitar el registro abierto ([P1](#12-preguntas-abiertas)) | La pantalla de registro desaparece. Las cuentas se crean desde RF-EMP-04. | ✅ |
-| RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve a la introducción. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | 🔄 |
+| RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve a la introducción. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | ✅ |
 | RF-AUTH-04 | Recuperar contraseña | "¿Olvidaste la contraseña?" envía el correo de restablecimiento de Firebase | ⬜ |
 | RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | ⬜ |
 | RF-AUTH-06 | ~~Cuentas nuevas pendientes de aprobación~~ | Descartado por P1: ya no hay registro abierto | — |
@@ -205,12 +205,12 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 | RF-ORD-01 | Agregar productos desde el catálogo | Búsqueda por nombre y cantidad de 1 a 99. Agregar un producto que ya está en el pedido suma la cantidad. | ✅ |
 | RF-ORD-02 | Quitar productos | Quitar un producto actualiza el total | ✅ |
 | RF-ORD-03 | Elegir el destino | Habitación o mesa con número, u "Otro" | ✅ |
-| RF-ORD-04 | Confirmar el pedido | Solo se puede con al menos un producto y un destino. Guarda con estado `in_progress` (En curso) y la fecha del servidor. Hoy guarda `confirm`. | 🔄 |
+| RF-ORD-04 | Confirmar el pedido | Solo se puede con al menos un producto y un destino. Guarda con estado `in_progress` (En curso) y la fecha del servidor. | ✅ |
 | RF-ORD-05 | Reintentar sin duplicar | El borrador conserva su id hasta que se guarda, así que un reintento sobrescribe el mismo documento | ✅ |
-| RF-ORD-06 | No quedarse esperando | Sin conexión, el pedido se guarda en el dispositivo (RF-ORD-09) en vez de mostrar un error. Con conexión lenta, a los 15 s avisa y permite reintentar. | 🔄 |
+| RF-ORD-06 | No quedarse esperando | Al confirmar, la app espera 3 s la respuesta del servidor. Si llega, muestra "Pedido confirmado". Si no llega, por estar sin conexión o con conexión lenta, muestra "Pedido guardado en el dispositivo" (RF-ORD-09) y el empleado sigue trabajando. No hay botón de reintentar: el pedido se envía solo. | ✅ |
 | RF-ORD-07 | Catálogo desde el inventario | Los productos salen de Firestore, y los productos inactivos no aparecen | ⬜ (M4) |
-| RF-ORD-08 | Destinos piscina y bar ([P19](#12-preguntas-abiertas)) | Se agregan Piscina y Bar, con número opcional (silla o puesto) | ⬜ |
-| RF-ORD-09 | Pedidos sin conexión ([P8](#12-preguntas-abiertas)) | Sin conexión, el pedido queda guardado en el dispositivo con la marca "pendiente de enviar" y se envía solo al volver la conexión, sin duplicarse (V2) | ⬜ |
+| RF-ORD-08 | Destinos piscina y bar ([P19](#12-preguntas-abiertas)) | Se agregan Piscina y Bar, con número opcional (silla o puesto) | ✅ |
+| RF-ORD-09 | Pedidos sin conexión ([P8](#12-preguntas-abiertas)) | Sin conexión, el pedido queda guardado en el dispositivo con la marca "pendiente de enviar" y se envía solo al volver la conexión, sin duplicarse (V2). El menú muestra cuántos pedidos están pendientes de enviar. | ✅ Falta la prueba manual de V2 en Android |
 
 ### 6.3 Pedidos en curso (`CUR`)
 Estados del pedido según [P2](#12-preguntas-abiertas) y [P21](#12-preguntas-abiertas): un pedido está En curso desde que se crea, mientras se le agregan productos.
@@ -529,10 +529,10 @@ En Spark, si un día se pasa la cuota, Firestore deja de responder hasta que se 
 | `id` | string | UUID, igual al id del documento |
 | `idEmployee` | string | `uid` de Firebase Auth |
 | `products` | array | `{productId, productName, quantity, unitAmount, totalAmount}`. El precio queda copiado en el pedido. |
-| `typeOrder` | string | `room`, `table` u `other` |
+| `typeOrder` | string | `room`, `table`, `pool`, `bar` u `other` |
 | `typeOrderNumber` | int o null | Número de habitación o mesa |
 | `dateOrder` | timestamp | Lo pone el servidor |
-| `state` | string | `confirm`, `close` o `pay` |
+| `state` | string | `in_progress`, `closed`, `paid` o `cancelled`. Hasta el tercer PR de M3 la app solo crea `in_progress`. |
 | `totalPayAmount` | long | Total en pesos |
 
 **`Users/{uid}`**, desde M2: `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area`, `active` y `createdAt`. La app solo lo lee; hasta M6 los perfiles se crean a mano en la consola (S6).
@@ -771,6 +771,8 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-14 | Registrar la app iOS en Firebase ahora, con su propia key restringida al bundle id | Poder probar iOS con Firebase desde M2. La distribución sigue para cuando se necesite (P22). |
 | 2026-11-14 | M3 se entrega en tres PR hacia `develop`: base (estados nuevos, destinos y pedidos sin conexión), lista y detalle, y acciones (cerrar, reabrir, pagar, cancelar y editar). | Son unos 20 requisitos, y cada parte se puede revisar y probar por separado |
 | 2026-11-14 | V2 en escritorio: la librería de Firebase para JVM guardaba su base local en la carpeta temporal del sistema, que el sistema operativo vacía. Ahora vive en la carpeta de datos de la aplicación del usuario. Con ese cambio, un pedido guardado sin conexión sobrevivió a matar el proceso y se envió al reabrir la app. | Sin el cambio, los pedidos pendientes de enviar se podían perder al reiniciar el computador. No hizo falta el archivo propio previsto como plan B. |
+| 2026-11-14 | Al confirmar un pedido, la app espera 3 s al servidor. Sin respuesta, el pedido queda guardado en el dispositivo como pendiente de enviar, sin distinguir entre estar sin conexión y tener conexión lenta. Reemplaza la espera de 15 s con botón de reintentar (RF-ORD-06). | Firestore ya dejó el pedido en cola y lo envía solo, así que reintentar no aporta nada, y el mesero no se queda esperando con mala señal |
+| 2026-11-14 | V6 se prueba en el tercer PR de M3, cuando las reglas permitan agregar productos a un pedido existente. Si el servidor rechaza productos después de reiniciar la app, Firestore no avisa: la app llevará su propia lista local de productos agregados sin confirmar. | Las reglas publicadas hoy no permiten esa escritura, así que no hay cómo probarla antes |
 
 ## 14. Riesgos
 

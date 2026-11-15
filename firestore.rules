@@ -43,12 +43,22 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Orders keep the current model (confirm, close, pay) until M3 brings the new states and their transitions.
+    // M3 arrives in three parts. This one covers creating orders; closing, reopening, paying,
+    // cancelling and editing them come with their own rules in the next parts.
     match /Orders/{orderId} {
-      function isOwnConfirmedOrder(order) {
+      function hasValidDestination(order) {
+        return order.typeOrder in ['room', 'table', 'pool', 'bar', 'other']
+          && (order.typeOrderNumber == null || (order.typeOrderNumber is int && order.typeOrderNumber > 0))
+          // A room or a table is always a specific one.
+          && (!(order.typeOrder in ['room', 'table']) || order.typeOrderNumber is int);
+      }
+
+      // RF-ORD-04: an order starts in progress, in the name of who takes it and with the server date.
+      function isOwnNewOrder(order) {
         return order.id == orderId
           && order.idEmployee == request.auth.uid
-          && order.state == 'confirm'
+          && order.state == 'in_progress'
+          && hasValidDestination(order)
           && order.products is list
           && order.products.size() > 0
           && order.totalPayAmount is int
@@ -57,12 +67,12 @@ service cloud.firestore {
       }
 
       allow read: if isActiveEmployee();
-      allow create: if isActiveEmployee() && isOwnConfirmedOrder(request.resource.data);
-      // Confirming again after a timeout rewrites the same order (same id), so its owner may overwrite it.
+      allow create: if isActiveEmployee() && isOwnNewOrder(request.resource.data);
+      // RF-ORD-05: confirming again rewrites the same order (same id), so its owner may overwrite it.
       allow update: if isActiveEmployee()
         && resource.data.idEmployee == request.auth.uid
-        && resource.data.state == 'confirm'
-        && isOwnConfirmedOrder(request.resource.data);
+        && resource.data.state == 'in_progress'
+        && isOwnNewOrder(request.resource.data);
       // RNF-11: orders are cancelled, never deleted.
       allow delete: if false;
     }
