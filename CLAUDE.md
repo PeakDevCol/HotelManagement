@@ -81,7 +81,7 @@ El CI (`.github/workflows/ci.yml`) corre los tests y compila Android y escritori
 
 ## Firestore
 - Las reglas van en `firestore.rules` y los índices en `firestore.indexes.json`, en la raíz del repo. Se crean en el hito M2 (S3). Si un cambio necesita un permiso o un índice nuevo, actualízalos en el mismo PR.
-- Prueba las reglas con el emulador de Firebase, por rol y por cada cambio de estado (S7).
+- No hay tests automáticos de las reglas (S7, descartados). Cuando cambien, deja en el PR la lista de casos por rol y por cambio de estado que una persona debe revisar en el simulador de reglas de la consola antes de publicarlas.
 - Los permisos se aplican en las reglas, no solo en la UI.
 
 ## Tests

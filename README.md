@@ -36,9 +36,10 @@ Descárgalos desde la consola de Firebase del proyecto `hotelmanagementpdc`:
 | Plataforma | Archivo | Ubicación |
 |---|---|---|
 | Android | `google-services.json` | `androidApp/` |
-| Escritorio | El mismo `google-services.json` | Se lee de `androidApp/` al compilar. Las opciones se generan en `desktopApp/build/`. |
+| Escritorio | `firebase.properties`, con los datos de la app Web "Escritorio" (copia `desktopApp/firebase.properties.example`) | `desktopApp/`. Se lee al compilar y las opciones se generan en `desktopApp/build/`. |
 | iOS | `GoogleService-Info.plist` (app iOS con bundle id `com.peakdevcol.project.hotelmanagement`) | `iosApp/iosApp/` |
 
+Cada plataforma tiene su propia API key, restringida a esa plataforma (PRD, S2).
 Sin el archivo, las apps compilan y arrancan igual, pero con Firebase desactivado. Así compila el CI.
 
 ## Ejecutar

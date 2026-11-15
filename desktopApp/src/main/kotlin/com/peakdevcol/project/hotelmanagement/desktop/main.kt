@@ -28,7 +28,7 @@ fun main() {
 /** Starts the JVM Firebase SDK. Returns false when there is no configuration. */
 private fun initFirebase(): Boolean {
     val options = generatedFirebaseOptions ?: run {
-        System.err.println("Firebase disabled: androidApp/google-services.json was not found at build time.")
+        System.err.println("Firebase disabled: desktopApp/firebase.properties was not found at build time.")
         return false
     }
 

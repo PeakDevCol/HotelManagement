@@ -1,6 +1,5 @@
 package com.peakdevcol.project.hotelmanagement.domain.repository
 
-import com.peakdevcol.project.hotelmanagement.domain.model.NewUser
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
@@ -10,8 +9,6 @@ interface AuthRepository {
     fun currentUserId(): String?
 
     suspend fun login(email: String, password: String): Result<Unit>
-
-    suspend fun createAccount(user: NewUser, password: String): Result<Unit>
 
     suspend fun logOut()
 }

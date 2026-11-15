@@ -1,0 +1,6 @@
+# Copy this file to desktopApp/firebase.properties (gitignored) and fill it with the
+# configuration of the Firebase Web app "Escritorio" (Firebase console > Project settings > Your apps).
+applicationId=1:000000000000:web:0000000000000000000000
+apiKey=
+projectId=hotelmanagementpdc
+storageBucket=
