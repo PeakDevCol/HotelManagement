@@ -57,9 +57,13 @@ data object HomeRoute
 @Serializable
 data object AddOrderRoute
 
-/** A menu section that is not migrated yet. */
+/**
+ * A menu section that is not migrated yet.
+ * The section travels by name: outside Android, navigation has no argument type for enums
+ * and the whole graph fails to build, which left the desktop app stuck after the login.
+ */
 @Serializable
-data class ComingSoonRoute(val section: HomeSection)
+data class ComingSoonRoute(val sectionName: String)
 
 @Composable
 fun App() {
@@ -108,7 +112,7 @@ private fun HomeNavigation() {
             HomeScreen(onSectionClick = { section ->
                 when (section) {
                     HomeSection.AddOrder -> navController.navigate(AddOrderRoute)
-                    else -> navController.navigate(ComingSoonRoute(section))
+                    else -> navController.navigate(ComingSoonRoute(section.name))
                 }
             })
         }
@@ -116,7 +120,10 @@ private fun HomeNavigation() {
             AddOrderScreen(onBack = { navController.popBackStack() })
         }
         composable<ComingSoonRoute> { entry ->
-            ComingSoonScreen(section = entry.toRoute<ComingSoonRoute>().section, onBack = { navController.popBackStack() })
+            ComingSoonScreen(
+                section = HomeSection.valueOf(entry.toRoute<ComingSoonRoute>().sectionName),
+                onBack = { navController.popBackStack() },
+            )
         }
     }
 }
