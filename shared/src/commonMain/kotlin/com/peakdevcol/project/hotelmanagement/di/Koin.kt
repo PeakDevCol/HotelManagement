@@ -5,20 +5,28 @@ import com.peakdevcol.project.hotelmanagement.data.catalog.StaticProductCatalog
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirebaseAuthRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreOrderRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreUserRepository
+import com.peakdevcol.project.hotelmanagement.data.local.LocalPendingAdditionRepository
+import com.peakdevcol.project.hotelmanagement.data.local.localTextStore
 import com.peakdevcol.project.hotelmanagement.domain.repository.AuthRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.PendingAdditionRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ProductCatalogRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.UserRepository
+import com.peakdevcol.project.hotelmanagement.domain.usecase.AddProductsToOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CancelOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CloseOrderUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.DismissRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoginUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveAccessUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOpenOrdersUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOrderDetailUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveRejectedAdditionsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ReconcilePendingAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.RegisterPaymentUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.RemoveProductFromOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReopenOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.ui.AppViewModel
@@ -37,11 +45,17 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 
+private const val PENDING_ADDITIONS_FILE = "pending-additions"
+
 private val dataModule = module {
     single<AuthRepository> { FirebaseAuthRepository(auth = lazy { Firebase.auth }) }
     single<UserRepository> { FirestoreUserRepository(firestore = lazy { Firebase.firestore }) }
     single<OrderRepository> { FirestoreOrderRepository(firestore = lazy { Firebase.firestore }) }
     single<ProductCatalogRepository> { StaticProductCatalog() }
+    single<PendingAdditionRepository> {
+        val config = get<AppConfig>()
+        LocalPendingAdditionRepository(store = lazy { localTextStore(config.localDataDirectory, PENDING_ADDITIONS_FILE) })
+    }
 }
 
 private val domainModule = module {
@@ -54,6 +68,11 @@ private val domainModule = module {
     factoryOf(::ReopenOrderUseCase)
     factoryOf(::RegisterPaymentUseCase)
     factoryOf(::CancelOrderUseCase)
+    factoryOf(::AddProductsToOrderUseCase)
+    factoryOf(::RemoveProductFromOrderUseCase)
+    factoryOf(::ReconcilePendingAdditionsUseCase)
+    factoryOf(::ObserveRejectedAdditionsUseCase)
+    factoryOf(::DismissRejectedAdditionsUseCase)
     factoryOf(::ObservePendingOrderCountUseCase)
     factoryOf(::SaveOrderUseCase)
     factoryOf(::GetProductsUseCase)
@@ -73,6 +92,9 @@ private val uiModule = module {
             reopenOrder = get(),
             registerPayment = get(),
             cancelOrder = get(),
+            getProducts = get(),
+            addProductsToOrder = get(),
+            removeProductFromOrder = get(),
         )
     }
 }

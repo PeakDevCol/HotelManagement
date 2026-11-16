@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -33,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderAction
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderActionError
+import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDetail
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderEvent
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderEventType
@@ -40,7 +44,9 @@ import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.model.formatBogotaDateTime
 import com.peakdevcol.project.hotelmanagement.domain.model.formatPesos
 import com.peakdevcol.project.hotelmanagement.resources.Res
+import com.peakdevcol.project.hotelmanagement.resources.ic_delete
 import com.peakdevcol.project.hotelmanagement.resources.order_actions_offline
+import com.peakdevcol.project.hotelmanagement.resources.order_add_product
 import com.peakdevcol.project.hotelmanagement.resources.order_cancel_action
 import com.peakdevcol.project.hotelmanagement.resources.order_cancelled_done
 import com.peakdevcol.project.hotelmanagement.resources.order_close_action
@@ -53,6 +59,7 @@ import com.peakdevcol.project.hotelmanagement.resources.order_detail_products
 import com.peakdevcol.project.hotelmanagement.resources.order_detail_taken_by
 import com.peakdevcol.project.hotelmanagement.resources.order_detail_title
 import com.peakdevcol.project.hotelmanagement.resources.order_error_invalid_tip
+import com.peakdevcol.project.hotelmanagement.resources.order_error_last_product
 import com.peakdevcol.project.hotelmanagement.resources.order_error_missing_reason
 import com.peakdevcol.project.hotelmanagement.resources.order_error_no_connection
 import com.peakdevcol.project.hotelmanagement.resources.order_error_no_session
@@ -65,22 +72,31 @@ import com.peakdevcol.project.hotelmanagement.resources.order_event_closed
 import com.peakdevcol.project.hotelmanagement.resources.order_event_created
 import com.peakdevcol.project.hotelmanagement.resources.order_event_line
 import com.peakdevcol.project.hotelmanagement.resources.order_event_paid
+import com.peakdevcol.project.hotelmanagement.resources.order_event_products_added
+import com.peakdevcol.project.hotelmanagement.resources.order_event_products_removed
 import com.peakdevcol.project.hotelmanagement.resources.order_event_payment
 import com.peakdevcol.project.hotelmanagement.resources.order_event_reopened
 import com.peakdevcol.project.hotelmanagement.resources.order_paid_done
 import com.peakdevcol.project.hotelmanagement.resources.order_pay_action
+import com.peakdevcol.project.hotelmanagement.resources.order_product_added
+import com.peakdevcol.project.hotelmanagement.resources.order_product_added_offline
 import com.peakdevcol.project.hotelmanagement.resources.order_product_line
+import com.peakdevcol.project.hotelmanagement.resources.order_product_removed
+import com.peakdevcol.project.hotelmanagement.resources.order_remove_product
+import com.peakdevcol.project.hotelmanagement.resources.order_remove_product_message
 import com.peakdevcol.project.hotelmanagement.resources.order_reopen_action
 import com.peakdevcol.project.hotelmanagement.resources.order_reopen_message
 import com.peakdevcol.project.hotelmanagement.resources.order_reopened_done
 import com.peakdevcol.project.hotelmanagement.resources.order_total
 import com.peakdevcol.project.hotelmanagement.resources.order_unit_price
+import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductDialog
 import com.peakdevcol.project.hotelmanagement.ui.addorder.label
 import com.peakdevcol.project.hotelmanagement.ui.components.LoadingOverlay
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -120,12 +136,18 @@ fun OrderDetailScreen(
                 modifier = Modifier.padding(padding),
                 onRetry = { viewModel.onIntent(OrderDetailIntent.Retry) },
             )
-            is OrderDetailState.Loaded -> OrderDetailContent(detail = current.detail, padding = padding)
+            is OrderDetailState.Loaded -> OrderDetailContent(
+                detail = current.detail,
+                padding = padding,
+                onAddProduct = { viewModel.onIntent(OrderDetailIntent.AddProductClick) },
+                onRemoveProduct = { viewModel.onIntent(OrderDetailIntent.RemoveProductClick(it)) },
+            )
         }
     }
 
     (state as? OrderDetailState.Loaded)?.let { loaded ->
         OrderActionDialog(state = loaded, onIntent = viewModel::onIntent)
+        ProductDialogs(state = loaded, onIntent = viewModel::onIntent)
         if (loaded.isWorking) LoadingOverlay()
     }
 }
@@ -156,6 +178,26 @@ private fun OrderActionDialog(state: OrderDetailState.Loaded, onIntent: (OrderDe
             onDismiss = dismiss,
         )
         null -> Unit
+    }
+}
+
+@Composable
+private fun ProductDialogs(state: OrderDetailState.Loaded, onIntent: (OrderDetailIntent) -> Unit) {
+    val dismiss = { onIntent(OrderDetailIntent.DismissDialog) }
+    if (state.isAddingProduct && state.catalog.isNotEmpty()) {
+        AddProductDialog(
+            catalog = state.catalog,
+            onAdd = { product, quantity -> onIntent(OrderDetailIntent.AddProduct(product, quantity)) },
+            onDismiss = dismiss,
+        )
+    }
+    state.productToRemove?.let { product ->
+        ConfirmActionDialog(
+            title = stringResource(Res.string.order_remove_product, product.name),
+            message = stringResource(Res.string.order_remove_product_message),
+            onConfirm = { onIntent(OrderDetailIntent.ConfirmRemoveProduct) },
+            onDismiss = dismiss,
+        )
     }
 }
 
@@ -210,6 +252,13 @@ private suspend fun OrderDetailEffect.message(): String = when (this) {
             OrderAction.CANCEL -> Res.string.order_cancelled_done
         },
     )
+    is OrderDetailEffect.ProductAdded -> getString(
+        when (delivery) {
+            OrderDelivery.SENT -> Res.string.order_product_added
+            OrderDelivery.PENDING -> Res.string.order_product_added_offline
+        },
+    )
+    OrderDetailEffect.ProductRemoved -> getString(Res.string.order_product_removed)
     is OrderDetailEffect.ActionFailed -> when (error) {
         is OrderActionError.StateChanged ->
             getString(Res.string.order_error_state_changed, getString(error.currentState.label()))
@@ -218,13 +267,20 @@ private suspend fun OrderDetailEffect.message(): String = when (this) {
         OrderActionError.NotFound -> getString(Res.string.order_detail_not_found)
         OrderActionError.MissingReason -> getString(Res.string.order_error_missing_reason)
         OrderActionError.InvalidTip -> getString(Res.string.order_error_invalid_tip)
+        OrderActionError.LastProduct -> getString(Res.string.order_error_last_product)
+        OrderActionError.NoProducts -> getString(Res.string.order_error_unknown)
         OrderActionError.NoSession -> getString(Res.string.order_error_no_session)
         OrderActionError.Unknown -> getString(Res.string.order_error_unknown)
     }
 }
 
 @Composable
-private fun OrderDetailContent(detail: OrderDetail, padding: PaddingValues) {
+private fun OrderDetailContent(
+    detail: OrderDetail,
+    padding: PaddingValues,
+    onAddProduct: () -> Unit,
+    onRemoveProduct: (Product) -> Unit,
+) {
     val order = detail.order
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -257,7 +313,17 @@ private fun OrderDetailContent(detail: OrderDetail, padding: PaddingValues) {
             }
         }
         item { SectionTitle(stringResource(Res.string.order_detail_products)) }
-        items(order.products, key = { it.id }) { product -> ProductLine(product) }
+        itemsIndexed(order.products, key = { index, product -> product.lineId ?: index }) { _, product ->
+            ProductLine(
+                product = product,
+                onRemove = if (detail.canRemoveProducts) ({ onRemoveProduct(product) }) else null,
+            )
+        }
+        if (detail.canEditProducts) {
+            item {
+                TextButton(onClick = onAddProduct) { Text(stringResource(Res.string.order_add_product)) }
+            }
+        }
         item {
             HorizontalDivider()
             Text(
@@ -283,7 +349,7 @@ private fun SectionTitle(title: String) {
 }
 
 @Composable
-private fun ProductLine(product: Product) {
+private fun ProductLine(product: Product, onRemove: (() -> Unit)?) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -297,6 +363,14 @@ private fun ProductLine(product: Product) {
             )
         }
         Text(text = formatPesos(product.totalAmount), style = MaterialTheme.typography.titleMedium)
+        if (onRemove != null) {
+            IconButton(onClick = onRemove) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_delete),
+                    contentDescription = stringResource(Res.string.order_remove_product, product.name),
+                )
+            }
+        }
     }
 }
 
@@ -309,6 +383,8 @@ private fun HistoryLine(event: OrderEvent) {
             OrderEventType.REOPENED -> Res.string.order_event_reopened
             OrderEventType.PAID -> Res.string.order_event_paid
             OrderEventType.CANCELLED -> Res.string.order_event_cancelled
+            OrderEventType.PRODUCTS_ADDED -> Res.string.order_event_products_added
+            OrderEventType.PRODUCTS_REMOVED -> Res.string.order_event_products_removed
         },
     )
     Column {
@@ -323,6 +399,12 @@ private fun HistoryLine(event: OrderEvent) {
                     stringResource(method.label()),
                     formatPesos(event.tipAmount ?: 0),
                 ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        event.products.forEach { product ->
+            Text(
+                text = stringResource(Res.string.order_product_line, product.name, product.quantity),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

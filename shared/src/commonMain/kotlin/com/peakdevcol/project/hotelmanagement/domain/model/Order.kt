@@ -20,9 +20,13 @@ data class Order(
     val totalAmount: Long get() = products.totalAmount()
 
     companion object {
-        /** A new random order id. Reusing it when retrying a save overwrites the same document. */
+        /** A new random id, for an order or for one of its lines. Reusing the id of an order when retrying a save overwrites the same document. */
         @OptIn(ExperimentalUuidApi::class)
         fun newId(): String = Uuid.random().toString()
+
+        /** RF-CUR-13: every line gets its own id, so two devices can add lines to the same order without replacing each other's. */
+        fun linesOf(products: List<Product>): List<Product> =
+            products.map { it.copy(lineId = it.lineId ?: newId()) }
 
         /** RF-ORD-04: a confirmed order starts in progress. The server sets its date when saved. */
         fun create(
@@ -33,7 +37,7 @@ data class Order(
         ): Order = Order(
             id = id,
             employeeId = employeeId,
-            products = products,
+            products = linesOf(products),
             destination = destination,
             state = OrderState.IN_PROGRESS,
         )

@@ -4,6 +4,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.OrderEvent
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderEventType
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderStateChange
 import com.peakdevcol.project.hotelmanagement.domain.model.PaymentMethod
+import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import dev.gitlive.firebase.firestore.BaseTimestamp
 import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.serialization.Serializable
@@ -18,7 +19,11 @@ internal data class OrderEventDto(
     val reason: String? = null,
     val method: String? = null,
     val tipAmount: Long? = null,
+    val products: List<ProductDto>? = null,
 )
+
+internal fun productsEventDto(type: OrderEventType, employeeId: String, products: List<Product>) =
+    OrderEventDto(type = type.code(), by = employeeId, products = products.map { it.toDto() })
 
 internal fun OrderStateChange.toEventDto() = when (this) {
     is OrderStateChange.Close -> OrderEventDto(type = OrderEventType.CLOSED.code(), by = employeeId)
@@ -42,6 +47,7 @@ internal fun OrderEventDto.toEvent(): OrderEvent? {
         cancelReason = reason,
         paymentMethod = PaymentMethod.entries.firstOrNull { it.code() == method },
         tipAmount = tipAmount,
+        products = products?.toProducts().orEmpty(),
     )
 }
 

@@ -4,18 +4,23 @@ import com.peakdevcol.project.hotelmanagement.data.firebase.dto.code
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.OrderDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.OrderEventDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.orderPaymentId
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.productsEventDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toEvent
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toEventDto
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toFirestoreMap
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toOrder
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toPaymentDto
 import com.peakdevcol.project.hotelmanagement.domain.model.Order
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderActionError
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderEvent
+import com.peakdevcol.project.hotelmanagement.domain.model.OrderEventType
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderState
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderStateChange
+import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.model.after
+import com.peakdevcol.project.hotelmanagement.domain.model.totalAmount
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
 import dev.gitlive.firebase.firestore.Direction
 import dev.gitlive.firebase.firestore.DocumentSnapshot
@@ -113,7 +118,7 @@ internal class FirestoreOrderRepository(
         val newState = order.state.after(change.action) 
             ?: return Result.failure(OrderActionError.StateChanged(order.state))
 
-        transaction.update(orderReference, *change.orderFields(newState))
+        transaction.update(orderReference, *change.orderFields(newState, order))
         transaction.set(orderReference.collection(FirestorePaths.ORDER_EVENTS).document, change.toEventDto())
         if (change is OrderStateChange.Pay) {
             val paymentReference = firestore.value.collection(FirestorePaths.PAYMENTS).document(orderPaymentId(orderId))
@@ -122,11 +127,17 @@ internal class FirestoreOrderRepository(
         return Result.success(Unit)
     }
 
-    private fun OrderStateChange.orderFields(newState: OrderState): Array<Pair<String, Any?>> {
+    private fun OrderStateChange.orderFields(newState: OrderState, order: Order): Array<Pair<String, Any?>> {
         val state = "state" to newState.code()
         return when (this) {
-            is OrderStateChange.Close ->
-                arrayOf(state, "closedAt" to FieldValue.serverTimestamp, "closedBy" to employeeId)
+            // Lines added from several devices do not update the stored total (V6), so closing
+            // the bill is where it is settled: the products cannot change after this.
+            is OrderStateChange.Close -> arrayOf(
+                state,
+                "closedAt" to FieldValue.serverTimestamp,
+                "closedBy" to employeeId,
+                TOTAL_FIELD to order.totalAmount,
+            )
             is OrderStateChange.Reopen -> arrayOf(state)
             is OrderStateChange.Pay -> arrayOf(
                 state,
@@ -142,6 +153,59 @@ internal class FirestoreOrderRepository(
                 "cancelledBy" to employeeId,
             )
         }
+    }
+
+    // RF-CUR-13 (V6): arrayUnion adds the lines to whatever the server has, so two devices never
+    // replace each other's lines, also without connection. The total is not incremented here:
+    // the SDK sends increments as decimals, which the rules reject, and the lines already say it.
+    override suspend fun addProducts(orderId: String, lines: List<Product>, employeeId: String): Result<OrderDelivery> = try {
+        val orderReference = orderDocument(orderId)
+        val batch = firestore.value.batch()
+        batch.update(orderReference, PRODUCTS_FIELD to FieldValue.arrayUnion(*lines.map { it.toFirestoreMap() }.toTypedArray()))
+        batch.set(
+            orderReference.collection(FirestorePaths.ORDER_EVENTS).document,
+            productsEventDto(OrderEventType.PRODUCTS_ADDED, employeeId, lines),
+        )
+        val confirmed = withTimeoutOrNull(serverWait) { batch.commit() }
+        Result.success(if (confirmed == null) OrderDelivery.PENDING else OrderDelivery.SENT)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e.toOrderActionError())
+    }
+
+    override suspend fun removeProduct(orderId: String, lineId: String, employeeId: String): Result<Unit> = try {
+        withTimeoutOrNull(transactionWait) {
+            firestore.value.runTransaction { removeProductIn(this, orderId, lineId, employeeId) }
+        } ?: Result.failure(OrderActionError.NoConnection)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e.toOrderActionError())
+    }
+
+    private suspend fun removeProductIn(transaction: Transaction, orderId: String, lineId: String, employeeId: String): Result<Unit> {
+        val orderReference = orderDocument(orderId)
+        val snapshot = transaction.get(orderReference)
+        if (!snapshot.exists) return Result.failure(OrderActionError.NotFound)
+        val order = snapshot.data<OrderDto>(ServerTimestampBehavior.ESTIMATE).toOrder(isPendingToSend = false)
+            ?: return Result.failure(OrderActionError.NotFound)
+        if (order.state != OrderState.IN_PROGRESS) return Result.failure(OrderActionError.StateChanged(order.state))
+
+        val (removed, remaining) = order.products.partition { it.lineId == lineId }
+        if (removed.isEmpty()) return Result.success(Unit)
+        if (remaining.isEmpty()) return Result.failure(OrderActionError.LastProduct)
+
+        transaction.update(
+            orderReference,
+            PRODUCTS_FIELD to remaining.map { it.toFirestoreMap() },
+            TOTAL_FIELD to remaining.totalAmount(),
+        )
+        transaction.set(
+            orderReference.collection(FirestorePaths.ORDER_EVENTS).document,
+            productsEventDto(OrderEventType.PRODUCTS_REMOVED, employeeId, removed),
+        )
+        return Result.success(Unit)
     }
 
     private fun Exception.toOrderActionError(): OrderActionError = when ((this as? FirebaseFirestoreException)?.code) {
@@ -163,5 +227,7 @@ internal class FirestoreOrderRepository(
 
     private companion object {
         val OPEN_STATES = listOf(OrderState.IN_PROGRESS.code(), OrderState.CLOSED.code())
+        const val PRODUCTS_FIELD = "products"
+        const val TOTAL_FIELD = "totalPayAmount"
     }
 }

@@ -26,10 +26,11 @@ fun order(
     destination: OrderDestination = OrderDestination.Table(3),
     isPendingToSend: Boolean = false,
     isUpToDate: Boolean = true,
+    products: List<Product> = listOf(Product(id = "1", name = "Cerveza Aguila", unitPrice = 3_500, quantity = 2, lineId = "line-0")),
 ) = Order(
     id = id,
     employeeId = employeeId,
-    products = listOf(Product(id = "1", name = "Cerveza Aguila", unitPrice = 3_500, quantity = 2)),
+    products = products,
     destination = destination,
     state = state,
     createdAt = createdAt?.let(Instant::parse),

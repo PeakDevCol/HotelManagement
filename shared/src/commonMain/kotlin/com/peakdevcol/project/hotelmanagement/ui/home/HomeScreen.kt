@@ -39,6 +39,11 @@ import com.peakdevcol.project.hotelmanagement.resources.menu_add_order
 import com.peakdevcol.project.hotelmanagement.resources.menu_balance
 import com.peakdevcol.project.hotelmanagement.resources.menu_current_orders
 import com.peakdevcol.project.hotelmanagement.resources.menu_inventory
+import com.peakdevcol.project.hotelmanagement.resources.order_product_line
+import com.peakdevcol.project.hotelmanagement.resources.rejected_additions_message
+import com.peakdevcol.project.hotelmanagement.resources.rejected_additions_title
+import com.peakdevcol.project.hotelmanagement.domain.model.PendingAddition
+import com.peakdevcol.project.hotelmanagement.ui.addorder.label
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -100,6 +105,39 @@ fun HomeScreen(onSectionClick: (HomeSection) -> Unit, viewModel: HomeViewModel =
         )
         null -> Unit
     }
+
+    if (state.rejectedAdditions.isNotEmpty()) {
+        RejectedAdditionsDialog(
+            additions = state.rejectedAdditions,
+            onRead = { viewModel.onIntent(HomeIntent.RejectedAdditionsRead) },
+        )
+    }
+}
+
+/** RF-CUR-13: tells which products the server did not add, because their order was no longer in progress. */
+@Composable
+private fun RejectedAdditionsDialog(additions: List<PendingAddition>, onRead: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onRead,
+        title = { Text(stringResource(Res.string.rejected_additions_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(stringResource(Res.string.rejected_additions_message))
+                additions.forEach { addition ->
+                    Column {
+                        Text(text = addition.destination.label(), style = MaterialTheme.typography.titleSmall)
+                        addition.products.forEach { product ->
+                            Text(stringResource(Res.string.order_product_line, product.name, product.quantity))
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onRead) { Text(stringResource(Res.string.dialog_accept)) } },
+    )
 }
 
 /** RF-ORD-09: orders saved on the device that the server does not have yet. */
