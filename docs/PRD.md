@@ -132,7 +132,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
 | Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
-| Pedidos en curso | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M3. |
+| Pedidos en curso | 🔄 En parte | Lista en tiempo real, filtros y detalle desde el segundo PR de M3. Cerrar, reabrir, pagar, cancelar y editar llegan en el tercero. |
 | Inventario | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M4. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
 | Recuperar contraseña | ⬜ Pendiente | |
@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 67 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 96 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -210,7 +210,7 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 | RF-ORD-06 | No quedarse esperando | Al confirmar, la app espera 3 s la respuesta del servidor. Si llega, muestra "Pedido confirmado". Si no llega, por estar sin conexión o con conexión lenta, muestra "Pedido guardado en el dispositivo" (RF-ORD-09) y el empleado sigue trabajando. No hay botón de reintentar: el pedido se envía solo. | ✅ |
 | RF-ORD-07 | Catálogo desde el inventario | Los productos salen de Firestore, y los productos inactivos no aparecen | ⬜ (M4) |
 | RF-ORD-08 | Destinos piscina y bar ([P19](#12-preguntas-abiertas)) | Se agregan Piscina y Bar, con número opcional (silla o puesto) | ✅ |
-| RF-ORD-09 | Pedidos sin conexión ([P8](#12-preguntas-abiertas)) | Sin conexión, el pedido queda guardado en el dispositivo con la marca "pendiente de enviar" y se envía solo al volver la conexión, sin duplicarse (V2). El menú muestra cuántos pedidos están pendientes de enviar. | ✅ Falta la prueba manual de V2 en Android |
+| RF-ORD-09 | Pedidos sin conexión ([P8](#12-preguntas-abiertas)) | Sin conexión, el pedido queda guardado en el dispositivo con la marca "pendiente de enviar" y se envía solo al volver la conexión, sin duplicarse (V2). El menú muestra cuántos pedidos están pendientes de enviar. | ✅ |
 
 ### 6.3 Pedidos en curso (`CUR`)
 Estados del pedido según [P2](#12-preguntas-abiertas) y [P21](#12-preguntas-abiertas): un pedido está En curso desde que se crea, mientras se le agregan productos.
@@ -241,9 +241,9 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
-| RF-CUR-01 | Lista en tiempo real | Muestra los pedidos `in_progress` y `closed`, ordenados por fecha, el más antiguo primero. Un pedido creado en otro dispositivo aparece sin recargar. | ⬜ |
-| RF-CUR-02 | Filtros | Mis pedidos o todos, y filtro por estado | ⬜ |
-| RF-CUR-03 | Detalle | Productos, cantidades, total, destino, empleado, hora e historial de cambios (RF-CUR-11) | ⬜ |
+| RF-CUR-01 | Lista en tiempo real | Muestra los pedidos `in_progress` y `closed`, ordenados por fecha, el más antiguo primero. Un pedido creado en otro dispositivo aparece sin recargar. | ✅ |
+| RF-CUR-02 | Filtros | Mis pedidos o todos, y filtro por estado. Al abrir la lista se muestran todos. | ✅ |
+| RF-CUR-03 | Detalle | Productos, cantidades, total, destino, empleado, hora e historial de cambios (RF-CUR-11) | ✅ |
 | RF-CUR-04 | Cerrar la cuenta | `in_progress` → `closed`, guardando `closedAt` y `closedBy` | ⬜ |
 | RF-CUR-05 | Registrar el pago | `closed` → `paid`, con el método de pago (efectivo o transferencia, [P4](#12-preguntas-abiertas)) y la propina opcional ([P15](#12-preguntas-abiertas)), guardando `paidAt` y `paidBy`. Crea el registro en `Payments` en la misma transacción. El pedido sale de la lista. | ⬜ |
 | RF-CUR-06 | Editar un pedido | Agregar o quitar productos en `in_progress` ([P3](#12-preguntas-abiertas)). El total se recalcula. | ⬜ |
@@ -251,7 +251,7 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 | RF-CUR-08 | Cambios simultáneos | Si dos dispositivos cambian el estado del mismo pedido a la vez, el cambio se hace en una transacción de Firestore. El segundo ve el estado actualizado y un aviso, y nunca se registra un pago dos veces. | ⬜ |
 | RF-CUR-09 | ~~Atender~~ | Descartado por P21: Abierto y En curso son el mismo estado | — |
 | RF-CUR-10 | Reabrir | `closed` → `in_progress` para poder editar ([P3](#12-preguntas-abiertas)). Queda en el historial. | ⬜ |
-| RF-CUR-11 | Historial | Cada cambio (crear, agregar o quitar productos, cerrar, reabrir, pagar o cancelar) guarda quién, cuándo y qué cambió | ⬜ |
+| RF-CUR-11 | Historial | Cada cambio (crear, agregar o quitar productos, cerrar, reabrir, pagar o cancelar) guarda quién, cuándo y qué cambió. La creación sale del propio pedido (`idEmployee` y `dateOrder`); los demás cambios se guardan en `events`. | 🔄 El detalle ya muestra la creación; los demás eventos llegan en el tercer PR de M3 |
 | RF-CUR-12 | Cambios de estado con conexión | Cerrar, reabrir, pagar y cancelar necesitan conexión, porque usan transacciones. Sin conexión, esos botones se desactivan con un aviso. | ⬜ |
 | RF-CUR-13 | Agregar productos sin conexión | Sin conexión se pueden agregar productos a un pedido En curso. Al sincronizar se suman a lo que haya agregado otro dispositivo, sin pisarlo (V6). Si al sincronizar el pedido ya no está En curso, las reglas rechazan esos productos y la app avisa cuáles no se agregaron. Quitar productos necesita conexión. | ⬜ |
 
@@ -672,7 +672,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | # | Qué hay que comprobar | Si no se cumple | Afecta | Hito |
 |---|---|---|---|---|
 | V1 | Crear cuentas sin cerrar la sesión actual: con una segunda instancia de Firebase en GitLive, o con la API REST de Firebase Auth | Usar la otra opción; las dos funcionan en Spark | RF-EMP-04, RF-ASI-11 | M6 |
-| V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio. **Resuelta en escritorio el 2026-11-14:** se cumple, una vez que la base local sale de la carpeta temporal (sección 13). En Android falta la prueba manual en modo avión. | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
+| V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio. **Resuelta en escritorio el 2026-11-14:** se cumple, una vez que la base local sale de la carpeta temporal (sección 13). En Android se probó a mano el 2026-11-15 en modo avión, cerrando y abriendo la app: se cumple. | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
 | V3 | Que App Check no tiene proveedor para la app de escritorio (JVM) | Si lo tuviera, exigirlo; si no, dejarlo en modo de monitoreo | S4, R12 | M7 |
 | V4 | Uso real de Firestore durante el piloto, contra la cuota diaria de Spark | Reducir listeners y lecturas. Pasar a Blaze solo con una decisión nueva. | RNF-12 | M7 |
 | V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 |
@@ -773,6 +773,9 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-14 | V2 en escritorio: la librería de Firebase para JVM guardaba su base local en la carpeta temporal del sistema, que el sistema operativo vacía. Ahora vive en la carpeta de datos de la aplicación del usuario. Con ese cambio, un pedido guardado sin conexión sobrevivió a matar el proceso y se envió al reabrir la app. | Sin el cambio, los pedidos pendientes de enviar se podían perder al reiniciar el computador. No hizo falta el archivo propio previsto como plan B. |
 | 2026-11-14 | Al confirmar un pedido, la app espera 3 s al servidor. Sin respuesta, el pedido queda guardado en el dispositivo como pendiente de enviar, sin distinguir entre estar sin conexión y tener conexión lenta. Reemplaza la espera de 15 s con botón de reintentar (RF-ORD-06). | Firestore ya dejó el pedido en cola y lo envía solo, así que reintentar no aporta nada, y el mesero no se queda esperando con mala señal |
 | 2026-11-14 | V6 se prueba en el tercer PR de M3, cuando las reglas permitan agregar productos a un pedido existente. Si el servidor rechaza productos después de reiniciar la app, Firestore no avisa: la app llevará su propia lista local de productos agregados sin confirmar. | Las reglas publicadas hoy no permiten esa escritura, así que no hay cómo probarla antes |
+| 2026-11-16 | La lista de pedidos en curso se abre mostrando todos los pedidos, no solo los del empleado | Quien cobra en caja necesita ver los de cualquier mesero; "Mis pedidos" queda a un toque |
+| 2026-11-16 | La lista de pedidos en curso se ordena y se filtra en la app, sin índice compuesto en Firestore | El listener solo trae pedidos abiertos, que son pocos, y así no hay que crear un índice a mano en la consola |
+| 2026-11-16 | El evento "pedido creado" del historial se toma del propio pedido y no se guarda en `events` | El pedido ya guarda quién y cuándo. Un documento aparte se duplicaría o fallaría al reintentar un guardado (RF-ORD-05). |
 
 ## 14. Riesgos
 

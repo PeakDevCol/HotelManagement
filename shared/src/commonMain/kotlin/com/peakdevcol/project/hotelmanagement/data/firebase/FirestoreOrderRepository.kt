@@ -1,12 +1,16 @@
 package com.peakdevcol.project.hotelmanagement.data.firebase
 
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.code
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.OrderDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toDto
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toOrder
 import com.peakdevcol.project.hotelmanagement.domain.model.Order
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderState
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
+import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.firestore.ServerTimestampBehavior
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -47,4 +51,27 @@ internal class FirestoreOrderRepository(
             .snapshots(includeMetadataChanges = true)
             .map { orders -> orders.documents.count { it.metadata.hasPendingWrites } }
             .distinctUntilChanged()
+
+    // RNF-12: only what is open is listened to. Paid and cancelled orders leave the query by themselves.
+    override fun observeOpenOrders(): Flow<List<Order>> =
+        firestore.value
+            .collection(FirestorePaths.ORDERS)
+            .where { "state" inArray OPEN_STATES }
+            .snapshots(includeMetadataChanges = true)
+            .map { orders -> orders.documents.mapNotNull { it.toOrder() } }
+
+    override fun observeOrder(orderId: String): Flow<Order?> =
+        firestore.value
+            .collection(FirestorePaths.ORDERS)
+            .document(orderId)
+            .snapshots(includeMetadataChanges = true)
+            .map { snapshot -> if (snapshot.exists) snapshot.toOrder() else null }
+
+    // An order saved offline has no server date yet: the estimate of the device keeps it readable.
+    private fun DocumentSnapshot.toOrder(): Order? =
+        data<OrderDto>(ServerTimestampBehavior.ESTIMATE).toOrder(isPendingToSend = metadata.hasPendingWrites)
+
+    private companion object {
+        val OPEN_STATES = listOf(OrderState.IN_PROGRESS.code(), OrderState.CLOSED.code())
+    }
 }

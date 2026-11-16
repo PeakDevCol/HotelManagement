@@ -34,6 +34,8 @@ import com.peakdevcol.project.hotelmanagement.resources.session_error
 import com.peakdevcol.project.hotelmanagement.ui.components.AuthFrame
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
+import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersScreen
+import com.peakdevcol.project.hotelmanagement.ui.currentorders.OrderDetailScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.ComingSoonScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeSection
@@ -56,6 +58,12 @@ data object HomeRoute
 
 @Serializable
 data object AddOrderRoute
+
+@Serializable
+data object CurrentOrdersRoute
+
+@Serializable
+data class OrderDetailRoute(val orderId: String)
 
 /**
  * A menu section that is not migrated yet.
@@ -112,12 +120,25 @@ private fun HomeNavigation() {
             HomeScreen(onSectionClick = { section ->
                 when (section) {
                     HomeSection.AddOrder -> navController.navigate(AddOrderRoute)
+                    HomeSection.CurrentOrders -> navController.navigate(CurrentOrdersRoute)
                     else -> navController.navigate(ComingSoonRoute(section.name))
                 }
             })
         }
         composable<AddOrderRoute> {
             AddOrderScreen(onBack = { navController.popBackStack() })
+        }
+        composable<CurrentOrdersRoute> {
+            CurrentOrdersScreen(
+                onBack = { navController.popBackStack() },
+                onOrderClick = { orderId -> navController.navigate(OrderDetailRoute(orderId)) },
+            )
+        }
+        composable<OrderDetailRoute> { entry ->
+            OrderDetailScreen(
+                orderId = entry.toRoute<OrderDetailRoute>().orderId,
+                onBack = { navController.popBackStack() },
+            )
         }
         composable<ComingSoonRoute> { entry ->
             ComingSoonScreen(

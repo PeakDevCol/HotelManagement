@@ -19,6 +19,16 @@ class FakeOrderRepository(
     val pendingOrders = MutableStateFlow(emptyMap<String, Int>())
     var pendingOrdersFailure: Throwable? = null
 
+    val openOrders = MutableStateFlow(emptyList<Order>())
+    var openOrdersFailure: Throwable? = null
+
+    override fun observeOpenOrders(): Flow<List<Order>> =
+        openOrdersFailure?.let { error -> flow { throw error } } ?: openOrders
+
+    override fun observeOrder(orderId: String): Flow<Order?> =
+        openOrdersFailure?.let { error -> flow { throw error } }
+            ?: openOrders.map { orders -> orders.firstOrNull { it.id == orderId } }
+
     override suspend fun saveOrder(order: Order): Result<OrderDelivery> {
         attempts += order
         if (result.isSuccess) saved += order
