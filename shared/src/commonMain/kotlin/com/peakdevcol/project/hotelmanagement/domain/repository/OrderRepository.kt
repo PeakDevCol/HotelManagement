@@ -13,4 +13,10 @@ interface OrderRepository {
 
     /** Emits how many in-progress orders of the employee are still waiting to be sent. */
     fun observePendingOrderCount(employeeId: String): Flow<Int>
+
+    /** Emits the orders in progress and closed, and every change to them, in no particular order. */
+    fun observeOpenOrders(): Flow<List<Order>>
+
+    /** Emits the order and its changes, or null when it does not exist. */
+    fun observeOrder(orderId: String): Flow<Order?>
 }

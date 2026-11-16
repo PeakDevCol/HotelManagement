@@ -7,6 +7,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import dev.gitlive.firebase.firestore.BaseTimestamp
 import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 internal data class OrderDto(
@@ -28,6 +29,32 @@ internal data class ProductDto(
     val unitAmount: Long,
     val totalAmount: Long,
 )
+
+/** Returns null when the state or the destination is not one of section 8 of the PRD. */
+internal fun OrderDto.toOrder(isPendingToSend: Boolean): Order? {
+    val orderState = OrderState.entries.firstOrNull { it.code() == state } ?: return null
+    val destination = destinationOf(typeOrder, typeOrderNumber) ?: return null
+    return Order(
+        id = id,
+        employeeId = idEmployee,
+        products = products.map { it.toProduct() },
+        destination = destination,
+        state = orderState,
+        createdAt = (dateOrder as? Timestamp)?.let { Instant.fromEpochSeconds(it.seconds, it.nanoseconds) },
+        isPendingToSend = isPendingToSend,
+    )
+}
+
+private fun ProductDto.toProduct() = Product(id = productId, name = productName, unitPrice = unitAmount, quantity = quantity)
+
+private fun destinationOf(type: String, number: Int?): OrderDestination? = when (type) {
+    "room" -> number?.let { OrderDestination.Room(it) }
+    "table" -> number?.let { OrderDestination.Table(it) }
+    "pool" -> OrderDestination.Pool(number)
+    "bar" -> OrderDestination.Bar(number)
+    "other" -> OrderDestination.Other
+    else -> null
+}
 
 internal fun Order.toDto() = OrderDto(
     id = id,

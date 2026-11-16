@@ -80,6 +80,28 @@
     <string name="destination_number">Número</string>
     <string name="destination_number_optional">Número (opcional)</string>
 
+    <!-- Current orders -->
+    <string name="order_state_in_progress">En curso</string>
+    <string name="order_state_closed">Cerrado</string>
+    <string name="order_state_paid">Pagado</string>
+    <string name="order_state_cancelled">Cancelado</string>
+    <string name="order_pending_to_send">Pendiente de enviar</string>
+    <string name="order_employee_unknown">Empleado desconocido</string>
+    <string name="filter_all_orders">Todos los pedidos</string>
+    <string name="filter_my_orders">Mis pedidos</string>
+    <string name="filter_all_states">Todos los estados</string>
+    <string name="current_orders_empty">No hay pedidos en curso.</string>
+    <string name="current_orders_empty_filter">No hay pedidos con ese filtro.</string>
+    <string name="current_orders_error">No se pudieron cargar los pedidos.</string>
+    <string name="order_detail_title">Detalle del pedido</string>
+    <string name="order_detail_taken_by">Atendido por %1$s</string>
+    <string name="order_detail_products">Productos</string>
+    <string name="order_detail_history">Historial</string>
+    <string name="order_detail_not_found">Este pedido ya no existe.</string>
+    <string name="order_detail_error">No se pudo cargar el pedido.</string>
+    <string name="order_event_created">Pedido creado</string>
+    <string name="order_event_line">%1$s por %2$s</string>
+
     <string name="order_saved_title">Pedido confirmado</string>
     <string name="order_saved_message">El pedido se guardó correctamente.</string>
     <string name="order_saved_offline_title">Pedido guardado en el dispositivo</string>

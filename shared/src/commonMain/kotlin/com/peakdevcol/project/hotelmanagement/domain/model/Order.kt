@@ -1,5 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.domain.model
 
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -9,6 +10,10 @@ data class Order(
     val products: List<Product>,
     val destination: OrderDestination,
     val state: OrderState,
+    /** Set by the server. Until the order reaches it, this is the estimate of the device. */
+    val createdAt: Instant? = null,
+    /** RF-ORD-09: saved on this device, but the server does not have it yet. */
+    val isPendingToSend: Boolean = false,
 ) {
     val totalAmount: Long get() = products.totalAmount()
 

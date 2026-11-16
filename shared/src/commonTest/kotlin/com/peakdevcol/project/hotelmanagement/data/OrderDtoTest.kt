@@ -2,6 +2,7 @@ package com.peakdevcol.project.hotelmanagement.data
 
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.code
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toDto
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toOrder
 import com.peakdevcol.project.hotelmanagement.domain.model.Order
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderState
@@ -10,6 +11,7 @@ import dev.gitlive.firebase.firestore.Timestamp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.time.Instant
 
 class OrderDtoTest {
     private val beer = Product(id = "1", name = "Cerveza Aguila", unitPrice = 3_500, quantity = 2)
@@ -53,5 +55,27 @@ class OrderDtoTest {
 
         assertEquals("other", dto.typeOrder)
         assertNull(dto.typeOrderNumber)
+    }
+
+    @Test
+    fun readsBackTheOrderItStored() {
+        val saved = Order.create("uid-1", listOf(beer), OrderDestination.Pool(12), id = "order-1")
+        val stored = saved.toDto().copy(dateOrder = Timestamp(seconds = 1_794_702_180, nanoseconds = 0))
+
+        val read = stored.toOrder(isPendingToSend = true)
+
+        assertEquals(
+            saved.copy(createdAt = Instant.fromEpochSeconds(1_794_702_180), isPendingToSend = true),
+            read,
+        )
+    }
+
+    @Test
+    fun anOrderWithAnUnknownStateOrDestinationIsNotValid() {
+        val stored = orderTo(OrderDestination.Room(204))
+
+        assertNull(stored.copy(state = "confirm").toOrder(isPendingToSend = false))
+        assertNull(stored.copy(typeOrder = "lobby").toOrder(isPendingToSend = false))
+        assertNull(stored.copy(typeOrderNumber = null).toOrder(isPendingToSend = false))
     }
 }

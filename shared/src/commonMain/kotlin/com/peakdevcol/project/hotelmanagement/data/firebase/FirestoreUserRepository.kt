@@ -18,4 +18,10 @@ internal class FirestoreUserRepository(
             .document(userId)
             .snapshots
             .map { snapshot -> if (snapshot.exists) snapshot.data<UserDto>().toUser(userId) else null }
+
+    override fun observeEmployees(): Flow<List<User>> =
+        firestore.value
+            .collection(FirestorePaths.USERS)
+            .snapshots
+            .map { employees -> employees.documents.mapNotNull { it.data<UserDto>().toUser(it.id) } }
 }

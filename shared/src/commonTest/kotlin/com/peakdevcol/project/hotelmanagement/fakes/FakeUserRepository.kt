@@ -15,6 +15,9 @@ class FakeUserRepository(vararg users: User) : UserRepository {
         profiles.value += user.id to user
     }
 
+    override fun observeEmployees(): Flow<List<User>> =
+        failure?.let { error -> flow { throw error } } ?: profiles.map { it.values.toList() }
+
     override fun observeUser(userId: String): Flow<User?> =
         failure?.let { error -> flow { throw error } } ?: profiles.map { it[userId] }
 }
