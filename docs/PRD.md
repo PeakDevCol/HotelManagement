@@ -132,7 +132,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
 | Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
-| Pedidos en curso | 🔄 En parte | Lista en tiempo real, filtros, detalle, cerrar, reabrir, pagar y cancelar. Editar los productos de un pedido llega en el cuarto PR de M3. |
+| Pedidos en curso | ✅ Hecho en M3 | Lista en tiempo real, filtros, detalle, cerrar, reabrir, pagar, cancelar, y agregar y quitar productos, también sin conexión. |
 | Inventario | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M4. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
 | Recuperar contraseña | ⬜ Pendiente | |
@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 133 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 166 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -246,14 +246,14 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 | RF-CUR-03 | Detalle | Productos, cantidades, total, destino, empleado, hora e historial de cambios (RF-CUR-11) | ✅ |
 | RF-CUR-04 | Cerrar la cuenta | `in_progress` → `closed`, guardando `closedAt` y `closedBy` | ✅ |
 | RF-CUR-05 | Registrar el pago | `closed` → `paid`, con el método de pago (efectivo o transferencia, [P4](#12-preguntas-abiertas)) y la propina opcional ([P15](#12-preguntas-abiertas)), guardando `paidAt` y `paidBy`. Crea el registro en `Payments` en la misma transacción. El pedido sale de la lista. | ✅ |
-| RF-CUR-06 | Editar un pedido | Agregar o quitar productos en `in_progress` ([P3](#12-preguntas-abiertas)). El total se recalcula. | ⬜ |
+| RF-CUR-06 | Editar un pedido | Agregar o quitar productos en `in_progress` ([P3](#12-preguntas-abiertas)). El total se recalcula. Cada producto agregado es una línea nueva, con su propio id. No se puede quitar el último producto: si el pedido ya no va, lo cancela un administrador. | ✅ |
 | RF-CUR-07 | Cancelar un pedido ([P20](#12-preguntas-abiertas)) | Solo administradores, con un motivo. Guarda `cancelReason`, `cancelledAt` y `cancelledBy`. | ✅ |
 | RF-CUR-08 | Cambios simultáneos | Si dos dispositivos cambian el estado del mismo pedido a la vez, el cambio se hace en una transacción de Firestore. El segundo ve el estado actualizado y un aviso, y nunca se registra un pago dos veces. | ✅ |
 | RF-CUR-09 | ~~Atender~~ | Descartado por P21: Abierto y En curso son el mismo estado | — |
 | RF-CUR-10 | Reabrir | `closed` → `in_progress` para poder editar ([P3](#12-preguntas-abiertas)). Queda en el historial. | ✅ |
-| RF-CUR-11 | Historial | Cada cambio (crear, agregar o quitar productos, cerrar, reabrir, pagar o cancelar) guarda quién, cuándo y qué cambió. La creación sale del propio pedido (`idEmployee` y `dateOrder`); los demás cambios se guardan en `events`. | 🔄 Crear, cerrar, reabrir, pagar y cancelar ya quedan en el historial. Agregar y quitar productos llega con RF-CUR-06. |
+| RF-CUR-11 | Historial | Cada cambio (crear, agregar o quitar productos, cerrar, reabrir, pagar o cancelar) guarda quién, cuándo y qué cambió. La creación sale del propio pedido (`idEmployee` y `dateOrder`); los demás cambios se guardan en `events`. | ✅ |
 | RF-CUR-12 | Cambios de estado con conexión | Cerrar, reabrir, pagar y cancelar necesitan conexión, porque usan transacciones. Sin conexión, esos botones se desactivan con un aviso. | ✅ |
-| RF-CUR-13 | Agregar productos sin conexión | Sin conexión se pueden agregar productos a un pedido En curso. Al sincronizar se suman a lo que haya agregado otro dispositivo, sin pisarlo (V6). Si al sincronizar el pedido ya no está En curso, las reglas rechazan esos productos y la app avisa cuáles no se agregaron. Quitar productos necesita conexión. | ⬜ |
+| RF-CUR-13 | Agregar productos sin conexión | Sin conexión se pueden agregar productos a un pedido En curso. Al sincronizar se suman a lo que haya agregado otro dispositivo, sin pisarlo (V6). Si al sincronizar el pedido ya no está En curso, las reglas rechazan esos productos y la app avisa cuáles no se agregaron. Quitar productos necesita conexión. El aviso aparece en el menú principal, aunque se haya cerrado y abierto la app, y nombra el pedido y los productos. | ✅ |
 
 ### 6.4 Inventario (`INV`)
 | ID | Requisito | Criterios de aceptación | Estado |
@@ -547,7 +547,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
 | `Users/{uid}` | `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area` (`service`, `reception`, `housekeeping`, `maintenance` o `management`), `active`, `createdAt`, `createdBy` | Reemplaza a `Users/basic/Users/{uid}` (P9). Sin campos de contraseña. M1 crea la ruta con `fullName`, `email`, `type` y `createdAt`; M2 agrega `area`, `active` y el rol `reception`, y M6, `createdBy`. | M1, M2 y M6 |
-| `Orders/{id}` | Los actuales, más `closedAt/By`, `paidAt/By`, `paymentMethod`, `tipAmount`, `taxAmount` y, al cancelar, `cancelReason` y `cancelledAt/By` | `state`: `in_progress`, `closed`, `paid` o `cancelled`. `typeOrder`: `room`, `table`, `pool`, `bar` u `other`. Cada línea tiene su propio id, `taxRate` y `taxAmount`. Las líneas se agregan con `arrayUnion` y el total con `increment`, para que dos dispositivos agreguen productos a la vez, incluso sin conexión, sin pisarse (RF-CUR-13, V6). | M3 |
+| `Orders/{id}` | Los actuales, más `closedAt/By`, `paidAt/By`, `paymentMethod`, `tipAmount`, `taxAmount` y, al cancelar, `cancelReason` y `cancelledAt/By` | `state`: `in_progress`, `closed`, `paid` o `cancelled`. `typeOrder`: `room`, `table`, `pool`, `bar` u `other`. Cada línea tiene su propio id, `taxRate` y `taxAmount`. Cada línea tiene su `lineId` y se agrega con `arrayUnion`, para que dos dispositivos agreguen productos a la vez, incluso sin conexión, sin pisarse (RF-CUR-13, V6). El total no se incrementa al agregar: la app lo calcula de las líneas, y `totalPayAmount` se vuelve a guardar al cerrar la cuenta y al quitar un producto (sección 13). | M3 |
 | `Orders/{id}/events/{id}` | `type`, `by`, `at` y el detalle del cambio | Historial (RF-CUR-11) | M3 |
 | `Payments/{id}` | `amount`, `tipAmount`, `method` (`cash` o `transfer`), `source` (`order` o `reservation`), `sourceId`, `receivedBy`, `receivedAt` | Un registro por cada pago recibido. El balance y el cierre de caja salen de aquí. El cierre toma los pagos por `receivedAt` entre su `from` y su `to`, así que un pago nunca se edita. | M3 |
 | `CashClosings/{id}` | `from`, `to`, `type` (`daily` o `manual`), `expectedCash`, `countedCash`, `difference`, `note`, `closedBy`, `createdAt` | Cierre de caja (P17) | M5 |
@@ -676,7 +676,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | V3 | Que App Check no tiene proveedor para la app de escritorio (JVM) | Si lo tuviera, exigirlo; si no, dejarlo en modo de monitoreo | S4, R12 | M7 |
 | V4 | Uso real de Firestore durante el piloto, contra la cuota diaria de Spark | Reducir listeners y lecturas. Pasar a Blaze solo con una decisión nueva. | RNF-12 | M7 |
 | V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 |
-| V6 | Que agregar productos sin conexión desde dos dispositivos no pise líneas ni el total (`arrayUnion` e `increment`). Y que, si otro dispositivo cerró el pedido mientras tanto, la app detecte que el servidor rechazó esos productos y avise, aunque se haya cerrado y abierto la app. | Permitir agregar productos solo con conexión | RF-CUR-13 | M3 |
+| V6 | Que agregar productos sin conexión desde dos dispositivos no pise líneas ni el total (`arrayUnion` e `increment`). Y que, si otro dispositivo cerró el pedido mientras tanto, la app detecte que el servidor rechazó esos productos y avise, aunque se haya cerrado y abierto la app. **Resuelta el 2026-11-16:** se cumple con `arrayUnion` y sin `increment` (sección 13). Dos dispositivos sin conexión agregaron líneas al mismo pedido y el servidor conservó las de ambos; con el pedido cerrado mientras tanto, el servidor rechazó las líneas y la app lo detectó después de reiniciar. | Permitir agregar productos solo con conexión | RF-CUR-13 | M3 |
 | V7 | Tamaño de las fotos comprimidas, y que solo se lean al abrir el detalle | Bajar la calidad o quitar las fotos | RF-TAR-07 | M14 |
 | V8 | Si GitLive permite consultas de suma y conteo en Firestore para el balance | Sumar en el cliente, consultando solo el rango elegido | RF-BAL-01 | M5 |
 
@@ -783,6 +783,10 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-16 | No se puede quitar el último producto de un pedido. Si el pedido ya no va, lo cancela un administrador con un motivo. | Evitar pedidos vacíos por cobrar. Se implementa con RF-CUR-06. |
 | 2026-11-16 | "Sin conexión" en el detalle de un pedido se deduce de que Firestore esté mostrando su copia local. Los botones de cerrar, reabrir, pagar y cancelar se desactivan con un aviso (RF-CUR-12). | No hace falta código de conectividad por plataforma, y una transacción sin servidor falla de todas formas |
 | 2026-11-16 | Los impuestos por línea del pedido (`taxRate` y `taxAmount`) quedan para M4 | Los impuestos se crean en M4 (RF-INV-07) |
+| 2026-11-16 | V6: los productos se agregan a un pedido con `arrayUnion`, una línea con id propio por cada producto agregado, y **sin** `increment` para el total. El total que muestra la app sale siempre de las líneas, y `totalPayAmount` se guarda de nuevo al cerrar la cuenta y al quitar un producto. | En la prueba, la librería envió el `increment` como número decimal y las reglas, que exigen pesos enteros, rechazaron la escritura. Sin `increment` no hay total que dos dispositivos puedan pisar. |
+| 2026-11-16 | Un producto agregado a un pedido que ya lo tiene queda como una línea aparte, sin sumar cantidades | `arrayUnion` solo fusiona bien líneas distintas, y el historial muestra cada ronda |
+| 2026-11-16 | La app guarda en el dispositivo una lista pequeña de los productos agregados sin conexión que el servidor no ha confirmado. Al abrir el menú la compara con el pedido del servidor y avisa cuáles se rechazaron. En Android y escritorio es un archivo en la carpeta de datos de la app; en iOS, las preferencias del usuario. Sin dependencias nuevas. | Firestore descarta una escritura rechazada sin avisar, y más aún si la app se cerró (V6) |
+| 2026-11-16 | Los productos pendientes de enviar también impiden cerrar sesión, igual que los pedidos pendientes | El servidor los rechazaría sin la sesión de quien los agregó (RF-AUTH-03, R5) |
 
 ## 14. Riesgos
 
