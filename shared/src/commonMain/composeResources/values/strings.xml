@@ -37,6 +37,12 @@
     <string name="home_title">Menú principal</string>
     <string name="logout">Cerrar sesión</string>
     <string name="logout_message">¿Estás seguro de cerrar sesión?</string>
+    <string name="logout_pending_title">Todavía no puedes cerrar sesión</string>
+    <string name="logout_pending_message">Hay pedidos pendientes de enviar. Conéctate a internet y espera a que se envíen.</string>
+    <plurals name="home_pending_orders">
+        <item quantity="one">Tienes %1$d pedido pendiente de enviar. Se enviará solo al volver la conexión.</item>
+        <item quantity="other">Tienes %1$d pedidos pendientes de enviar. Se enviarán solos al volver la conexión.</item>
+    </plurals>
     <string name="menu_balance">Balance</string>
     <string name="menu_inventory">Inventario</string>
     <string name="menu_add_order">Crear pedido</string>
@@ -64,15 +70,21 @@
 
     <string name="destination_room">Habitación</string>
     <string name="destination_table">Mesa</string>
+    <string name="destination_pool">Piscina</string>
+    <string name="destination_bar">Bar</string>
     <string name="destination_other">Otro</string>
     <string name="destination_room_number">Habitación %1$d</string>
     <string name="destination_table_number">Mesa %1$d</string>
+    <string name="destination_pool_number">Piscina %1$d</string>
+    <string name="destination_bar_number">Bar %1$d</string>
     <string name="destination_number">Número</string>
+    <string name="destination_number_optional">Número (opcional)</string>
 
     <string name="order_saved_title">Pedido confirmado</string>
     <string name="order_saved_message">El pedido se guardó correctamente.</string>
+    <string name="order_saved_offline_title">Pedido guardado en el dispositivo</string>
+    <string name="order_saved_offline_message">Está pendiente de enviar. Se enviará solo cuando vuelva la conexión.</string>
     <string name="order_error_title">No se pudo guardar el pedido</string>
     <string name="order_error_no_session">Tu sesión se cerró. Vuelve a iniciar sesión.</string>
-    <string name="order_error_timeout">El servidor no respondió. Revisa tu conexión y vuelve a confirmar: el pedido no se duplicará.</string>
     <string name="order_error_unknown">Revisa tu conexión e inténtalo de nuevo.</string>
 </resources>

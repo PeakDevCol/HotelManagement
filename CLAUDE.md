@@ -56,7 +56,7 @@ Capas dentro de `shared`, con las dependencias apuntando hacia el dominio: `pres
 ## Comandos
 ```bash
 # Tests: obligatorio antes de dar por terminada cualquier tarea
-./gradlew :shared:allTests :shared:testAndroidHostTest
+./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test
 
 # Compilar
 ./gradlew :androidApp:assembleDebug

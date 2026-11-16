@@ -7,6 +7,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.UserType
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveAccessUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
+import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeUserRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -88,7 +89,7 @@ class AppViewModelTest : MainDispatcherTest() {
         val viewModel = AppViewModel(
             config = AppConfig(firebaseEnabled = firebaseEnabled),
             observeAccess = ObserveAccessUseCase(auth, users),
-            logOut = LogOutUseCase(auth),
+            logOut = LogOutUseCase(auth, FakeOrderRepository()),
         )
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect {} }
         return viewModel

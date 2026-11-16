@@ -52,7 +52,7 @@ Sin el archivo, las apps compilan y arrancan igual, pero con Firebase desactivad
 ./gradlew :desktopApp:run
 
 # Tests del código compartido
-./gradlew :shared:allTests :shared:testAndroidHostTest
+./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test
 ```
 
 iOS: abre `iosApp/iosApp.xcodeproj` en Xcode y ejecuta el esquema `iosApp`.

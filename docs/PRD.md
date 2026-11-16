@@ -131,7 +131,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Introducción, login y cerrar sesión | ✅ Migrado | La sesión de Firebase decide qué navegación se muestra |
 | Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
-| Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`) |
+| Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
 | Pedidos en curso | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M3. |
 | Inventario | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M4. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 47 tests en `commonTest` (dominio, datos y ViewModels), y pasan en JVM y en Android.
+Hay 67 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -193,7 +193,7 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 |---|---|---|---|
 | RF-AUTH-01 | Iniciar sesión con correo y contraseña | Un error de credenciales o de red muestra un mensaje claro. Al entrar se abre el menú. | ✅ |
 | RF-AUTH-02 | Quitar el registro abierto ([P1](#12-preguntas-abiertas)) | La pantalla de registro desaparece. Las cuentas se crean desde RF-EMP-04. | ✅ |
-| RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve a la introducción. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | 🔄 |
+| RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve a la introducción. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | ✅ |
 | RF-AUTH-04 | Recuperar contraseña | "¿Olvidaste la contraseña?" envía el correo de restablecimiento de Firebase | ⬜ |
 | RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | ⬜ |
 | RF-AUTH-06 | ~~Cuentas nuevas pendientes de aprobación~~ | Descartado por P1: ya no hay registro abierto | — |
@@ -205,12 +205,12 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 | RF-ORD-01 | Agregar productos desde el catálogo | Búsqueda por nombre y cantidad de 1 a 99. Agregar un producto que ya está en el pedido suma la cantidad. | ✅ |
 | RF-ORD-02 | Quitar productos | Quitar un producto actualiza el total | ✅ |
 | RF-ORD-03 | Elegir el destino | Habitación o mesa con número, u "Otro" | ✅ |
-| RF-ORD-04 | Confirmar el pedido | Solo se puede con al menos un producto y un destino. Guarda con estado `in_progress` (En curso) y la fecha del servidor. Hoy guarda `confirm`. | 🔄 |
+| RF-ORD-04 | Confirmar el pedido | Solo se puede con al menos un producto y un destino. Guarda con estado `in_progress` (En curso) y la fecha del servidor. | ✅ |
 | RF-ORD-05 | Reintentar sin duplicar | El borrador conserva su id hasta que se guarda, así que un reintento sobrescribe el mismo documento | ✅ |
-| RF-ORD-06 | No quedarse esperando | Sin conexión, el pedido se guarda en el dispositivo (RF-ORD-09) en vez de mostrar un error. Con conexión lenta, a los 15 s avisa y permite reintentar. | 🔄 |
+| RF-ORD-06 | No quedarse esperando | Al confirmar, la app espera 3 s la respuesta del servidor. Si llega, muestra "Pedido confirmado". Si no llega, por estar sin conexión o con conexión lenta, muestra "Pedido guardado en el dispositivo" (RF-ORD-09) y el empleado sigue trabajando. No hay botón de reintentar: el pedido se envía solo. | ✅ |
 | RF-ORD-07 | Catálogo desde el inventario | Los productos salen de Firestore, y los productos inactivos no aparecen | ⬜ (M4) |
-| RF-ORD-08 | Destinos piscina y bar ([P19](#12-preguntas-abiertas)) | Se agregan Piscina y Bar, con número opcional (silla o puesto) | ⬜ |
-| RF-ORD-09 | Pedidos sin conexión ([P8](#12-preguntas-abiertas)) | Sin conexión, el pedido queda guardado en el dispositivo con la marca "pendiente de enviar" y se envía solo al volver la conexión, sin duplicarse (V2) | ⬜ |
+| RF-ORD-08 | Destinos piscina y bar ([P19](#12-preguntas-abiertas)) | Se agregan Piscina y Bar, con número opcional (silla o puesto) | ✅ |
+| RF-ORD-09 | Pedidos sin conexión ([P8](#12-preguntas-abiertas)) | Sin conexión, el pedido queda guardado en el dispositivo con la marca "pendiente de enviar" y se envía solo al volver la conexión, sin duplicarse (V2). El menú muestra cuántos pedidos están pendientes de enviar. | ✅ Falta la prueba manual de V2 en Android |
 
 ### 6.3 Pedidos en curso (`CUR`)
 Estados del pedido según [P2](#12-preguntas-abiertas) y [P21](#12-preguntas-abiertas): un pedido está En curso desde que se crea, mientras se le agregan productos.
@@ -492,7 +492,7 @@ El check-out, el repaso del día y el fin de un mantenimiento dejan la habitaci�
 | RNF-03 | Seguridad | Los permisos se aplican en las **reglas de Firestore**, no solo en la UI. No se guardan contraseñas ni secretos en Firestore ni en el repo. |
 | RNF-04 | Conectividad | La app nunca se queda cargando indefinidamente. Sin conexión se pueden crear pedidos y agregarles productos, marcar asistencia en el celular, hacer tareas de habitación y reportar daños u objetos. Los cambios de estado de pedidos, los pagos, las reservas, los check-in y check-out, y tomar, asignar o bloquear necesitan conexión, para no cobrar dos veces ni cruzar reservas. |
 | RNF-05 | Tiempo real | Los cambios de un pedido, una habitación o una tarea se ven en los demás dispositivos en menos de 5 s con conexión. |
-| RNF-06 | Calidad | El dominio y los ViewModels tienen tests en `commonTest`. Cada PR pasa `./gradlew :shared:allTests :shared:testAndroidHostTest`. |
+| RNF-06 | Calidad | El dominio y los ViewModels tienen tests en `commonTest`. Cada PR pasa `./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test`. |
 | RNF-07 | CI | Una GitHub Action en cada PR hacia `develop` corre los tests y compila Android y escritorio. |
 | RNF-08 | Accesibilidad | Los íconos tienen descripción, los botones miden al menos 48 dp y hay modo claro y oscuro. Las pantallas de tareas se usan con una mano y con botones grandes. |
 | RNF-09 | Compatibilidad de datos | Ya no aplica al legacy: no hay datos productivos ([P9](#12-preguntas-abiertas)) y el legacy se eliminó en M1. Desde el piloto (M7), todo cambio de esquema incluye su migración. |
@@ -529,10 +529,10 @@ En Spark, si un día se pasa la cuota, Firestore deja de responder hasta que se 
 | `id` | string | UUID, igual al id del documento |
 | `idEmployee` | string | `uid` de Firebase Auth |
 | `products` | array | `{productId, productName, quantity, unitAmount, totalAmount}`. El precio queda copiado en el pedido. |
-| `typeOrder` | string | `room`, `table` u `other` |
+| `typeOrder` | string | `room`, `table`, `pool`, `bar` u `other` |
 | `typeOrderNumber` | int o null | Número de habitación o mesa |
 | `dateOrder` | timestamp | Lo pone el servidor |
-| `state` | string | `confirm`, `close` o `pay` |
+| `state` | string | `in_progress`, `closed`, `paid` o `cancelled`. Hasta el tercer PR de M3 la app solo crea `in_progress`. |
 | `totalPayAmount` | long | Total en pesos |
 
 **`Users/{uid}`**, desde M2: `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area`, `active` y `createdAt`. La app solo lo lee; hasta M6 los perfiles se crean a mano en la consola (S6).
@@ -632,7 +632,7 @@ Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza reso
 | M0 | — | `task/prd` | Este PRD (primer PR) y los diagramas de la [sección 16](#16-diagramas) (segundo PR). Borrar los datos de prueba (S1). | — |
 | M1 | v1.0 | `feature/remove-legacy` | Eliminar `app` (S5), revisar que no queden datos de prueba (S1), ruta `Users/{uid}` (P9) y CI (RNF-07). Va primero porque, sin usuarios productivos, es el momento más barato. | M0 |
 | M2 | v1.0 | `feature/security-baseline` | S2, S3, S6, S7 y S8. Roles, áreas y `active` en las reglas. RF-AUTH-02 y RF-AUTH-07. | M1 |
-| M3 | v1.0 | `feature/current-orders` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
+| M3 | v1.0 | `feature/current-orders-1`, `-2` y `-3` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
 | M4 | v1.0 | `feature/inventory` | RF-INV-01 a RF-INV-04, RF-INV-06, RF-INV-07 y RF-ORD-07 | M2 |
 | M5 | v1.0 | `feature/balance` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
 | M6 | v1.0 | `feature/roles-admin` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
@@ -655,7 +655,7 @@ M14 trae la base de tareas que usa la limpieza, por eso va antes que M15.
 Un hito está terminado cuando:
 - [ ] Los requisitos del hito cumplen sus criterios de aceptación.
 - [ ] Las validaciones del hito (sección 12) están resueltas y su resultado quedó en la sección 13.
-- [ ] Hay tests para la lógica nueva en `commonTest`, y `./gradlew :shared:allTests :shared:testAndroidHostTest` pasa.
+- [ ] Hay tests para la lógica nueva en `commonTest`, y `./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test` pasa.
 - [ ] Android, escritorio e iOS compilan.
 - [ ] Las pantallas nuevas se revisaron en modo claro y oscuro.
 - [ ] No se subieron secretos (`google-services.json`, `GoogleService-Info.plist`, keystores).
@@ -672,7 +672,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | # | Qué hay que comprobar | Si no se cumple | Afecta | Hito |
 |---|---|---|---|---|
 | V1 | Crear cuentas sin cerrar la sesión actual: con una segunda instancia de Firebase en GitLive, o con la API REST de Firebase Auth | Usar la otra opción; las dos funcionan en Spark | RF-EMP-04, RF-ASI-11 | M6 |
-| V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
+| V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio. **Resuelta en escritorio el 2026-11-14:** se cumple, una vez que la base local sale de la carpeta temporal (sección 13). En Android falta la prueba manual en modo avión. | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
 | V3 | Que App Check no tiene proveedor para la app de escritorio (JVM) | Si lo tuviera, exigirlo; si no, dejarlo en modo de monitoreo | S4, R12 | M7 |
 | V4 | Uso real de Firestore durante el piloto, contra la cuota diaria de Spark | Reducir listeners y lecturas. Pasar a Blaze solo con una decisión nueva. | RNF-12 | M7 |
 | V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 |
@@ -769,6 +769,10 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-14 | En M2 las reglas cubren solo `Users` y `Orders` con el modelo actual, y niegan todo lo demás. Cada hito agrega las reglas de sus colecciones. Hasta M3, quien creó un pedido puede volver a escribirlo mientras siga en `confirm`. | No escribir reglas para datos que aún no existen. Confirmar de nuevo tras un tiempo límite reescribe el mismo pedido con el mismo id. |
 | 2026-11-14 | Una cuenta sin perfil activo ve una pantalla que lo explica y solo puede cerrar sesión. El perfil se observa en tiempo real, así que desactivar a un empleado le quita el acceso de inmediato. | RF-AUTH-07 y el escenario 6 de la sección 3 |
 | 2026-11-14 | Registrar la app iOS en Firebase ahora, con su propia key restringida al bundle id | Poder probar iOS con Firebase desde M2. La distribución sigue para cuando se necesite (P22). |
+| 2026-11-14 | M3 se entrega en tres PR hacia `develop`: base (estados nuevos, destinos y pedidos sin conexión), lista y detalle, y acciones (cerrar, reabrir, pagar, cancelar y editar). | Son unos 20 requisitos, y cada parte se puede revisar y probar por separado |
+| 2026-11-14 | V2 en escritorio: la librería de Firebase para JVM guardaba su base local en la carpeta temporal del sistema, que el sistema operativo vacía. Ahora vive en la carpeta de datos de la aplicación del usuario. Con ese cambio, un pedido guardado sin conexión sobrevivió a matar el proceso y se envió al reabrir la app. | Sin el cambio, los pedidos pendientes de enviar se podían perder al reiniciar el computador. No hizo falta el archivo propio previsto como plan B. |
+| 2026-11-14 | Al confirmar un pedido, la app espera 3 s al servidor. Sin respuesta, el pedido queda guardado en el dispositivo como pendiente de enviar, sin distinguir entre estar sin conexión y tener conexión lenta. Reemplaza la espera de 15 s con botón de reintentar (RF-ORD-06). | Firestore ya dejó el pedido en cola y lo envía solo, así que reintentar no aporta nada, y el mesero no se queda esperando con mala señal |
+| 2026-11-14 | V6 se prueba en el tercer PR de M3, cuando las reglas permitan agregar productos a un pedido existente. Si el servidor rechaza productos después de reiniciar la app, Firestore no avisa: la app llevará su propia lista local de productos agregados sin confirmar. | Las reglas publicadas hoy no permiten esa escritura, así que no hay cómo probarla antes |
 
 ## 14. Riesgos
 

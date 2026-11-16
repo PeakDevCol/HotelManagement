@@ -1,5 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
+import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.usecase.OrderError
@@ -22,11 +23,22 @@ class SaveOrderUseCaseTest {
 
         val result = useCase(listOf(product), OrderDestination.Table(4))
 
-        assertTrue(result.isSuccess)
+        assertEquals(OrderDelivery.SENT, result.getOrNull())
         val saved = orders.saved.single()
         assertEquals("uid-1", saved.employeeId)
         assertEquals(OrderDestination.Table(4), saved.destination)
         assertEquals(9_000, saved.totalAmount)
+    }
+
+    @Test
+    fun tellsWhenTheOrderIsStillWaitingToBeSent() = runTest {
+        val orders = FakeOrderRepository(result = Result.success(OrderDelivery.PENDING))
+        val useCase = SaveOrderUseCase(FakeAuthRepository(userId = "uid-1"), orders)
+
+        val result = useCase(listOf(product), OrderDestination.Bar())
+
+        assertEquals(OrderDelivery.PENDING, result.getOrNull())
+        assertEquals(1, orders.saved.size)
     }
 
     @Test

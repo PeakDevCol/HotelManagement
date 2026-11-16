@@ -6,7 +6,3 @@ class LoginUseCase(private val authRepository: AuthRepository) {
     suspend operator fun invoke(email: String, password: String): Result<Unit> =
         authRepository.login(email.trim(), password)
 }
-
-class LogOutUseCase(private val authRepository: AuthRepository) {
-    suspend operator fun invoke() = authRepository.logOut()
-}

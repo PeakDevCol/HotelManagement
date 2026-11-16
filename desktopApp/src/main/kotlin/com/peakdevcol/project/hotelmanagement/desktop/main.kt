@@ -9,7 +9,6 @@ import com.peakdevcol.project.hotelmanagement.di.initKoin
 import com.peakdevcol.project.hotelmanagement.ui.App
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.initialize
-import java.util.prefs.Preferences
 
 fun main() {
     val firebaseEnabled = initFirebase()
@@ -32,14 +31,7 @@ private fun initFirebase(): Boolean {
         return false
     }
 
-    // The JVM SDK needs somewhere to persist the session between launches.
-    val storage = Preferences.userRoot().node("com/peakdevcol/project/hotelmanagement/firebase")
-    FirebasePlatform.initializeFirebasePlatform(object : FirebasePlatform() {
-        override fun store(key: String, value: String) = storage.put(key, value)
-        override fun retrieve(key: String): String? = storage.get(key, null)
-        override fun clear(key: String) = storage.remove(key)
-        override fun log(msg: String) = println(msg)
-    })
+    FirebasePlatform.initializeFirebasePlatform(DesktopFirebasePlatform())
     Firebase.initialize(Application(), options)
     return true
 }

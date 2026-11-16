@@ -26,8 +26,13 @@ import androidx.compose.ui.unit.dp
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.cancel
+import com.peakdevcol.project.hotelmanagement.resources.destination_bar
+import com.peakdevcol.project.hotelmanagement.resources.destination_bar_number
 import com.peakdevcol.project.hotelmanagement.resources.destination_number
+import com.peakdevcol.project.hotelmanagement.resources.destination_number_optional
 import com.peakdevcol.project.hotelmanagement.resources.destination_other
+import com.peakdevcol.project.hotelmanagement.resources.destination_pool
+import com.peakdevcol.project.hotelmanagement.resources.destination_pool_number
 import com.peakdevcol.project.hotelmanagement.resources.destination_room
 import com.peakdevcol.project.hotelmanagement.resources.destination_room_number
 import com.peakdevcol.project.hotelmanagement.resources.destination_table
@@ -37,13 +42,17 @@ import com.peakdevcol.project.hotelmanagement.resources.order_destination_defaul
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
-private enum class DestinationType(val label: StringResource, val needsNumber: Boolean) {
-    Room(Res.string.destination_room, needsNumber = true),
-    Table(Res.string.destination_table, needsNumber = true),
-    Other(Res.string.destination_other, needsNumber = false),
+private enum class NumberRule { Required, Optional, NotUsed }
+
+private enum class DestinationType(val label: StringResource, val numberRule: NumberRule) {
+    Room(Res.string.destination_room, NumberRule.Required),
+    Table(Res.string.destination_table, NumberRule.Required),
+    Pool(Res.string.destination_pool, NumberRule.Optional),
+    Bar(Res.string.destination_bar, NumberRule.Optional),
+    Other(Res.string.destination_other, NumberRule.NotUsed),
 }
 
-/** Choose a room, a table or "other" as the order destination. */
+/** Choose a room, a table, the pool, the bar or "other" as the order destination. */
 @Composable
 fun DestinationDialog(
     current: OrderDestination?,
@@ -55,6 +64,8 @@ fun DestinationDialog(
             when (current) {
                 is OrderDestination.Room -> DestinationType.Room
                 is OrderDestination.Table -> DestinationType.Table
+                is OrderDestination.Pool -> DestinationType.Pool
+                is OrderDestination.Bar -> DestinationType.Bar
                 OrderDestination.Other -> DestinationType.Other
                 null -> null
             },
@@ -65,17 +76,27 @@ fun DestinationDialog(
             when (current) {
                 is OrderDestination.Room -> current.number.toString()
                 is OrderDestination.Table -> current.number.toString()
-                else -> ""
+                is OrderDestination.Pool -> current.number?.toString().orEmpty()
+                is OrderDestination.Bar -> current.number?.toString().orEmpty()
+                OrderDestination.Other, null -> ""
             },
         )
     }
 
     val number = numberText.toIntOrNull()?.takeIf { it > 0 }
+    // A number that was typed but is not valid must not be dropped silently.
+    val optionalNumberIsValid = numberText.isEmpty() || number != null
     val destination = when (type) {
         DestinationType.Room -> number?.let { OrderDestination.Room(it) }
         DestinationType.Table -> number?.let { OrderDestination.Table(it) }
+        DestinationType.Pool -> OrderDestination.Pool(number).takeIf { optionalNumberIsValid }
+        DestinationType.Bar -> OrderDestination.Bar(number).takeIf { optionalNumberIsValid }
         DestinationType.Other -> OrderDestination.Other
         null -> null
+    }
+    val numberLabel = when (type?.numberRule) {
+        NumberRule.Optional -> Res.string.destination_number_optional
+        else -> Res.string.destination_number
     }
 
     AlertDialog(
@@ -104,8 +125,8 @@ fun DestinationDialog(
                 OutlinedTextField(
                     value = numberText,
                     onValueChange = { text -> numberText = text.filter(Char::isDigit).take(4) },
-                    label = { Text(stringResource(Res.string.destination_number)) },
-                    enabled = type?.needsNumber == true,
+                    label = { Text(stringResource(numberLabel)) },
+                    enabled = type != null && type?.numberRule != NumberRule.NotUsed,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -127,6 +148,10 @@ fun DestinationDialog(
 fun OrderDestination?.label(): String = when (this) {
     is OrderDestination.Room -> stringResource(Res.string.destination_room_number, number)
     is OrderDestination.Table -> stringResource(Res.string.destination_table_number, number)
+    is OrderDestination.Pool ->
+        number?.let { stringResource(Res.string.destination_pool_number, it) } ?: stringResource(Res.string.destination_pool)
+    is OrderDestination.Bar ->
+        number?.let { stringResource(Res.string.destination_bar_number, it) } ?: stringResource(Res.string.destination_bar)
     OrderDestination.Other -> stringResource(Res.string.destination_other)
     null -> stringResource(Res.string.order_destination_default)
 }

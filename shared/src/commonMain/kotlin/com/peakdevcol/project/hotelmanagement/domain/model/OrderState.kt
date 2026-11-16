@@ -1,7 +1,9 @@
 package com.peakdevcol.project.hotelmanagement.domain.model
 
+/** Life cycle of an order (PRD, section 6.3). */
 enum class OrderState {
-    CONFIRM,
-    CLOSE,
-    PAY
+    IN_PROGRESS,
+    CLOSED,
+    PAID,
+    CANCELLED,
 }

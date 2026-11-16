@@ -13,11 +13,11 @@ data class Order(
     val totalAmount: Long get() = products.totalAmount()
 
     companion object {
-        /** Builds a new confirmed order. The creation date is set by the server when saved. */
         /** A new random order id. Reusing it when retrying a save overwrites the same document. */
         @OptIn(ExperimentalUuidApi::class)
         fun newId(): String = Uuid.random().toString()
 
+        /** RF-ORD-04: a confirmed order starts in progress. The server sets its date when saved. */
         fun create(
             employeeId: String,
             products: List<Product>,
@@ -28,7 +28,7 @@ data class Order(
             employeeId = employeeId,
             products = products,
             destination = destination,
-            state = OrderState.CONFIRM,
+            state = OrderState.IN_PROGRESS,
         )
     }
 }

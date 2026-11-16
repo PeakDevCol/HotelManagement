@@ -1,13 +1,14 @@
 package com.peakdevcol.project.hotelmanagement.ui
 
+import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
-import com.peakdevcol.project.hotelmanagement.domain.usecase.OrderError
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeProductCatalog
+import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderIntent
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.SaveFailure
 import com.peakdevcol.project.hotelmanagement.ui.addorder.SaveResult
@@ -31,7 +32,7 @@ class AddOrderViewModelTest : MainDispatcherTest() {
 
     @Test
     fun loadsTheCatalog() {
-        val state = viewModel().uiState.value
+        val state = viewModel().state.value
 
         assertEquals(listOf(beer, soda), state.catalog)
         assertFalse(state.catalogFailed)
@@ -41,109 +42,125 @@ class AddOrderViewModelTest : MainDispatcherTest() {
     fun showsCatalogErrorAndRetries() {
         catalog.result = Result.failure(IllegalStateException("offline"))
         val viewModel = viewModel()
-        assertTrue(viewModel.uiState.value.catalogFailed)
+        assertTrue(viewModel.state.value.catalogFailed)
 
         catalog.result = Result.success(listOf(beer))
-        viewModel.loadCatalog()
+        viewModel.onIntent(AddOrderIntent.RetryCatalog)
 
-        assertFalse(viewModel.uiState.value.catalogFailed)
-        assertEquals(listOf(beer), viewModel.uiState.value.catalog)
+        assertFalse(viewModel.state.value.catalogFailed)
+        assertEquals(listOf(beer), viewModel.state.value.catalog)
     }
 
     @Test
     fun addingTheSameProductTwiceAddsItsQuantities() {
         val viewModel = viewModel()
 
-        viewModel.onAddProduct(beer, 2)
-        viewModel.onAddProduct(soda, 1)
-        viewModel.onAddProduct(beer, 3)
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 2))
+        viewModel.onIntent(AddOrderIntent.AddProduct(soda, 1))
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 3))
 
-        val products = viewModel.uiState.value.products
+        val products = viewModel.state.value.products
         assertEquals(listOf(5, 1), products.map { it.quantity })
-        assertEquals(5 * 3_500L + 3_000L, viewModel.uiState.value.totalAmount)
+        assertEquals(5 * 3_500L + 3_000L, viewModel.state.value.totalAmount)
     }
 
     @Test
     fun ignoresQuantitiesBelowOne() {
         val viewModel = viewModel()
 
-        viewModel.onAddProduct(beer, 0)
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 0))
 
-        assertTrue(viewModel.uiState.value.products.isEmpty())
+        assertTrue(viewModel.state.value.products.isEmpty())
     }
 
     @Test
     fun removesAProduct() {
         val viewModel = viewModel()
-        viewModel.onAddProduct(beer, 2)
-        viewModel.onAddProduct(soda, 1)
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 2))
+        viewModel.onIntent(AddOrderIntent.AddProduct(soda, 1))
 
-        viewModel.onRemoveProduct(beer.id)
+        viewModel.onIntent(AddOrderIntent.RemoveProduct(beer.id))
 
-        assertEquals(listOf(soda.id), viewModel.uiState.value.products.map { it.id })
+        assertEquals(listOf(soda.id), viewModel.state.value.products.map { it.id })
     }
 
     @Test
     fun confirmNeedsProductsAndDestination() {
         val viewModel = viewModel()
-        assertFalse(viewModel.uiState.value.canConfirm)
+        assertFalse(viewModel.state.value.canConfirm)
 
-        viewModel.onAddProduct(beer, 1)
-        assertFalse(viewModel.uiState.value.canConfirm)
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
+        assertFalse(viewModel.state.value.canConfirm)
 
-        viewModel.onDestinationSelected(OrderDestination.Room(204))
-        assertTrue(viewModel.uiState.value.canConfirm)
+        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Room(204)))
+        assertTrue(viewModel.state.value.canConfirm)
     }
 
     @Test
     fun savingResetsTheOrderButKeepsTheCatalog() {
         val viewModel = viewModel()
-        viewModel.onAddProduct(beer, 2)
-        viewModel.onDestinationSelected(OrderDestination.Table(3))
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 2))
+        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Table(3)))
 
-        viewModel.onConfirm()
+        viewModel.onIntent(AddOrderIntent.Confirm)
 
         val saved = orders.saved.single()
         assertEquals(OrderDestination.Table(3), saved.destination)
         assertEquals(7_000, saved.totalAmount)
-        val state = viewModel.uiState.value
-        assertEquals(SaveResult.Saved, state.saveResult)
+        val state = viewModel.state.value
+        assertEquals(SaveResult.Sent, state.saveResult)
         assertTrue(state.products.isEmpty())
         assertNull(state.destination)
         assertEquals(listOf(beer, soda), state.catalog)
 
-        viewModel.onResultDismissed()
-        assertNull(viewModel.uiState.value.saveResult)
+        viewModel.onIntent(AddOrderIntent.DismissResult)
+        assertNull(viewModel.state.value.saveResult)
     }
 
     @Test
     fun failedSaveKeepsTheOrderAndRetriesWithTheSameId() {
-        orders.result = Result.failure(OrderError.Timeout)
+        orders.result = Result.failure(IllegalStateException("permission denied"))
         val viewModel = viewModel()
-        viewModel.onAddProduct(beer, 1)
-        viewModel.onDestinationSelected(OrderDestination.Other)
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
+        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Other))
 
-        viewModel.onConfirm()
+        viewModel.onIntent(AddOrderIntent.Confirm)
 
-        val state = viewModel.uiState.value
-        assertEquals(SaveResult.Failed(SaveFailure.Timeout), state.saveResult)
+        val state = viewModel.state.value
+        assertEquals(SaveResult.Failed(SaveFailure.Unknown), state.saveResult)
         assertFalse(state.isSaving)
         assertEquals(1, state.products.size)
 
-        orders.result = Result.success(Unit)
-        viewModel.onConfirm()
+        orders.result = Result.success(OrderDelivery.SENT)
+        viewModel.onIntent(AddOrderIntent.Confirm)
 
         assertEquals(2, orders.attempts.size)
         assertEquals(orders.attempts[0].id, orders.attempts[1].id)
     }
 
     @Test
+    fun anOrderWithoutAnswerFromTheServerIsSavedOnTheDeviceAndTheScreenIsReadyForTheNext() {
+        orders.result = Result.success(OrderDelivery.PENDING)
+        val viewModel = viewModel()
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
+        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Pool(12)))
+
+        viewModel.onIntent(AddOrderIntent.Confirm)
+
+        val state = viewModel.state.value
+        assertEquals(SaveResult.SavedOnDevice, state.saveResult)
+        assertTrue(state.products.isEmpty())
+        assertFalse(state.isSaving)
+        assertEquals(OrderDestination.Pool(12), orders.saved.single().destination)
+    }
+
+    @Test
     fun nextOrderGetsANewId() {
         val viewModel = viewModel()
         repeat(2) {
-            viewModel.onAddProduct(beer, 1)
-            viewModel.onDestinationSelected(OrderDestination.Other)
-            viewModel.onConfirm()
+            viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
+            viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Other))
+            viewModel.onIntent(AddOrderIntent.Confirm)
         }
 
         assertNotEquals(orders.saved[0].id, orders.saved[1].id)
@@ -155,11 +172,11 @@ class AddOrderViewModelTest : MainDispatcherTest() {
             GetProductsUseCase(catalog),
             SaveOrderUseCase(FakeAuthRepository(userId = null), orders),
         )
-        viewModel.onAddProduct(beer, 1)
-        viewModel.onDestinationSelected(OrderDestination.Other)
+        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
+        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Other))
 
-        viewModel.onConfirm()
+        viewModel.onIntent(AddOrderIntent.Confirm)
 
-        assertEquals(SaveResult.Failed(SaveFailure.NoSession), viewModel.uiState.value.saveResult)
+        assertEquals(SaveResult.Failed(SaveFailure.NoSession), viewModel.state.value.saveResult)
     }
 }

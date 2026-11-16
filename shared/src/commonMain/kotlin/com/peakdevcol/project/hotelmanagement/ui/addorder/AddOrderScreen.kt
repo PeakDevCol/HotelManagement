@@ -46,12 +46,13 @@ import com.peakdevcol.project.hotelmanagement.resources.order_confirm
 import com.peakdevcol.project.hotelmanagement.resources.order_edit_destination
 import com.peakdevcol.project.hotelmanagement.resources.order_empty
 import com.peakdevcol.project.hotelmanagement.resources.order_error_no_session
-import com.peakdevcol.project.hotelmanagement.resources.order_error_timeout
 import com.peakdevcol.project.hotelmanagement.resources.order_error_title
 import com.peakdevcol.project.hotelmanagement.resources.order_error_unknown
 import com.peakdevcol.project.hotelmanagement.resources.order_product_line
 import com.peakdevcol.project.hotelmanagement.resources.order_remove_product
 import com.peakdevcol.project.hotelmanagement.resources.order_saved_message
+import com.peakdevcol.project.hotelmanagement.resources.order_saved_offline_message
+import com.peakdevcol.project.hotelmanagement.resources.order_saved_offline_title
 import com.peakdevcol.project.hotelmanagement.resources.order_saved_title
 import com.peakdevcol.project.hotelmanagement.resources.order_total
 import com.peakdevcol.project.hotelmanagement.resources.order_unit_price
@@ -65,7 +66,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun AddOrderScreen(onBack: () -> Unit, viewModel: AddOrderViewModel = koinViewModel()) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var showAddProduct by rememberSaveable { mutableStateOf(false) }
     var showDestination by rememberSaveable { mutableStateOf(false) }
 
@@ -88,12 +89,12 @@ fun AddOrderScreen(onBack: () -> Unit, viewModel: AddOrderViewModel = koinViewMo
                     total = formatPesos(state.totalAmount),
                     canConfirm = state.canConfirm,
                     onEditDestination = { showDestination = true },
-                    onConfirm = viewModel::onConfirm,
+                    onConfirm = { viewModel.onIntent(AddOrderIntent.Confirm) },
                 )
             },
         ) { padding ->
             when {
-                state.catalogFailed -> CatalogError(Modifier.padding(padding), onRetry = viewModel::loadCatalog)
+                state.catalogFailed -> CatalogError(Modifier.padding(padding), onRetry = { viewModel.onIntent(AddOrderIntent.RetryCatalog) })
                 state.products.isEmpty() -> EmptyOrder(Modifier.padding(padding))
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -103,7 +104,7 @@ fun AddOrderScreen(onBack: () -> Unit, viewModel: AddOrderViewModel = koinViewMo
                     ),
                 ) {
                     items(state.products, key = { it.id }) { product ->
-                        ProductRow(product = product, onRemove = { viewModel.onRemoveProduct(product.id) })
+                        ProductRow(product = product, onRemove = { viewModel.onIntent(AddOrderIntent.RemoveProduct(product.id)) })
                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     }
                 }
@@ -117,7 +118,7 @@ fun AddOrderScreen(onBack: () -> Unit, viewModel: AddOrderViewModel = koinViewMo
         AddProductDialog(
             catalog = state.catalog,
             onAdd = { product, quantity ->
-                viewModel.onAddProduct(product, quantity)
+                viewModel.onIntent(AddOrderIntent.AddProduct(product, quantity))
                 showAddProduct = false
             },
             onDismiss = { showAddProduct = false },
@@ -128,14 +129,14 @@ fun AddOrderScreen(onBack: () -> Unit, viewModel: AddOrderViewModel = koinViewMo
         DestinationDialog(
             current = state.destination,
             onSelect = {
-                viewModel.onDestinationSelected(it)
+                viewModel.onIntent(AddOrderIntent.SelectDestination(it))
                 showDestination = false
             },
             onDismiss = { showDestination = false },
         )
     }
 
-    state.saveResult?.let { result -> SaveResultDialog(result, onDismiss = viewModel::onResultDismissed) }
+    state.saveResult?.let { result -> SaveResultDialog(result, onDismiss = { viewModel.onIntent(AddOrderIntent.DismissResult) }) }
 }
 
 @Composable
@@ -240,10 +241,10 @@ private fun CatalogError(modifier: Modifier, onRetry: () -> Unit) {
 @Composable
 private fun SaveResultDialog(result: SaveResult, onDismiss: () -> Unit) {
     val (title, message) = when (result) {
-        SaveResult.Saved -> Res.string.order_saved_title to Res.string.order_saved_message
+        SaveResult.Sent -> Res.string.order_saved_title to Res.string.order_saved_message
+        SaveResult.SavedOnDevice -> Res.string.order_saved_offline_title to Res.string.order_saved_offline_message
         is SaveResult.Failed -> Res.string.order_error_title to when (result.reason) {
             SaveFailure.NoSession -> Res.string.order_error_no_session
-            SaveFailure.Timeout -> Res.string.order_error_timeout
             SaveFailure.Unknown -> Res.string.order_error_unknown
         }
     }
