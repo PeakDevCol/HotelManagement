@@ -43,8 +43,8 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // M3 arrives in three parts. This one covers creating orders; closing, reopening, paying,
-    // cancelling and editing them come with their own rules in the next parts.
+    // Orders (PRD, section 6.3). An order is created in progress and then only moves through the
+    // transitions of the table: close, reopen, pay and cancel. Nobody changes a paid or cancelled order.
     match /Orders/{orderId} {
       function hasValidDestination(order) {
         return order.typeOrder in ['room', 'table', 'pool', 'bar', 'other']
@@ -66,15 +66,112 @@ service cloud.firestore {
           && order.dateOrder == request.time;
       }
 
+      function changesOnly(fields) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+      }
+
+      function movesFrom(states, newState) {
+        return resource.data.state in states && request.resource.data.state == newState;
+      }
+
+      // RF-ORD-05: confirming again rewrites the same order (same id), so its owner may overwrite it.
+      function isRetryOfTheCreation() {
+        return resource.data.idEmployee == request.auth.uid
+          && resource.data.state == 'in_progress'
+          && isOwnNewOrder(request.resource.data);
+      }
+
+      // RF-CUR-06 and RF-CUR-13: products and total only change while the order is in progress.
+      function isProductChange() {
+        return movesFrom(['in_progress'], 'in_progress')
+          && changesOnly(['products', 'totalPayAmount'])
+          && request.resource.data.products is list
+          && request.resource.data.products.size() > 0
+          && request.resource.data.totalPayAmount is int
+          && request.resource.data.totalPayAmount >= 0;
+      }
+
+      // RF-CUR-04
+      function isClosing() {
+        return movesFrom(['in_progress'], 'closed')
+          && changesOnly(['state', 'closedAt', 'closedBy'])
+          && request.resource.data.closedBy == request.auth.uid
+          && request.resource.data.closedAt == request.time;
+      }
+
+      // RF-CUR-10
+      function isReopening() {
+        return movesFrom(['closed'], 'in_progress') && changesOnly(['state']);
+      }
+
+      // RF-CUR-05: the payment document must be created in the same transaction.
+      function isPaying() {
+        return movesFrom(['closed'], 'paid')
+          && changesOnly(['state', 'paidAt', 'paidBy', 'paymentMethod', 'tipAmount'])
+          && request.resource.data.paidBy == request.auth.uid
+          && request.resource.data.paidAt == request.time
+          && request.resource.data.paymentMethod in ['cash', 'transfer']
+          && request.resource.data.tipAmount is int
+          && request.resource.data.tipAmount >= 0
+          && !exists(/databases/$(database)/documents/Payments/$('order_' + orderId))
+          && existsAfter(/databases/$(database)/documents/Payments/$('order_' + orderId));
+      }
+
+      // RF-CUR-07: only an administrator cancels, and always with a reason.
+      function isCancelling() {
+        return isAdmin()
+          && movesFrom(['in_progress', 'closed'], 'cancelled')
+          && changesOnly(['state', 'cancelReason', 'cancelledAt', 'cancelledBy'])
+          && request.resource.data.cancelReason is string
+          && request.resource.data.cancelReason.size() > 0
+          && request.resource.data.cancelledBy == request.auth.uid
+          && request.resource.data.cancelledAt == request.time;
+      }
+
       allow read: if isActiveEmployee();
       allow create: if isActiveEmployee() && isOwnNewOrder(request.resource.data);
-      // RF-ORD-05: confirming again rewrites the same order (same id), so its owner may overwrite it.
       allow update: if isActiveEmployee()
-        && resource.data.idEmployee == request.auth.uid
-        && resource.data.state == 'in_progress'
-        && isOwnNewOrder(request.resource.data);
+        && (isRetryOfTheCreation() || isProductChange() || isClosing() || isReopening() || isPaying() || isCancelling());
       // RNF-11: orders are cancelled, never deleted.
       allow delete: if false;
+
+      // RF-CUR-11: the history. Each event is written once, by who made the change, with the server date.
+      match /events/{eventId} {
+        allow read: if isActiveEmployee();
+        allow create: if isActiveEmployee()
+          && request.resource.data.by == request.auth.uid
+          && request.resource.data.at == request.time
+          && request.resource.data.type in ['closed', 'reopened', 'paid', 'cancelled', 'products_added', 'products_removed'];
+        allow update, delete: if false;
+      }
+    }
+
+    // Payments received. The balance and the cash closing are built from these, so a payment is
+    // created once and never edited or deleted. Only administrators read them (PRD, section 3).
+    match /Payments/{paymentId} {
+      function orderPath(payment) {
+        return /databases/$(database)/documents/Orders/$(payment.sourceId);
+      }
+
+      // RF-CUR-05 and RF-CUR-08: one payment per order, for its whole amount, in the same transaction
+      // that moves the order from closed to paid. The tip goes apart (P15).
+      function isPaymentOfAnOrder(payment) {
+        return payment.keys().hasOnly(['amount', 'tipAmount', 'method', 'source', 'sourceId', 'receivedBy', 'receivedAt'])
+          && payment.source == 'order'
+          && paymentId == 'order_' + payment.sourceId
+          && payment.receivedBy == request.auth.uid
+          && payment.receivedAt == request.time
+          && payment.method in ['cash', 'transfer']
+          && payment.tipAmount is int
+          && payment.tipAmount >= 0
+          && get(orderPath(payment)).data.state == 'closed'
+          && getAfter(orderPath(payment)).data.state == 'paid'
+          && payment.amount == get(orderPath(payment)).data.totalPayAmount;
+      }
+
+      allow read: if isAdmin();
+      allow create: if isActiveEmployee() && isPaymentOfAnOrder(request.resource.data);
+      allow update, delete: if false;
     }
   }
 }

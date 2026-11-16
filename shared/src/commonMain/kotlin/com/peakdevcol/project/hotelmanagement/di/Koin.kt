@@ -9,6 +9,8 @@ import com.peakdevcol.project.hotelmanagement.domain.repository.AuthRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ProductCatalogRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.UserRepository
+import com.peakdevcol.project.hotelmanagement.domain.usecase.CancelOrderUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.CloseOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoginUseCase
@@ -16,6 +18,8 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveAccessUseCas
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOpenOrdersUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOrderDetailUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.RegisterPaymentUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ReopenOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.ui.AppViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
@@ -46,6 +50,10 @@ private val domainModule = module {
     factoryOf(::ObserveAccessUseCase)
     factoryOf(::ObserveOpenOrdersUseCase)
     factoryOf(::ObserveOrderDetailUseCase)
+    factoryOf(::CloseOrderUseCase)
+    factoryOf(::ReopenOrderUseCase)
+    factoryOf(::RegisterPaymentUseCase)
+    factoryOf(::CancelOrderUseCase)
     factoryOf(::ObservePendingOrderCountUseCase)
     factoryOf(::SaveOrderUseCase)
     factoryOf(::GetProductsUseCase)
@@ -57,7 +65,16 @@ private val uiModule = module {
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddOrderViewModel)
     viewModelOf(::CurrentOrdersViewModel)
-    viewModel { parameters -> OrderDetailViewModel(orderId = parameters.get(), observeOrderDetail = get()) }
+    viewModel { parameters ->
+        OrderDetailViewModel(
+            orderId = parameters.get(),
+            observeOrderDetail = get(),
+            closeOrder = get(),
+            reopenOrder = get(),
+            registerPayment = get(),
+            cancelOrder = get(),
+        )
+    }
 }
 
 fun initKoin(config: AppConfig, appDeclaration: KoinAppDeclaration = {}) {

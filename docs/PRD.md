@@ -132,7 +132,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
 | Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
-| Pedidos en curso | 🔄 En parte | Lista en tiempo real, filtros y detalle desde el segundo PR de M3. Cerrar, reabrir, pagar, cancelar y editar llegan en el tercero. |
+| Pedidos en curso | 🔄 En parte | Lista en tiempo real, filtros, detalle, cerrar, reabrir, pagar y cancelar. Editar los productos de un pedido llega en el cuarto PR de M3. |
 | Inventario | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M4. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
 | Recuperar contraseña | ⬜ Pendiente | |
@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 96 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 133 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -244,15 +244,15 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 | RF-CUR-01 | Lista en tiempo real | Muestra los pedidos `in_progress` y `closed`, ordenados por fecha, el más antiguo primero. Un pedido creado en otro dispositivo aparece sin recargar. | ✅ |
 | RF-CUR-02 | Filtros | Mis pedidos o todos, y filtro por estado. Al abrir la lista se muestran todos. | ✅ |
 | RF-CUR-03 | Detalle | Productos, cantidades, total, destino, empleado, hora e historial de cambios (RF-CUR-11) | ✅ |
-| RF-CUR-04 | Cerrar la cuenta | `in_progress` → `closed`, guardando `closedAt` y `closedBy` | ⬜ |
-| RF-CUR-05 | Registrar el pago | `closed` → `paid`, con el método de pago (efectivo o transferencia, [P4](#12-preguntas-abiertas)) y la propina opcional ([P15](#12-preguntas-abiertas)), guardando `paidAt` y `paidBy`. Crea el registro en `Payments` en la misma transacción. El pedido sale de la lista. | ⬜ |
+| RF-CUR-04 | Cerrar la cuenta | `in_progress` → `closed`, guardando `closedAt` y `closedBy` | ✅ |
+| RF-CUR-05 | Registrar el pago | `closed` → `paid`, con el método de pago (efectivo o transferencia, [P4](#12-preguntas-abiertas)) y la propina opcional ([P15](#12-preguntas-abiertas)), guardando `paidAt` y `paidBy`. Crea el registro en `Payments` en la misma transacción. El pedido sale de la lista. | ✅ |
 | RF-CUR-06 | Editar un pedido | Agregar o quitar productos en `in_progress` ([P3](#12-preguntas-abiertas)). El total se recalcula. | ⬜ |
-| RF-CUR-07 | Cancelar un pedido ([P20](#12-preguntas-abiertas)) | Solo administradores, con un motivo. Guarda `cancelReason`, `cancelledAt` y `cancelledBy`. | ⬜ |
-| RF-CUR-08 | Cambios simultáneos | Si dos dispositivos cambian el estado del mismo pedido a la vez, el cambio se hace en una transacción de Firestore. El segundo ve el estado actualizado y un aviso, y nunca se registra un pago dos veces. | ⬜ |
+| RF-CUR-07 | Cancelar un pedido ([P20](#12-preguntas-abiertas)) | Solo administradores, con un motivo. Guarda `cancelReason`, `cancelledAt` y `cancelledBy`. | ✅ |
+| RF-CUR-08 | Cambios simultáneos | Si dos dispositivos cambian el estado del mismo pedido a la vez, el cambio se hace en una transacción de Firestore. El segundo ve el estado actualizado y un aviso, y nunca se registra un pago dos veces. | ✅ |
 | RF-CUR-09 | ~~Atender~~ | Descartado por P21: Abierto y En curso son el mismo estado | — |
-| RF-CUR-10 | Reabrir | `closed` → `in_progress` para poder editar ([P3](#12-preguntas-abiertas)). Queda en el historial. | ⬜ |
-| RF-CUR-11 | Historial | Cada cambio (crear, agregar o quitar productos, cerrar, reabrir, pagar o cancelar) guarda quién, cuándo y qué cambió. La creación sale del propio pedido (`idEmployee` y `dateOrder`); los demás cambios se guardan en `events`. | 🔄 El detalle ya muestra la creación; los demás eventos llegan en el tercer PR de M3 |
-| RF-CUR-12 | Cambios de estado con conexión | Cerrar, reabrir, pagar y cancelar necesitan conexión, porque usan transacciones. Sin conexión, esos botones se desactivan con un aviso. | ⬜ |
+| RF-CUR-10 | Reabrir | `closed` → `in_progress` para poder editar ([P3](#12-preguntas-abiertas)). Queda en el historial. | ✅ |
+| RF-CUR-11 | Historial | Cada cambio (crear, agregar o quitar productos, cerrar, reabrir, pagar o cancelar) guarda quién, cuándo y qué cambió. La creación sale del propio pedido (`idEmployee` y `dateOrder`); los demás cambios se guardan en `events`. | 🔄 Crear, cerrar, reabrir, pagar y cancelar ya quedan en el historial. Agregar y quitar productos llega con RF-CUR-06. |
+| RF-CUR-12 | Cambios de estado con conexión | Cerrar, reabrir, pagar y cancelar necesitan conexión, porque usan transacciones. Sin conexión, esos botones se desactivan con un aviso. | ✅ |
 | RF-CUR-13 | Agregar productos sin conexión | Sin conexión se pueden agregar productos a un pedido En curso. Al sincronizar se suman a lo que haya agregado otro dispositivo, sin pisarlo (V6). Si al sincronizar el pedido ya no está En curso, las reglas rechazan esos productos y la app avisa cuáles no se agregaron. Quitar productos necesita conexión. | ⬜ |
 
 ### 6.4 Inventario (`INV`)
@@ -532,7 +532,7 @@ En Spark, si un día se pasa la cuota, Firestore deja de responder hasta que se 
 | `typeOrder` | string | `room`, `table`, `pool`, `bar` u `other` |
 | `typeOrderNumber` | int o null | Número de habitación o mesa |
 | `dateOrder` | timestamp | Lo pone el servidor |
-| `state` | string | `in_progress`, `closed`, `paid` o `cancelled`. Hasta el tercer PR de M3 la app solo crea `in_progress`. |
+| `state` | string | `in_progress`, `closed`, `paid` o `cancelled`. Desde el tercer PR de M3 la app mueve el pedido por todos los estados, y guarda `closedAt/By`, `paidAt/By`, `paymentMethod`, `tipAmount`, `cancelReason` y `cancelledAt/By`. `Orders/{id}/events` y `Payments` ya existen como en el modelo objetivo. |
 | `totalPayAmount` | long | Total en pesos |
 
 **`Users/{uid}`**, desde M2: `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area`, `active` y `createdAt`. La app solo lo lee; hasta M6 los perfiles se crean a mano en la consola (S6).
@@ -632,7 +632,7 @@ Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza reso
 | M0 | — | `task/prd` | Este PRD (primer PR) y los diagramas de la [sección 16](#16-diagramas) (segundo PR). Borrar los datos de prueba (S1). | — |
 | M1 | v1.0 | `feature/remove-legacy` | Eliminar `app` (S5), revisar que no queden datos de prueba (S1), ruta `Users/{uid}` (P9) y CI (RNF-07). Va primero porque, sin usuarios productivos, es el momento más barato. | M0 |
 | M2 | v1.0 | `feature/security-baseline` | S2, S3, S6, S7 y S8. Roles, áreas y `active` en las reglas. RF-AUTH-02 y RF-AUTH-07. | M1 |
-| M3 | v1.0 | `feature/current-orders-1`, `-2` y `-3` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
+| M3 | v1.0 | `feature/current-orders-1` a `-4` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
 | M4 | v1.0 | `feature/inventory` | RF-INV-01 a RF-INV-04, RF-INV-06, RF-INV-07 y RF-ORD-07 | M2 |
 | M5 | v1.0 | `feature/balance` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
 | M6 | v1.0 | `feature/roles-admin` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
@@ -776,6 +776,13 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-16 | La lista de pedidos en curso se abre mostrando todos los pedidos, no solo los del empleado | Quien cobra en caja necesita ver los de cualquier mesero; "Mis pedidos" queda a un toque |
 | 2026-11-16 | La lista de pedidos en curso se ordena y se filtra en la app, sin índice compuesto en Firestore | El listener solo trae pedidos abiertos, que son pocos, y así no hay que crear un índice a mano en la consola |
 | 2026-11-16 | El evento "pedido creado" del historial se toma del propio pedido y no se guarda en `events` | El pedido ya guarda quién y cuándo. Un documento aparte se duplicaría o fallaría al reintentar un guardado (RF-ORD-05). |
+| 2026-11-16 | La tercera parte de M3 se divide en dos PR: acciones de estado, pago, historial y reglas; y después edición de productos con V6. M3 queda en cuatro PR. | V6 solo se puede probar con las reglas nuevas publicadas, y el PR que toca dinero queda más fácil de revisar |
+| 2026-11-16 | El pago de un pedido es siempre por su total, sin pagos parciales ni divididos. La propina se guarda aparte, en `tipAmount`. | El PRD no contempla pagos parciales, y el balance muestra las propinas separadas (RF-BAL-07) |
+| 2026-11-16 | El pago de un pedido se guarda en `Payments/order_{id del pedido}` y las reglas solo permiten crearlo, en la misma transacción que pasa el pedido de `closed` a `paid` | Aunque dos dispositivos cobren a la vez, solo puede existir un pago por pedido (RF-CUR-08) |
+| 2026-11-16 | Cualquier empleado activo cierra, reabre y cobra cualquier pedido, no solo los suyos. Solo un administrador cancela. | Tabla de la sección 6.3: quien cobra en caja no es siempre quien tomó el pedido |
+| 2026-11-16 | No se puede quitar el último producto de un pedido. Si el pedido ya no va, lo cancela un administrador con un motivo. | Evitar pedidos vacíos por cobrar. Se implementa con RF-CUR-06. |
+| 2026-11-16 | "Sin conexión" en el detalle de un pedido se deduce de que Firestore esté mostrando su copia local. Los botones de cerrar, reabrir, pagar y cancelar se desactivan con un aviso (RF-CUR-12). | No hace falta código de conectividad por plataforma, y una transacción sin servidor falla de todas formas |
+| 2026-11-16 | Los impuestos por línea del pedido (`taxRate` y `taxAmount`) quedan para M4 | Los impuestos se crean en M4 (RF-INV-07) |
 
 ## 14. Riesgos
 

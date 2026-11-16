@@ -4,4 +4,6 @@ package com.peakdevcol.project.hotelmanagement.data.firebase
 internal object FirestorePaths {
     const val USERS = "Users"
     const val ORDERS = "Orders"
+    const val ORDER_EVENTS = "events"
+    const val PAYMENTS = "Payments"
 }

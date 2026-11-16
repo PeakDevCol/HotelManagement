@@ -9,11 +9,11 @@ import com.peakdevcol.project.hotelmanagement.domain.model.UserArea
 import com.peakdevcol.project.hotelmanagement.domain.model.UserType
 import kotlin.time.Instant
 
-fun employee(id: String, fullName: String) = User(
+fun employee(id: String, fullName: String, type: UserType = UserType.BASIC) = User(
     id = id,
     fullName = fullName,
     email = "$id@hotel.co",
-    type = UserType.BASIC,
+    type = type,
     area = UserArea.SERVICE,
     active = true,
 )
@@ -25,6 +25,7 @@ fun order(
     createdAt: String? = "2026-11-15T00:23:00Z",
     destination: OrderDestination = OrderDestination.Table(3),
     isPendingToSend: Boolean = false,
+    isUpToDate: Boolean = true,
 ) = Order(
     id = id,
     employeeId = employeeId,
@@ -33,4 +34,5 @@ fun order(
     state = state,
     createdAt = createdAt?.let(Instant::parse),
     isPendingToSend = isPendingToSend,
+    isUpToDate = isUpToDate,
 )

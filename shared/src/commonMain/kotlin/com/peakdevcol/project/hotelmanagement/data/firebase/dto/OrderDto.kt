@@ -31,7 +31,7 @@ internal data class ProductDto(
 )
 
 /** Returns null when the state or the destination is not one of section 8 of the PRD. */
-internal fun OrderDto.toOrder(isPendingToSend: Boolean): Order? {
+internal fun OrderDto.toOrder(isPendingToSend: Boolean, isUpToDate: Boolean = true): Order? {
     val orderState = OrderState.entries.firstOrNull { it.code() == state } ?: return null
     val destination = destinationOf(typeOrder, typeOrderNumber) ?: return null
     return Order(
@@ -42,6 +42,7 @@ internal fun OrderDto.toOrder(isPendingToSend: Boolean): Order? {
         state = orderState,
         createdAt = (dateOrder as? Timestamp)?.let { Instant.fromEpochSeconds(it.seconds, it.nanoseconds) },
         isPendingToSend = isPendingToSend,
+        isUpToDate = isUpToDate,
     )
 }
 

@@ -100,7 +100,39 @@
     <string name="order_detail_not_found">Este pedido ya no existe.</string>
     <string name="order_detail_error">No se pudo cargar el pedido.</string>
     <string name="order_event_created">Pedido creado</string>
+    <string name="order_event_closed">Cuenta cerrada</string>
+    <string name="order_event_reopened">Pedido reabierto</string>
+    <string name="order_event_paid">Pago registrado</string>
+    <string name="order_event_cancelled">Pedido cancelado</string>
     <string name="order_event_line">%1$s por %2$s</string>
+    <string name="order_event_payment">%1$s · Propina: %2$s</string>
+    <string name="order_event_cancel_reason">Motivo: %1$s</string>
+
+    <!-- Order actions -->
+    <string name="order_close_action">Cerrar la cuenta</string>
+    <string name="order_close_message">El pedido queda pendiente de cobro. Para agregarle productos habrá que reabrirlo.</string>
+    <string name="order_reopen_action">Reabrir el pedido</string>
+    <string name="order_reopen_message">El pedido vuelve a estar En curso y se le pueden agregar productos.</string>
+    <string name="order_pay_action">Registrar el pago</string>
+    <string name="order_cancel_action">Cancelar el pedido</string>
+    <string name="order_cancel_message">El pedido queda anulado y ya no se puede cobrar. Queda en el historial.</string>
+    <string name="order_cancel_reason">Motivo</string>
+    <string name="order_cancel_keep">No cancelar</string>
+    <string name="order_payment_title">Registrar el pago</string>
+    <string name="order_payment_total">Total a cobrar: %1$s</string>
+    <string name="order_payment_method_cash">Efectivo</string>
+    <string name="order_payment_method_transfer">Transferencia</string>
+    <string name="order_payment_tip">Propina (opcional)</string>
+    <string name="order_actions_offline">Sin conexión. Para cerrar, reabrir, cobrar o cancelar necesitas internet.</string>
+    <string name="order_closed_done">Cuenta cerrada.</string>
+    <string name="order_reopened_done">Pedido reabierto.</string>
+    <string name="order_paid_done">Pago registrado.</string>
+    <string name="order_cancelled_done">Pedido cancelado.</string>
+    <string name="order_error_state_changed">Otro dispositivo cambió este pedido. Ahora está: %1$s.</string>
+    <string name="order_error_no_connection">No hay conexión con el servidor. Inténtalo de nuevo cuando vuelva.</string>
+    <string name="order_error_not_allowed">No tienes permiso para hacer esto.</string>
+    <string name="order_error_missing_reason">Escribe el motivo de la cancelación.</string>
+    <string name="order_error_invalid_tip">La propina no puede ser negativa.</string>
 
     <string name="order_saved_title">Pedido confirmado</string>
     <string name="order_saved_message">El pedido se guardó correctamente.</string>

@@ -14,6 +14,8 @@ data class Order(
     val createdAt: Instant? = null,
     /** RF-ORD-09: saved on this device, but the server does not have it yet. */
     val isPendingToSend: Boolean = false,
+    /** False while the device shows its own copy because it has not heard from the server. */
+    val isUpToDate: Boolean = true,
 ) {
     val totalAmount: Long get() = products.totalAmount()
 
