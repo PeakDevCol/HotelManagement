@@ -43,7 +43,14 @@ class EmployeeUseCasesTest {
     @Test
     fun anAdministratorSeesEverythingInTheOrderOfTheirArea() {
         assertEquals(
-            listOf(AppSection.CURRENT_ORDERS, AppSection.BALANCE, AppSection.INVENTORY, AppSection.EMPLOYEES, AppSection.ADD_ORDER),
+            listOf(
+                AppSection.CURRENT_ORDERS,
+                AppSection.BALANCE,
+                AppSection.INVENTORY,
+                AppSection.EMPLOYEES,
+                AppSection.SETTINGS,
+                AppSection.ADD_ORDER,
+            ),
             menuFor(admin),
         )
         assertEquals(AppSection.ADD_ORDER, menuFor(admin.copy(area = UserArea.SERVICE)).first())
@@ -53,6 +60,7 @@ class EmployeeUseCasesTest {
     @Test
     fun theAreaNeverGivesPermissionsTheRoleDoesNotHave() {
         assertFalse(AppSection.EMPLOYEES in menuFor(waiter.copy(area = UserArea.MANAGEMENT)))
+        assertFalse(AppSection.SETTINGS in menuFor(waiter.copy(area = UserArea.MANAGEMENT)))
     }
 
     // ---- RF-EMP-01

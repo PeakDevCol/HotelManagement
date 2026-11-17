@@ -242,4 +242,26 @@
     <string name="employee_error_not_allowed">Solo un administrador puede gestionar empleados.</string>
     <string name="employee_error_network">No hay conexión con el servidor. Gestionar empleados necesita internet.</string>
     <string name="employee_error_unknown">No se pudo guardar. Inténtalo de nuevo.</string>
+
+    <!-- Settings -->
+    <string name="menu_settings">Configuración</string>
+    <string name="settings_error">No se pudo cargar la configuración.</string>
+    <string name="settings_day_start_title">Inicio del día operativo</string>
+    <string name="settings_day_start_hint">Las ventas de la madrugada cuentan para el día anterior hasta esta hora. Escríbela en formato de 24 horas.</string>
+    <string name="settings_hour">Hora (0 a 23)</string>
+    <string name="settings_minute">Minutos (0 a 59)</string>
+    <string name="settings_time_error">Escribe una hora entre 0 y 23 y minutos entre 0 y 59.</string>
+    <string name="settings_day_start_preview">Hoy el día operativo empieza a las %1$s.</string>
+    <string name="settings_last_change">Último cambio: %1$s, %2$s</string>
+    <string name="settings_saved">Configuración guardada.</string>
+    <string name="settings_not_allowed">Solo un administrador puede cambiar la configuración.</string>
+    <string name="settings_backup_title">Respaldo manual</string>
+    <string name="settings_backup_hint">Guarda en este computador una copia de todos los datos en un archivo. Se recomienda hacerlo cada mes.</string>
+    <string name="settings_backup_only_desktop">El respaldo se hace desde la aplicación de escritorio.</string>
+    <string name="settings_backup_date">Pedidos y pagos desde (opcional)</string>
+    <string name="settings_backup_date_error">Escribe la fecha como año-mes-día, por ejemplo 2026-11-01, o déjala vacía.</string>
+    <string name="settings_backup_export">Exportar respaldo</string>
+    <string name="settings_backup_done">Respaldo guardado: %1$d documentos en %2$s</string>
+    <string name="settings_backup_not_allowed">Solo un administrador puede hacer respaldos.</string>
+    <string name="settings_backup_error_file">No se pudo escribir el archivo del respaldo.</string>
 </resources>
