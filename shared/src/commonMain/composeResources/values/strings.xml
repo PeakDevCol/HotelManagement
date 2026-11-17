@@ -200,4 +200,46 @@
     <string name="categories_delete_message">La categoría se borra. Solo se puede si no tiene productos.</string>
     <string name="categories_move_up">Subir %1$s</string>
     <string name="categories_move_down">Bajar %1$s</string>
+
+    <!-- Password (RF-AUTH-04) -->
+    <string name="forgot_password">¿Olvidaste la contraseña?</string>
+    <string name="forgot_password_sent_title">Revisa tu correo</string>
+    <string name="forgot_password_sent_message">Si %1$s está registrado, te llegará un mensaje con un enlace para crear una contraseña nueva.</string>
+
+    <!-- Employees -->
+    <string name="menu_employees">Empleados</string>
+    <string name="employees_empty">Aún no hay empleados.</string>
+    <string name="employees_error">No se pudieron cargar los empleados.</string>
+    <string name="employees_new">Nuevo empleado</string>
+    <string name="employees_edit">Editar empleado</string>
+    <string name="employees_inactive">Inactivo</string>
+    <string name="employees_you">Tú</string>
+    <string name="employees_row_detail">%1$s · %2$s</string>
+    <string name="employee_name">Nombre completo</string>
+    <string name="employee_role">Rol</string>
+    <string name="employee_area">Área</string>
+    <string name="employee_active">Activo</string>
+    <string name="employee_active_hint">Un empleado inactivo no puede usar la aplicación.</string>
+    <string name="employee_own_access_hint">No puedes cambiar tu propio rol ni desactivarte. Así siempre queda un administrador.</string>
+    <string name="employee_email_hint">El correo no se puede cambiar después: es el usuario para iniciar sesión.</string>
+    <string name="employee_send_password_email">Enviar correo de contraseña</string>
+    <string name="employee_not_found">Este empleado ya no existe.</string>
+    <string name="role_basic">Empleado</string>
+    <string name="role_reception">Recepción</string>
+    <string name="role_admin">Administrador</string>
+    <string name="area_service">Servicio</string>
+    <string name="area_reception">Recepción</string>
+    <string name="area_housekeeping">Limpieza</string>
+    <string name="area_maintenance">Mantenimiento</string>
+    <string name="area_management">Administración</string>
+    <string name="employee_created">Empleado creado. Le llegará un correo para crear su contraseña.</string>
+    <string name="employee_created_without_email">Empleado creado, pero no se pudo enviar el correo. Ábrelo y toca "Enviar correo de contraseña".</string>
+    <string name="employee_saved">Cambios guardados.</string>
+    <string name="employee_password_email_sent">Correo de contraseña enviado.</string>
+    <string name="employee_error_name">El nombre debe tener al menos 6 caracteres.</string>
+    <string name="employee_error_email_in_use">Ya existe una cuenta con ese correo.</string>
+    <string name="employee_error_own_access">No puedes cambiar tu propio rol ni desactivarte.</string>
+    <string name="employee_error_not_allowed">Solo un administrador puede gestionar empleados.</string>
+    <string name="employee_error_network">No hay conexión con el servidor. Gestionar empleados necesita internet.</string>
+    <string name="employee_error_unknown">No se pudo guardar. Inténtalo de nuevo.</string>
 </resources>

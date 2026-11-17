@@ -1,5 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.ui.home
 
+import com.peakdevcol.project.hotelmanagement.domain.model.AppSection
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,7 +19,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Placeholder for menu sections that are not migrated yet. */
 @Composable
-fun ComingSoonScreen(section: HomeSection, onBack: () -> Unit) {
+fun ComingSoonScreen(section: AppSection, onBack: () -> Unit) {
     Scaffold(topBar = { ScreenTopBar(title = stringResource(section.title()), onBack = onBack) }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp), contentAlignment = Alignment.Center) {
             Text(

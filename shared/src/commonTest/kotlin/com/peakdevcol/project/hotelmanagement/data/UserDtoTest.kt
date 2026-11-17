@@ -1,10 +1,12 @@
 package com.peakdevcol.project.hotelmanagement.data
 
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.UserDto
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toNewUserDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toUser
 import com.peakdevcol.project.hotelmanagement.domain.model.User
 import com.peakdevcol.project.hotelmanagement.domain.model.UserArea
 import com.peakdevcol.project.hotelmanagement.domain.model.UserType
+import dev.gitlive.firebase.firestore.Timestamp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -43,5 +45,17 @@ class UserDtoTest {
         val incomplete = UserDto(fullName = "Ana Gómez", email = "ana@hotel.co", type = "basic", area = "service")
 
         assertEquals(false, incomplete.toUser("uid-1")?.active)
+    }
+
+    @Test
+    fun aNewEmployeeIsStoredWithWhoCreatedItAndTheServerDate() {
+        val employee = User("uid-2", "Luis Pérez", "luis@hotel.co", UserType.RECEPTION, UserArea.MAINTENANCE, active = true)
+
+        val stored = employee.toNewUserDto(createdBy = "admin")
+
+        assertEquals("reception" to "maintenance", stored.type to stored.area)
+        assertEquals("admin", stored.createdBy)
+        assertEquals(Timestamp.ServerTimestamp, stored.createdAt)
+        assertEquals(employee, UserDto(stored.fullName, stored.email, stored.type, stored.area, stored.active).toUser("uid-2"))
     }
 }

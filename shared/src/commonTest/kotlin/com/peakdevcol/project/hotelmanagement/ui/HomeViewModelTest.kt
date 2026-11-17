@@ -1,5 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.ui
 
+import com.peakdevcol.project.hotelmanagement.domain.model.AppSection
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderState
 import com.peakdevcol.project.hotelmanagement.domain.model.PendingAddition
@@ -22,7 +23,6 @@ import com.peakdevcol.project.hotelmanagement.ui.home.HomeViewModel
 import com.peakdevcol.project.hotelmanagement.ui.home.LogOutDialog
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -162,11 +162,12 @@ class HomeViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun onlyAnAdministratorManagesTheInventory() {
-        assertFalse(viewModel().state.value.canManageInventory)
+    fun theMenuShowsWhatTheRoleAllows() {
+        assertEquals(listOf(AppSection.ADD_ORDER, AppSection.CURRENT_ORDERS), viewModel().state.value.sections)
 
         auth = FakeAuthRepository(userId = "admin")
 
-        assertTrue(viewModel().state.value.canManageInventory)
+        assertTrue(AppSection.EMPLOYEES in viewModel().state.value.sections)
+        assertTrue(AppSection.INVENTORY in viewModel().state.value.sections)
     }
 }

@@ -36,9 +36,11 @@ import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.OrderDetailScreen
+import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormScreen
+import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.ComingSoonScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeScreen
-import com.peakdevcol.project.hotelmanagement.ui.home.HomeSection
+import com.peakdevcol.project.hotelmanagement.domain.model.AppSection
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
@@ -78,6 +80,13 @@ data object CategoriesRoute
 
 @Serializable
 data object TaxesRoute
+
+@Serializable
+data object EmployeesRoute
+
+/** A null id opens the form to create an employee. */
+@Serializable
+data class EmployeeFormRoute(val employeeId: String? = null)
 
 @Serializable
 data class OrderDetailRoute(val orderId: String)
@@ -136,10 +145,11 @@ private fun HomeNavigation() {
         composable<HomeRoute> {
             HomeScreen(onSectionClick = { section ->
                 when (section) {
-                    HomeSection.AddOrder -> navController.navigate(AddOrderRoute)
-                    HomeSection.CurrentOrders -> navController.navigate(CurrentOrdersRoute)
-                    HomeSection.Inventory -> navController.navigate(InventoryRoute)
-                    else -> navController.navigate(ComingSoonRoute(section.name))
+                    AppSection.ADD_ORDER -> navController.navigate(AddOrderRoute)
+                    AppSection.CURRENT_ORDERS -> navController.navigate(CurrentOrdersRoute)
+                    AppSection.INVENTORY -> navController.navigate(InventoryRoute)
+                    AppSection.EMPLOYEES -> navController.navigate(EmployeesRoute)
+                    AppSection.BALANCE -> navController.navigate(ComingSoonRoute(section.name))
                 }
             })
         }
@@ -178,9 +188,21 @@ private fun HomeNavigation() {
         composable<TaxesRoute> {
             TaxesScreen(onBack = { navController.popBackStack() })
         }
+        composable<EmployeesRoute> {
+            EmployeesScreen(
+                onBack = { navController.popBackStack() },
+                onEmployeeClick = { employeeId -> navController.navigate(EmployeeFormRoute(employeeId)) },
+            )
+        }
+        composable<EmployeeFormRoute> { entry ->
+            EmployeeFormScreen(
+                employeeId = entry.toRoute<EmployeeFormRoute>().employeeId,
+                onBack = { navController.popBackStack() },
+            )
+        }
         composable<ComingSoonRoute> { entry ->
             ComingSoonScreen(
-                section = HomeSection.valueOf(entry.toRoute<ComingSoonRoute>().sectionName),
+                section = AppSection.valueOf(entry.toRoute<ComingSoonRoute>().sectionName),
                 onBack = { navController.popBackStack() },
             )
         }

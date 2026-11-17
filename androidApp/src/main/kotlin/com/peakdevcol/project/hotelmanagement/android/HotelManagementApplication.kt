@@ -12,6 +12,7 @@ class HotelManagementApplication : Application() {
             AppConfig(
                 firebaseEnabled = BuildConfig.FIREBASE_CONFIGURED,
                 localDataDirectory = filesDir.absolutePath,
+                platformContext = applicationContext,
             ),
         )
     }

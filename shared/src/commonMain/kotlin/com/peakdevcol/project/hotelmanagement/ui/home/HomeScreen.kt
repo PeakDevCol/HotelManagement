@@ -38,10 +38,12 @@ import com.peakdevcol.project.hotelmanagement.resources.logout_pending_title
 import com.peakdevcol.project.hotelmanagement.resources.menu_add_order
 import com.peakdevcol.project.hotelmanagement.resources.menu_balance
 import com.peakdevcol.project.hotelmanagement.resources.menu_current_orders
+import com.peakdevcol.project.hotelmanagement.resources.menu_employees
 import com.peakdevcol.project.hotelmanagement.resources.menu_inventory
 import com.peakdevcol.project.hotelmanagement.resources.order_product_line
 import com.peakdevcol.project.hotelmanagement.resources.rejected_additions_message
 import com.peakdevcol.project.hotelmanagement.resources.rejected_additions_title
+import com.peakdevcol.project.hotelmanagement.domain.model.AppSection
 import com.peakdevcol.project.hotelmanagement.domain.model.PendingAddition
 import com.peakdevcol.project.hotelmanagement.ui.addorder.label
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
@@ -50,12 +52,9 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-/** Sections reachable from the main menu, in the order the buttons are shown. */
-enum class HomeSection { Balance, Inventory, AddOrder, CurrentOrders }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onSectionClick: (HomeSection) -> Unit, viewModel: HomeViewModel = koinViewModel()) {
+fun HomeScreen(onSectionClick: (AppSection) -> Unit, viewModel: HomeViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -85,7 +84,7 @@ fun HomeScreen(onSectionClick: (HomeSection) -> Unit, viewModel: HomeViewModel =
             if (state.pendingOrderCount > 0) {
                 PendingOrdersNotice(count = state.pendingOrderCount)
             }
-            HomeSection.entries.filter { it != HomeSection.Inventory || state.canManageInventory }.forEach { section ->
+            state.sections.forEach { section ->
                 PrimaryButton(
                     text = stringResource(section.title()),
                     onClick = { onSectionClick(section) },
@@ -186,9 +185,10 @@ private fun PendingOrdersDialog(onDismiss: () -> Unit) {
     )
 }
 
-fun HomeSection.title() = when (this) {
-    HomeSection.Balance -> Res.string.menu_balance
-    HomeSection.Inventory -> Res.string.menu_inventory
-    HomeSection.AddOrder -> Res.string.menu_add_order
-    HomeSection.CurrentOrders -> Res.string.menu_current_orders
+fun AppSection.title() = when (this) {
+    AppSection.BALANCE -> Res.string.menu_balance
+    AppSection.INVENTORY -> Res.string.menu_inventory
+    AppSection.ADD_ORDER -> Res.string.menu_add_order
+    AppSection.CURRENT_ORDERS -> Res.string.menu_current_orders
+    AppSection.EMPLOYEES -> Res.string.menu_employees
 }

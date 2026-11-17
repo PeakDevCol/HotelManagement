@@ -19,6 +19,14 @@ class FakeAuthRepository(
         return loginResult
     }
 
+    val passwordEmails = mutableListOf<String>()
+    var passwordEmailResult: Result<Unit> = Result.success(Unit)
+
+    override suspend fun sendPasswordEmail(email: String): Result<Unit> {
+        if (passwordEmailResult.isSuccess) passwordEmails += email
+        return passwordEmailResult
+    }
+
     override suspend fun logOut() {
         sessionFlow.value = null
     }
