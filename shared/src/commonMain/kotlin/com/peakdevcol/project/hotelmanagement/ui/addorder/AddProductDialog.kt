@@ -31,11 +31,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.peakdevcol.project.hotelmanagement.domain.model.CatalogGroup
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.model.formatPesos
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.add
 import com.peakdevcol.project.hotelmanagement.resources.cancel
+import com.peakdevcol.project.hotelmanagement.resources.category_none
 import com.peakdevcol.project.hotelmanagement.resources.error_quantity
 import com.peakdevcol.project.hotelmanagement.resources.order_add_product
 import com.peakdevcol.project.hotelmanagement.resources.product
@@ -48,7 +50,7 @@ const val MAX_QUANTITY = 99
 /** Pick a product from the catalog, filtered by name, and how many units to add. */
 @Composable
 fun AddProductDialog(
-    catalog: List<Product>,
+    catalog: List<CatalogGroup>,
     onAdd: (Product, Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -57,9 +59,11 @@ fun AddProductDialog(
     var quantityText by rememberSaveable { mutableStateOf("1") }
 
     val filtered = remember(catalog, query) {
-        catalog.filter { it.name.contains(query.trim(), ignoreCase = true) }
+        catalog
+            .map { group -> group.copy(products = group.products.filter { it.name.contains(query.trim(), ignoreCase = true) }) }
+            .filter { it.products.isNotEmpty() }
     }
-    val selected = catalog.firstOrNull { it.id == selectedId }
+    val selected = catalog.firstNotNullOfOrNull { group -> group.products.firstOrNull { it.id == selectedId } }
     val quantity = quantityText.toIntOrNull()?.takeIf { it in 1..MAX_QUANTITY }
 
     AlertDialog(
@@ -83,12 +87,22 @@ fun AddProductDialog(
                     )
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 240.dp)) {
-                        items(filtered, key = { it.id }) { product ->
-                            ProductOption(
-                                product = product,
-                                selected = product.id == selectedId,
-                                onClick = { selectedId = product.id },
-                            )
+                        filtered.forEach { group ->
+                            item(key = "category-${group.categoryName}") {
+                                Text(
+                                    text = group.categoryName ?: stringResource(Res.string.category_none),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                                )
+                            }
+                            items(group.products, key = { it.id }) { product ->
+                                ProductOption(
+                                    product = product,
+                                    selected = product.id == selectedId,
+                                    onClick = { selectedId = product.id },
+                                )
+                            }
                         }
                     }
                 }

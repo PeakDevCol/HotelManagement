@@ -2,10 +2,13 @@ package com.peakdevcol.project.hotelmanagement.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.peakdevcol.project.hotelmanagement.domain.model.Access
 import com.peakdevcol.project.hotelmanagement.domain.model.PendingAddition
+import com.peakdevcol.project.hotelmanagement.domain.model.UserType
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DismissRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutOutcome
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveAccessUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReconcilePendingAdditionsUseCase
@@ -28,6 +31,8 @@ data class HomeState(
     val logOutDialog: LogOutDialog? = null,
     /** RF-CUR-13: products added without connection that the server did not accept. */
     val rejectedAdditions: List<PendingAddition> = emptyList(),
+    /** Only an administrator manages the inventory (PRD, section 3). */
+    val canManageInventory: Boolean = false,
 )
 
 sealed interface HomeIntent {
@@ -39,6 +44,7 @@ sealed interface HomeIntent {
 
 class HomeViewModel(
     observePendingOrderCount: ObservePendingOrderCountUseCase,
+    observeAccess: ObserveAccessUseCase,
     observeRejectedAdditions: ObserveRejectedAdditionsUseCase,
     reconcilePendingAdditions: ReconcilePendingAdditionsUseCase,
     private val dismissRejectedAdditions: DismissRejectedAdditionsUseCase,
@@ -61,6 +67,14 @@ class HomeViewModel(
         // The menu is what opens after starting the app, so this is where it finds out what the
         // server did with the products that were added without connection.
         viewModelScope.launch { runCatching { reconcilePendingAdditions() } }
+        viewModelScope.launch {
+            observeAccess()
+                .catch { emit(Access.Denied) }
+                .collect { access ->
+                    val isAdministrator = (access as? Access.Granted)?.user?.type == UserType.ADMIN
+                    _state.update { it.copy(canManageInventory = isAdministrator) }
+                }
+        }
         viewModelScope.launch {
             observeRejectedAdditions()
                 .catch { emit(emptyList()) }

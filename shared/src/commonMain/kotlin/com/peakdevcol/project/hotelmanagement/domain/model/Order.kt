@@ -1,8 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.domain.model
 
 import kotlin.time.Instant
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 data class Order(
     val id: String,
@@ -20,9 +18,8 @@ data class Order(
     val totalAmount: Long get() = products.totalAmount()
 
     companion object {
-        /** A new random id, for an order or for one of its lines. Reusing the id of an order when retrying a save overwrites the same document. */
-        @OptIn(ExperimentalUuidApi::class)
-        fun newId(): String = Uuid.random().toString()
+        /** Reusing the id of an order when retrying a save overwrites the same document. */
+        fun newId(): String = com.peakdevcol.project.hotelmanagement.domain.model.newId()
 
         /** RF-CUR-13: every line gets its own id, so two devices can add lines to the same order without replacing each other's. */
         fun linesOf(products: List<Product>): List<Product> =

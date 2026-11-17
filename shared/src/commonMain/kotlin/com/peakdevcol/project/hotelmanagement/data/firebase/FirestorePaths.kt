@@ -6,4 +6,6 @@ internal object FirestorePaths {
     const val ORDERS = "Orders"
     const val ORDER_EVENTS = "events"
     const val PAYMENTS = "Payments"
+    const val PRODUCTS = "Products"
+    const val CATEGORIES = "Categories"
 }
