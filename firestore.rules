@@ -37,8 +37,29 @@ service cloud.firestore {
       // Everyone reads their own profile, even when inactive: the app needs it to explain why it denies access.
       allow get: if signedIn() && (request.auth.uid == userId || isActiveEmployee());
       allow list: if isActiveEmployee();
-      // The allowed keys leave no room for password fields.
-      allow create, update: if isAdmin() && isValidProfile(request.resource.data);
+      // RF-EMP-04: an administrator creates the profile of a new employee, signing it with their
+      // own id and the server date. The allowed keys leave no room for password fields.
+      allow create: if isAdmin()
+        && isValidProfile(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+
+      // RF-EMP-02, RF-EMP-03 and RF-EMP-05: an administrator changes the name, the role, the area
+      // and whether an employee is active. The email and who created the profile never change.
+      // Nobody changes their own role or deactivates themselves: the last administrator can only
+      // be edited by themselves, so the hotel never runs out of administrators.
+      function keepsItsOrigin() {
+        return request.resource.data.email == resource.data.email
+          && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null)
+          && request.resource.data.get('createdBy', null) == resource.data.get('createdBy', null);
+      }
+
+      function keepsOwnAccess() {
+        return request.auth.uid != userId
+          || (request.resource.data.type == resource.data.type && request.resource.data.active == resource.data.active);
+      }
+
+      allow update: if isAdmin() && isValidProfile(request.resource.data) && keepsItsOrigin() && keepsOwnAccess();
       // Employees are deactivated, never deleted.
       allow delete: if false;
     }
