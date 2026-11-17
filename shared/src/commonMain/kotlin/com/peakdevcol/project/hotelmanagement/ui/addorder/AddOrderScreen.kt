@@ -41,6 +41,7 @@ import com.peakdevcol.project.hotelmanagement.resources.ic_delete
 import com.peakdevcol.project.hotelmanagement.resources.ic_edit
 import com.peakdevcol.project.hotelmanagement.resources.menu_add_order
 import com.peakdevcol.project.hotelmanagement.resources.order_add_product
+import com.peakdevcol.project.hotelmanagement.resources.order_catalog_empty
 import com.peakdevcol.project.hotelmanagement.resources.order_catalog_error
 import com.peakdevcol.project.hotelmanagement.resources.order_confirm
 import com.peakdevcol.project.hotelmanagement.resources.order_edit_destination
@@ -61,6 +62,7 @@ import com.peakdevcol.project.hotelmanagement.ui.components.LoadingOverlay
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -95,7 +97,8 @@ fun AddOrderScreen(onBack: () -> Unit, viewModel: AddOrderViewModel = koinViewMo
         ) { padding ->
             when {
                 state.catalogFailed -> CatalogError(Modifier.padding(padding), onRetry = { viewModel.onIntent(AddOrderIntent.RetryCatalog) })
-                state.products.isEmpty() -> EmptyOrder(Modifier.padding(padding))
+                state.isCatalogEmpty -> EmptyOrder(Modifier.padding(padding), Res.string.order_catalog_empty)
+                state.products.isEmpty() -> EmptyOrder(Modifier.padding(padding), Res.string.order_empty)
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
@@ -215,10 +218,10 @@ private fun OrderSummary(
 }
 
 @Composable
-private fun EmptyOrder(modifier: Modifier) {
+private fun EmptyOrder(modifier: Modifier, message: StringResource) {
     Box(modifier = modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
         Text(
-            text = stringResource(Res.string.order_empty),
+            text = stringResource(message),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

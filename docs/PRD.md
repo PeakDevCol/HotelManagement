@@ -131,9 +131,9 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Introducción, login y cerrar sesión | ✅ Migrado | La sesión de Firebase decide qué navegación se muestra |
 | Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
-| Crear pedido | ✅ Migrado | Catálogo fijo de 9 productos (`StaticProductCatalog`). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
+| Crear pedido | ✅ Migrado | El catálogo sale del inventario en Firestore (M4). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
 | Pedidos en curso | ✅ Hecho en M3 | Lista en tiempo real, filtros, detalle, cerrar, reabrir, pagar, cancelar, y agregar y quitar productos, también sin conexión. |
-| Inventario | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M4. |
+| Inventario | 🔄 En parte | Productos y categorías desde el primer PR de M4; solo lo ve el administrador. Los impuestos llegan en el segundo. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
 | Recuperar contraseña | ⬜ Pendiente | |
 | Roles y permisos | 🔄 En parte | Desde M2 solo entra quien tiene perfil activo, y las reglas distinguen al administrador. Las secciones según el rol llegan en M6. |
@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 166 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 205 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -208,7 +208,7 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 | RF-ORD-04 | Confirmar el pedido | Solo se puede con al menos un producto y un destino. Guarda con estado `in_progress` (En curso) y la fecha del servidor. | ✅ |
 | RF-ORD-05 | Reintentar sin duplicar | El borrador conserva su id hasta que se guarda, así que un reintento sobrescribe el mismo documento | ✅ |
 | RF-ORD-06 | No quedarse esperando | Al confirmar, la app espera 3 s la respuesta del servidor. Si llega, muestra "Pedido confirmado". Si no llega, por estar sin conexión o con conexión lenta, muestra "Pedido guardado en el dispositivo" (RF-ORD-09) y el empleado sigue trabajando. No hay botón de reintentar: el pedido se envía solo. | ✅ |
-| RF-ORD-07 | Catálogo desde el inventario | Los productos salen de Firestore, y los productos inactivos no aparecen | ⬜ (M4) |
+| RF-ORD-07 | Catálogo desde el inventario | Los productos salen de Firestore, y los productos inactivos no aparecen. Si el inventario está vacío, la app lo dice en vez de mostrar una lista sin productos. | ✅ |
 | RF-ORD-08 | Destinos piscina y bar ([P19](#12-preguntas-abiertas)) | Se agregan Piscina y Bar, con número opcional (silla o puesto) | ✅ |
 | RF-ORD-09 | Pedidos sin conexión ([P8](#12-preguntas-abiertas)) | Sin conexión, el pedido queda guardado en el dispositivo con la marca "pendiente de enviar" y se envía solo al volver la conexión, sin duplicarse (V2). El menú muestra cuántos pedidos están pendientes de enviar. | ✅ |
 
@@ -258,12 +258,12 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 ### 6.4 Inventario (`INV`)
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
-| RF-INV-01 | Listar productos | Nombre, precio, categoría, impuesto y si está activo | ⬜ |
-| RF-INV-02 | Crear y editar productos | Nombre obligatorio y precio mayor que 0. Cambiar un precio no altera los pedidos ya guardados. | ⬜ |
-| RF-INV-03 | Desactivar productos | Un producto inactivo no aparece al crear pedidos. Se desactiva, no se borra, para conservar el historial. | ⬜ |
-| RF-INV-04 | Categorías | El administrador las define. Por defecto: bebidas, snacks, piscina y bar. Agrupan el selector de productos. | ⬜ |
+| RF-INV-01 | Listar productos | Nombre, precio, categoría, impuesto y si está activo | 🔄 Falta el impuesto, que llega en el segundo PR de M4 |
+| RF-INV-02 | Crear y editar productos | Nombre obligatorio y precio mayor que 0. Cambiar un precio no altera los pedidos ya guardados. | ✅ |
+| RF-INV-03 | Desactivar productos | Un producto inactivo no aparece al crear pedidos. Se desactiva, no se borra, para conservar el historial. | ✅ |
+| RF-INV-04 | Categorías | El administrador las crea, las renombra, las ordena y borra las que no tienen productos, en su propia pantalla. No hay categorías por defecto. Agrupan el selector de productos, en el orden que les da el administrador. | ✅ |
 | RF-INV-05 | Existencias | Queda para después ([P5](#12-preguntas-abiertas)) | — |
-| RF-INV-06 | Migrar el catálogo inicial | Los 9 productos de `StaticProductCatalog` se cargan en Firestore una sola vez | ⬜ |
+| RF-INV-06 | Migrar el catálogo inicial | ~~Los 9 productos de `StaticProductCatalog` se cargan en Firestore una sola vez~~. Descartado el 2026-11-16: esos productos eran de ejemplo y el inventario empieza vacío. | — |
 | RF-INV-07 | Impuestos opcionales ([P14](#12-preguntas-abiertas)) | El administrador define impuestos con nombre y porcentaje (por ejemplo, IVA o impuesto al consumo). Cada producto puede tener uno o ninguno. El precio de venta incluye el impuesto, y el pedido guarda cuánto impuesto tiene cada línea. | ⬜ |
 
 ### 6.5 Balance (`BAL`)
@@ -551,7 +551,8 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `Orders/{id}/events/{id}` | `type`, `by`, `at` y el detalle del cambio | Historial (RF-CUR-11) | M3 |
 | `Payments/{id}` | `amount`, `tipAmount`, `method` (`cash` o `transfer`), `source` (`order` o `reservation`), `sourceId`, `receivedBy`, `receivedAt` | Un registro por cada pago recibido. El balance y el cierre de caja salen de aquí. El cierre toma los pagos por `receivedAt` entre su `from` y su `to`, así que un pago nunca se edita. | M3 |
 | `CashClosings/{id}` | `from`, `to`, `type` (`daily` o `manual`), `expectedCash`, `countedCash`, `difference`, `note`, `closedBy`, `createdAt` | Cierre de caja (P17) | M5 |
-| `Products/{id}` | `name`, `unitPrice`, `category`, `taxId`, `active` | Inventario | M4 |
+| `Products/{id}` | `name`, `unitPrice`, `categoryId`, `taxId`, `active` | Inventario. Se desactivan, no se borran. | M4 |
+| `Categories/{id}` | `name`, `position` | Categorías del inventario, en el orden que define el administrador (RF-INV-04) | M4 |
 | `Taxes/{id}` | `name`, `rate`, `active` | Impuestos opcionales (P14) | M4 |
 | `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt` | Cada versión agrega los suyos | M6 |
 
@@ -595,7 +596,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
   - Pasar a `paid` exige `paymentMethod`, y `paidBy` igual al `uid` de quien lo registra.
   - Solo un administrador cancela. Nadie modifica un pedido `paid` o `cancelled`.
 - `Payments`, `CashClosings` y los historiales (`events`): se crean y no se editan ni se borran. Solo un administrador crea cierres.
-- `Products`, `Taxes`, `RoomTypes`, `Settings`, `ChecklistTemplates`, `MaintenancePlans` y `Devices`: todos leen y solo un administrador escribe.
+- `Products`, `Categories`, `Taxes`, `RoomTypes`, `Settings`, `ChecklistTemplates`, `MaintenancePlans` y `Devices`: todos leen y solo un administrador escribe.
 - `Rooms`: todos leen. Solo un administrador cambia los datos de la habitación. `occupancy` cambia con el check-in y el check-out, y `housekeeping` con las tareas de limpieza.
 - `Shifts`: cada empleado lee los suyos y solo un administrador escribe.
 - `Attendance`: cada empleado crea y cierra sus propias marcaciones. Recepción también las lee, para ver quién está trabajando (RF-ASI-09, RF-TAR-02). Solo un administrador las corrige.
@@ -633,7 +634,7 @@ Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza reso
 | M1 | v1.0 | `feature/remove-legacy` | Eliminar `app` (S5), revisar que no queden datos de prueba (S1), ruta `Users/{uid}` (P9) y CI (RNF-07). Va primero porque, sin usuarios productivos, es el momento más barato. | M0 |
 | M2 | v1.0 | `feature/security-baseline` | S2, S3, S6, S7 y S8. Roles, áreas y `active` en las reglas. RF-AUTH-02 y RF-AUTH-07. | M1 |
 | M3 | v1.0 | `feature/current-orders-1` a `-4` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
-| M4 | v1.0 | `feature/inventory` | RF-INV-01 a RF-INV-04, RF-INV-06, RF-INV-07 y RF-ORD-07 | M2 |
+| M4 | v1.0 | `feature/inventory-1` y `-2` | RF-INV-01 a RF-INV-04, RF-INV-07 y RF-ORD-07 | M2 |
 | M5 | v1.0 | `feature/balance` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
 | M6 | v1.0 | `feature/roles-admin` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
 | M7 | v1.0 | `release/1.0.0` | Pruebas en dispositivos reales, S4, piloto de 1 a 2 semanas en un área del hotel, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V3 y V4. | M3 a M6 |
@@ -787,6 +788,11 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-16 | Un producto agregado a un pedido que ya lo tiene queda como una línea aparte, sin sumar cantidades | `arrayUnion` solo fusiona bien líneas distintas, y el historial muestra cada ronda |
 | 2026-11-16 | La app guarda en el dispositivo una lista pequeña de los productos agregados sin conexión que el servidor no ha confirmado. Al abrir el menú la compara con el pedido del servidor y avisa cuáles se rechazaron. En Android y escritorio es un archivo en la carpeta de datos de la app; en iOS, las preferencias del usuario. Sin dependencias nuevas. | Firestore descarta una escritura rechazada sin avisar, y más aún si la app se cerró (V6) |
 | 2026-11-16 | Los productos pendientes de enviar también impiden cerrar sesión, igual que los pedidos pendientes | El servidor los rechazaría sin la sesión de quien los agregó (RF-AUTH-03, R5) |
+| 2026-11-16 | M4 se entrega en dos PR: productos, categorías y catálogo desde Firestore; y después impuestos | El primero ya quita la lista fija de productos y se puede usar sin esperar los impuestos |
+| 2026-11-16 | Las categorías son una colección propia, `Categories`, con su pantalla para crear, renombrar, ordenar y borrar. El producto guarda `categoryId`. Reemplaza el campo de texto `category`. | Decisión del negocio. Con el id, renombrar una categoría no obliga a tocar sus productos. |
+| 2026-11-16 | El inventario empieza vacío: no se cargan los 9 productos de ejemplo ni categorías por defecto. Se descarta RF-INV-06 y se elimina `StaticProductCatalog`. | Decisión del negocio: esos productos solo servían de ejemplo |
+| 2026-11-16 | Una categoría solo se borra si no tiene productos, activos o inactivos | Los productos no se borran, y quedarían sin grupo |
+| 2026-11-16 | Solo el administrador ve "Inventario" en el menú. El resto de las secciones según el rol sigue en M6 (RF-AUTH-05). | Tabla de permisos de la sección 3 |
 
 ## 14. Riesgos
 
@@ -818,7 +824,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | En curso | Pedido abierto al que se le pueden agregar o quitar productos (`in_progress`). |
 | Cerrar la cuenta | Pasar el pedido a `closed`: se culminó y queda pendiente de cobro. Para editarlo hay que reabrirlo. |
 | Pago | Dinero recibido por un pedido o una reserva. Se guarda en `Payments`. |
-| Catálogo | Productos que se pueden pedir, con su precio. Hoy es `StaticProductCatalog` y en M4 pasa a `Products`. |
+| Catálogo | Productos activos del inventario (`Products`) que se pueden pedir, agrupados por categoría. |
 | Balance | Resumen de lo cobrado en un periodo, con filtros y desgloses. |
 | Día operativo | De 6:00 a. m. a 5:59 a. m. del día siguiente por defecto, en hora de Colombia. |
 | Cierre de caja | Comparación entre el efectivo contado y el esperado desde el cierre anterior. Puede ser diario o manual (cierre de turno). |

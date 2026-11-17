@@ -49,6 +49,7 @@ import com.peakdevcol.project.hotelmanagement.resources.order_actions_offline
 import com.peakdevcol.project.hotelmanagement.resources.order_add_product
 import com.peakdevcol.project.hotelmanagement.resources.order_cancel_action
 import com.peakdevcol.project.hotelmanagement.resources.order_cancelled_done
+import com.peakdevcol.project.hotelmanagement.resources.order_catalog_empty
 import com.peakdevcol.project.hotelmanagement.resources.order_close_action
 import com.peakdevcol.project.hotelmanagement.resources.order_close_message
 import com.peakdevcol.project.hotelmanagement.resources.order_closed_done
@@ -268,7 +269,7 @@ private suspend fun OrderDetailEffect.message(): String = when (this) {
         OrderActionError.MissingReason -> getString(Res.string.order_error_missing_reason)
         OrderActionError.InvalidTip -> getString(Res.string.order_error_invalid_tip)
         OrderActionError.LastProduct -> getString(Res.string.order_error_last_product)
-        OrderActionError.NoProducts -> getString(Res.string.order_error_unknown)
+        OrderActionError.NoProducts -> getString(Res.string.order_catalog_empty)
         OrderActionError.NoSession -> getString(Res.string.order_error_no_session)
         OrderActionError.Unknown -> getString(Res.string.order_error_unknown)
     }

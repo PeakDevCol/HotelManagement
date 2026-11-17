@@ -11,7 +11,6 @@ import com.peakdevcol.project.hotelmanagement.domain.model.UserType
 import com.peakdevcol.project.hotelmanagement.domain.usecase.AddProductsToOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CancelOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CloseOrderUseCase
-import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOrderDetailUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.RegisterPaymentUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.RemoveProductFromOrderUseCase
@@ -19,7 +18,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.ReopenOrderUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakePendingAdditionRepository
-import com.peakdevcol.project.hotelmanagement.fakes.FakeProductCatalog
+import com.peakdevcol.project.hotelmanagement.fakes.FakeCatalog
 import com.peakdevcol.project.hotelmanagement.fakes.FakeUserRepository
 import com.peakdevcol.project.hotelmanagement.fakes.employee
 import com.peakdevcol.project.hotelmanagement.fakes.order
@@ -46,7 +45,7 @@ class OrderDetailViewModelTest : MainDispatcherTest() {
     )
 
     private val soda = Product(id = "3", name = "Coca-Cola", unitPrice = 3_000)
-    private val catalog = FakeProductCatalog(Result.success(listOf(soda)))
+    private val catalog = FakeCatalog(soda)
     private val pendingAdditions = FakePendingAdditionRepository()
 
     private fun viewModel(orderId: String = "open", userId: String = "uid-1"): OrderDetailViewModel {
@@ -58,7 +57,7 @@ class OrderDetailViewModelTest : MainDispatcherTest() {
             reopenOrder = ReopenOrderUseCase(auth, orders),
             registerPayment = RegisterPaymentUseCase(auth, orders),
             cancelOrder = CancelOrderUseCase(auth, users, orders),
-            getProducts = GetProductsUseCase(catalog),
+            getProducts = catalog.getProducts,
             addProductsToOrder = AddProductsToOrderUseCase(auth, orders, pendingAdditions),
             removeProductFromOrder = RemoveProductFromOrderUseCase(auth, orders),
         )
@@ -211,7 +210,7 @@ class OrderDetailViewModelTest : MainDispatcherTest() {
 
         viewModel.onIntent(OrderDetailIntent.AddProductClick)
         assertTrue(viewModel.loaded().isAddingProduct)
-        assertEquals(listOf(soda), viewModel.loaded().catalog)
+        assertEquals(catalog.groupOf(soda), viewModel.loaded().catalog)
 
         viewModel.onIntent(OrderDetailIntent.AddProduct(soda, quantity = 2))
 
@@ -285,5 +284,16 @@ class OrderDetailViewModelTest : MainDispatcherTest() {
 
         assertNull(viewModel.loaded().productToRemove)
         assertTrue(viewModel.loaded().detail.canEditProducts)
+    }
+
+    @Test
+    fun warnsWhenThereIsNothingInTheInventoryToAdd() = runTest {
+        catalog.offer(emptyList())
+        val viewModel = viewModel()
+
+        viewModel.onIntent(OrderDetailIntent.AddProductClick)
+
+        assertFalse(viewModel.loaded().isAddingProduct)
+        assertEquals(OrderDetailEffect.ActionFailed(OrderActionError.NoProducts), viewModel.effects.first())
     }
 }

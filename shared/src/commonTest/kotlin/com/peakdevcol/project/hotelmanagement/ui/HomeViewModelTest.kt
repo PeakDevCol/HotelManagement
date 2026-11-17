@@ -4,31 +4,38 @@ import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderState
 import com.peakdevcol.project.hotelmanagement.domain.model.PendingAddition
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
+import com.peakdevcol.project.hotelmanagement.domain.model.UserType
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DismissRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveAccessUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReconcilePendingAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakePendingAdditionRepository
+import com.peakdevcol.project.hotelmanagement.fakes.FakeUserRepository
+import com.peakdevcol.project.hotelmanagement.fakes.employee
 import com.peakdevcol.project.hotelmanagement.fakes.order
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeIntent
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeViewModel
 import com.peakdevcol.project.hotelmanagement.ui.home.LogOutDialog
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class HomeViewModelTest : MainDispatcherTest() {
-    private val auth = FakeAuthRepository(userId = "uid-1")
+    private var auth = FakeAuthRepository(userId = "uid-1")
     private val orders = FakeOrderRepository()
+    private val users = FakeUserRepository(employee("uid-1", "Ana Gómez"), employee("admin", "Juan Felipe", type = UserType.ADMIN))
     private val pendingAdditions = FakePendingAdditionRepository()
 
     private fun viewModel() =
         HomeViewModel(
             observePendingOrderCount = ObservePendingOrderCountUseCase(auth, orders),
+            observeAccess = ObserveAccessUseCase(auth, users),
             observeRejectedAdditions = ObserveRejectedAdditionsUseCase(pendingAdditions),
             reconcilePendingAdditions = ReconcilePendingAdditionsUseCase(orders, pendingAdditions),
             dismissRejectedAdditions = DismissRejectedAdditionsUseCase(pendingAdditions),
@@ -152,5 +159,14 @@ class HomeViewModelTest : MainDispatcherTest() {
 
         assertEquals(LogOutDialog.PendingOrders, viewModel.state.value.logOutDialog)
         assertEquals("uid-1", auth.currentUserId())
+    }
+
+    @Test
+    fun onlyAnAdministratorManagesTheInventory() {
+        assertFalse(viewModel().state.value.canManageInventory)
+
+        auth = FakeAuthRepository(userId = "admin")
+
+        assertTrue(viewModel().state.value.canManageInventory)
     }
 }

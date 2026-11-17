@@ -2,6 +2,7 @@ package com.peakdevcol.project.hotelmanagement.ui.currentorders
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.peakdevcol.project.hotelmanagement.domain.model.CatalogGroup
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderAction
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderActionError
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
@@ -37,7 +38,7 @@ sealed interface OrderDetailState {
         val isWorking: Boolean = false,
         /** The action that is asking for a confirmation or for its data. */
         val dialog: OrderAction? = null,
-        val catalog: List<Product> = emptyList(),
+        val catalog: List<CatalogGroup> = emptyList(),
         val isAddingProduct: Boolean = false,
         /** The line the employee asked to remove, waiting for the confirmation. */
         val productToRemove: Product? = null,
@@ -146,7 +147,10 @@ class OrderDetailViewModel(
         if (loaded.catalog.isNotEmpty()) return
         viewModelScope.launch {
             getProducts()
-                .onSuccess { catalog -> updateLoaded { it.copy(catalog = catalog) } }
+                .onSuccess { catalog ->
+                    updateLoaded { it.copy(catalog = catalog, isAddingProduct = catalog.isNotEmpty()) }
+                    if (catalog.isEmpty()) _effects.send(OrderDetailEffect.ActionFailed(OrderActionError.NoProducts))
+                }
                 .onFailure {
                     updateLoaded { it.copy(isAddingProduct = false) }
                     _effects.send(OrderDetailEffect.ActionFailed(OrderActionError.Unknown))

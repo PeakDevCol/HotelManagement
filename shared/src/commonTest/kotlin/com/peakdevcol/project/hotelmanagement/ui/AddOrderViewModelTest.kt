@@ -3,11 +3,10 @@ package com.peakdevcol.project.hotelmanagement.ui
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
-import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
-import com.peakdevcol.project.hotelmanagement.fakes.FakeProductCatalog
+import com.peakdevcol.project.hotelmanagement.fakes.FakeCatalog
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderIntent
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.SaveFailure
@@ -24,31 +23,43 @@ class AddOrderViewModelTest : MainDispatcherTest() {
     private val beer = Product(id = "1", name = "Cerveza Aguila", unitPrice = 3_500)
     private val soda = Product(id = "3", name = "Coca-Cola", unitPrice = 3_000)
 
-    private val catalog = FakeProductCatalog(Result.success(listOf(beer, soda)))
+    private val catalog = FakeCatalog(beer, soda)
     private val orders = FakeOrderRepository()
     private val auth = FakeAuthRepository(userId = "uid-1")
 
-    private fun viewModel() = AddOrderViewModel(GetProductsUseCase(catalog), SaveOrderUseCase(auth, orders))
+    private fun viewModel() = AddOrderViewModel(catalog.getProducts, SaveOrderUseCase(auth, orders))
 
     @Test
     fun loadsTheCatalog() {
         val state = viewModel().state.value
 
-        assertEquals(listOf(beer, soda), state.catalog)
+        assertEquals(catalog.groupOf(beer, soda), state.catalog)
         assertFalse(state.catalogFailed)
+        assertFalse(state.isCatalogEmpty)
     }
 
     @Test
     fun showsCatalogErrorAndRetries() {
-        catalog.result = Result.failure(IllegalStateException("offline"))
+        catalog.productRepository.readFailure = IllegalStateException("offline")
         val viewModel = viewModel()
         assertTrue(viewModel.state.value.catalogFailed)
 
-        catalog.result = Result.success(listOf(beer))
+        catalog.productRepository.readFailure = null
+        catalog.offer(listOf(beer))
         viewModel.onIntent(AddOrderIntent.RetryCatalog)
 
         assertFalse(viewModel.state.value.catalogFailed)
-        assertEquals(listOf(beer), viewModel.state.value.catalog)
+        assertEquals(catalog.groupOf(beer), viewModel.state.value.catalog)
+    }
+
+    @Test
+    fun tellsWhenTheInventoryHasNothingToOrderYet() {
+        catalog.offer(emptyList())
+
+        val state = viewModel().state.value
+
+        assertTrue(state.isCatalogEmpty)
+        assertFalse(state.catalogFailed)
     }
 
     @Test
@@ -111,7 +122,7 @@ class AddOrderViewModelTest : MainDispatcherTest() {
         assertEquals(SaveResult.Sent, state.saveResult)
         assertTrue(state.products.isEmpty())
         assertNull(state.destination)
-        assertEquals(listOf(beer, soda), state.catalog)
+        assertEquals(catalog.groupOf(beer, soda), state.catalog)
 
         viewModel.onIntent(AddOrderIntent.DismissResult)
         assertNull(viewModel.state.value.saveResult)
@@ -169,7 +180,7 @@ class AddOrderViewModelTest : MainDispatcherTest() {
     @Test
     fun reportsMissingSession() {
         val viewModel = AddOrderViewModel(
-            GetProductsUseCase(catalog),
+            catalog.getProducts,
             SaveOrderUseCase(FakeAuthRepository(userId = null), orders),
         )
         viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))

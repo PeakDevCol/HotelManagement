@@ -40,6 +40,9 @@ import com.peakdevcol.project.hotelmanagement.ui.home.ComingSoonScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeSection
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionScreen
+import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesScreen
+import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
+import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginScreen
 import com.peakdevcol.project.hotelmanagement.ui.theme.HotelManagementTheme
 import kotlinx.serialization.Serializable
@@ -61,6 +64,16 @@ data object AddOrderRoute
 
 @Serializable
 data object CurrentOrdersRoute
+
+@Serializable
+data object InventoryRoute
+
+/** A null id opens the form to create a product. */
+@Serializable
+data class ProductFormRoute(val productId: String? = null)
+
+@Serializable
+data object CategoriesRoute
 
 @Serializable
 data class OrderDetailRoute(val orderId: String)
@@ -121,6 +134,7 @@ private fun HomeNavigation() {
                 when (section) {
                     HomeSection.AddOrder -> navController.navigate(AddOrderRoute)
                     HomeSection.CurrentOrders -> navController.navigate(CurrentOrdersRoute)
+                    HomeSection.Inventory -> navController.navigate(InventoryRoute)
                     else -> navController.navigate(ComingSoonRoute(section.name))
                 }
             })
@@ -139,6 +153,22 @@ private fun HomeNavigation() {
                 orderId = entry.toRoute<OrderDetailRoute>().orderId,
                 onBack = { navController.popBackStack() },
             )
+        }
+        composable<InventoryRoute> {
+            InventoryScreen(
+                onBack = { navController.popBackStack() },
+                onProductClick = { productId -> navController.navigate(ProductFormRoute(productId)) },
+                onCategoriesClick = { navController.navigate(CategoriesRoute) },
+            )
+        }
+        composable<ProductFormRoute> { entry ->
+            ProductFormScreen(
+                productId = entry.toRoute<ProductFormRoute>().productId,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable<CategoriesRoute> {
+            CategoriesScreen(onBack = { navController.popBackStack() })
         }
         composable<ComingSoonRoute> { entry ->
             ComingSoonScreen(

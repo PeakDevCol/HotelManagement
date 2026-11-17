@@ -2,6 +2,7 @@ package com.peakdevcol.project.hotelmanagement.ui.addorder
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.peakdevcol.project.hotelmanagement.domain.model.CatalogGroup
 import com.peakdevcol.project.hotelmanagement.domain.model.Order
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
@@ -28,7 +29,8 @@ sealed interface SaveResult {
 enum class SaveFailure { NoSession, Unknown }
 
 data class AddOrderState(
-    val catalog: List<Product> = emptyList(),
+    val catalog: List<CatalogGroup> = emptyList(),
+    val catalogLoaded: Boolean = false,
     val catalogFailed: Boolean = false,
     val products: List<Product> = emptyList(),
     val destination: OrderDestination? = null,
@@ -36,6 +38,8 @@ data class AddOrderState(
     val saveResult: SaveResult? = null,
 ) {
     val totalAmount: Long get() = products.totalAmount()
+    /** The inventory has nothing that can be ordered yet: an administrator has to create the products. */
+    val isCatalogEmpty: Boolean get() = catalogLoaded && catalog.isEmpty()
     val canConfirm: Boolean get() = products.isNotEmpty() && destination != null && !isSaving
 }
 
@@ -77,7 +81,7 @@ class AddOrderViewModel(
     private fun loadCatalog() {
         viewModelScope.launch {
             getProducts()
-                .onSuccess { catalog -> _state.update { it.copy(catalog = catalog, catalogFailed = false) } }
+                .onSuccess { catalog -> _state.update { it.copy(catalog = catalog, catalogLoaded = true, catalogFailed = false) } }
                 .onFailure { _state.update { it.copy(catalogFailed = true) } }
         }
     }
@@ -112,7 +116,7 @@ class AddOrderViewModel(
                 result.fold(
                     onSuccess = { delivery ->
                         draftOrderId = Order.newId()
-                        AddOrderState(catalog = current.catalog, saveResult = delivery.toSaveResult())
+                        AddOrderState(catalog = current.catalog, catalogLoaded = true, saveResult = delivery.toSaveResult())
                     },
                     onFailure = { error ->
                         current.copy(isSaving = false, saveResult = SaveResult.Failed(error.toSaveFailure()))

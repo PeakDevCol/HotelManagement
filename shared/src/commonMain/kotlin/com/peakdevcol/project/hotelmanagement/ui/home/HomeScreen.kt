@@ -85,7 +85,7 @@ fun HomeScreen(onSectionClick: (HomeSection) -> Unit, viewModel: HomeViewModel =
             if (state.pendingOrderCount > 0) {
                 PendingOrdersNotice(count = state.pendingOrderCount)
             }
-            HomeSection.entries.forEach { section ->
+            HomeSection.entries.filter { it != HomeSection.Inventory || state.canManageInventory }.forEach { section ->
                 PrimaryButton(
                     text = stringResource(section.title()),
                     onClick = { onSectionClick(section) },

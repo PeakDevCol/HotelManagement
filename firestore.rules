@@ -176,5 +176,42 @@ service cloud.firestore {
       allow create: if isActiveEmployee() && isPaymentOfAnOrder(request.resource.data);
       allow update, delete: if false;
     }
+
+    // Inventory (PRD, section 6.4). Every active employee reads it, to take orders; only an
+    // administrator changes it.
+    match /Categories/{categoryId} {
+      function isValidCategory(category) {
+        return category.keys().hasOnly(['name', 'position'])
+          && category.name is string
+          && category.name.size() > 0
+          && category.position is int
+          && category.position >= 0;
+      }
+
+      allow read: if isActiveEmployee();
+      allow create, update: if isAdmin() && isValidCategory(request.resource.data);
+      // The app only deletes a category that has no products (RF-INV-04).
+      allow delete: if isAdmin();
+    }
+
+    match /Products/{productId} {
+      // RF-INV-02: a name and a price greater than zero, in whole pesos.
+      function isValidProduct(product) {
+        return product.keys().hasOnly(['name', 'unitPrice', 'categoryId', 'taxId', 'active'])
+          && product.name is string
+          && product.name.size() > 0
+          && product.unitPrice is int
+          && product.unitPrice > 0
+          && product.categoryId is string
+          && product.categoryId.size() > 0
+          && (product.taxId == null || product.taxId is string)
+          && product.active is bool;
+      }
+
+      allow read: if isActiveEmployee();
+      allow create, update: if isAdmin() && isValidProduct(request.resource.data);
+      // RF-INV-03: a product is deactivated, never deleted, so the history keeps it.
+      allow delete: if false;
+    }
   }
 }
