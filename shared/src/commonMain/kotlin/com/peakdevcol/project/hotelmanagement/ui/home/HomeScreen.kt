@@ -40,6 +40,7 @@ import com.peakdevcol.project.hotelmanagement.resources.menu_balance
 import com.peakdevcol.project.hotelmanagement.resources.menu_current_orders
 import com.peakdevcol.project.hotelmanagement.resources.menu_employees
 import com.peakdevcol.project.hotelmanagement.resources.menu_inventory
+import com.peakdevcol.project.hotelmanagement.resources.menu_settings
 import com.peakdevcol.project.hotelmanagement.resources.order_product_line
 import com.peakdevcol.project.hotelmanagement.resources.rejected_additions_message
 import com.peakdevcol.project.hotelmanagement.resources.rejected_additions_title
@@ -191,4 +192,5 @@ fun AppSection.title() = when (this) {
     AppSection.ADD_ORDER -> Res.string.menu_add_order
     AppSection.CURRENT_ORDERS -> Res.string.menu_current_orders
     AppSection.EMPLOYEES -> Res.string.menu_employees
+    AppSection.SETTINGS -> Res.string.menu_settings
 }

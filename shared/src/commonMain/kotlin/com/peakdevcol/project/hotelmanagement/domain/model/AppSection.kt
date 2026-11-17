@@ -7,9 +7,11 @@ enum class AppSection {
     BALANCE,
     INVENTORY,
     EMPLOYEES,
+    SETTINGS,
 }
 
-private val ADMINISTRATOR_SECTIONS = setOf(AppSection.BALANCE, AppSection.INVENTORY, AppSection.EMPLOYEES)
+private val ADMINISTRATOR_SECTIONS =
+    setOf(AppSection.BALANCE, AppSection.INVENTORY, AppSection.EMPLOYEES, AppSection.SETTINGS)
 
 /**
  * RF-AUTH-05: the role decides which sections an employee sees (PRD, section 3), and the area
@@ -22,6 +24,7 @@ fun menuFor(user: User): List<AppSection> {
             AppSection.BALANCE,
             AppSection.INVENTORY,
             AppSection.EMPLOYEES,
+            AppSection.SETTINGS,
             AppSection.ADD_ORDER,
         )
         UserArea.SERVICE, UserArea.RECEPTION, UserArea.HOUSEKEEPING, UserArea.MAINTENANCE -> listOf(
@@ -30,6 +33,7 @@ fun menuFor(user: User): List<AppSection> {
             AppSection.BALANCE,
             AppSection.INVENTORY,
             AppSection.EMPLOYEES,
+            AppSection.SETTINGS,
         )
     }
     return ordered.filter { it !in ADMINISTRATOR_SECTIONS || user.type == UserType.ADMIN }

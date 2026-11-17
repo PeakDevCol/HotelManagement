@@ -47,6 +47,7 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesScreen
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginScreen
+import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsScreen
 import com.peakdevcol.project.hotelmanagement.ui.theme.HotelManagementTheme
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.stringResource
@@ -83,6 +84,9 @@ data object TaxesRoute
 
 @Serializable
 data object EmployeesRoute
+
+@Serializable
+data object SettingsRoute
 
 /** A null id opens the form to create an employee. */
 @Serializable
@@ -149,6 +153,7 @@ private fun HomeNavigation() {
                     AppSection.CURRENT_ORDERS -> navController.navigate(CurrentOrdersRoute)
                     AppSection.INVENTORY -> navController.navigate(InventoryRoute)
                     AppSection.EMPLOYEES -> navController.navigate(EmployeesRoute)
+                    AppSection.SETTINGS -> navController.navigate(SettingsRoute)
                     AppSection.BALANCE -> navController.navigate(ComingSoonRoute(section.name))
                 }
             })
@@ -199,6 +204,9 @@ private fun HomeNavigation() {
                 employeeId = entry.toRoute<EmployeeFormRoute>().employeeId,
                 onBack = { navController.popBackStack() },
             )
+        }
+        composable<SettingsRoute> {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
         composable<ComingSoonRoute> { entry ->
             ComingSoonScreen(
