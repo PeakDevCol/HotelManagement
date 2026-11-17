@@ -63,7 +63,14 @@ service cloud.firestore {
           && order.products.size() > 0
           && order.totalPayAmount is int
           && order.totalPayAmount >= 0
+          && hasValidTaxAmount(order)
           && order.dateOrder == request.time;
+      }
+
+      // RF-INV-07: the tax is a part of the total, in whole pesos. Orders saved before M4 have none.
+      function hasValidTaxAmount(order) {
+        return !('taxAmount' in order)
+          || (order.taxAmount is int && order.taxAmount >= 0 && order.taxAmount <= order.totalPayAmount);
       }
 
       function changesOnly(fields) {
@@ -85,7 +92,8 @@ service cloud.firestore {
       // Adding lines does not touch the total (V6): closing the bill settles it.
       function isProductChange() {
         return movesFrom(['in_progress'], 'in_progress')
-          && changesOnly(['products', 'totalPayAmount'])
+          && changesOnly(['products', 'totalPayAmount', 'taxAmount'])
+          && hasValidTaxAmount(request.resource.data)
           && request.resource.data.products is list
           && request.resource.data.products.size() > 0
           && request.resource.data.totalPayAmount is int
@@ -95,7 +103,8 @@ service cloud.firestore {
       // RF-CUR-04: closing settles the total from the lines, which cannot change afterwards.
       function isClosing() {
         return movesFrom(['in_progress'], 'closed')
-          && changesOnly(['state', 'closedAt', 'closedBy', 'totalPayAmount'])
+          && changesOnly(['state', 'closedAt', 'closedBy', 'totalPayAmount', 'taxAmount'])
+          && hasValidTaxAmount(request.resource.data)
           && request.resource.data.totalPayAmount is int
           && request.resource.data.totalPayAmount >= 0
           && request.resource.data.closedBy == request.auth.uid
@@ -192,6 +201,24 @@ service cloud.firestore {
       allow create, update: if isAdmin() && isValidCategory(request.resource.data);
       // The app only deletes a category that has no products (RF-INV-04).
       allow delete: if isAdmin();
+    }
+
+    // RF-INV-07: optional taxes. The rate is a whole number of hundredths of a point: 19 % is 1900.
+    match /Taxes/{taxId} {
+      function isValidTax(tax) {
+        return tax.keys().hasOnly(['name', 'rate', 'active'])
+          && tax.name is string
+          && tax.name.size() > 0
+          && tax.rate is int
+          && tax.rate > 0
+          && tax.rate <= 10000
+          && tax.active is bool;
+      }
+
+      allow read: if isActiveEmployee();
+      allow create, update: if isAdmin() && isValidTax(request.resource.data);
+      // A tax is deactivated, never deleted: products may still point to it.
+      allow delete: if false;
     }
 
     match /Products/{productId} {

@@ -133,7 +133,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
 | Crear pedido | ✅ Migrado | El catálogo sale del inventario en Firestore (M4). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
 | Pedidos en curso | ✅ Hecho en M3 | Lista en tiempo real, filtros, detalle, cerrar, reabrir, pagar, cancelar, y agregar y quitar productos, también sin conexión. |
-| Inventario | 🔄 En parte | Productos y categorías desde el primer PR de M4; solo lo ve el administrador. Los impuestos llegan en el segundo. |
+| Inventario | ✅ Hecho en M4 | Productos, categorías e impuestos. Solo lo ve el administrador. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
 | Recuperar contraseña | ⬜ Pendiente | |
 | Roles y permisos | 🔄 En parte | Desde M2 solo entra quien tiene perfil activo, y las reglas distinguen al administrador. Las secciones según el rol llegan en M6. |
@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 205 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 229 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -258,13 +258,13 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 ### 6.4 Inventario (`INV`)
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
-| RF-INV-01 | Listar productos | Nombre, precio, categoría, impuesto y si está activo | 🔄 Falta el impuesto, que llega en el segundo PR de M4 |
+| RF-INV-01 | Listar productos | Nombre, precio, categoría, impuesto y si está activo | ✅ |
 | RF-INV-02 | Crear y editar productos | Nombre obligatorio y precio mayor que 0. Cambiar un precio no altera los pedidos ya guardados. | ✅ |
 | RF-INV-03 | Desactivar productos | Un producto inactivo no aparece al crear pedidos. Se desactiva, no se borra, para conservar el historial. | ✅ |
 | RF-INV-04 | Categorías | El administrador las crea, las renombra, las ordena y borra las que no tienen productos, en su propia pantalla. No hay categorías por defecto. Agrupan el selector de productos, en el orden que les da el administrador. | ✅ |
 | RF-INV-05 | Existencias | Queda para después ([P5](#12-preguntas-abiertas)) | — |
 | RF-INV-06 | Migrar el catálogo inicial | ~~Los 9 productos de `StaticProductCatalog` se cargan en Firestore una sola vez~~. Descartado el 2026-11-16: esos productos eran de ejemplo y el inventario empieza vacío. | — |
-| RF-INV-07 | Impuestos opcionales ([P14](#12-preguntas-abiertas)) | El administrador define impuestos con nombre y porcentaje (por ejemplo, IVA o impuesto al consumo). Cada producto puede tener uno o ninguno. El precio de venta incluye el impuesto, y el pedido guarda cuánto impuesto tiene cada línea. | ⬜ |
+| RF-INV-07 | Impuestos opcionales ([P14](#12-preguntas-abiertas)) | El administrador define impuestos con nombre y porcentaje (por ejemplo, IVA o impuesto al consumo). Cada producto puede tener uno o ninguno. El precio de venta incluye el impuesto, y el pedido guarda cuánto impuesto tiene cada línea. El porcentaje admite hasta dos decimales. El impuesto se calcula hacia adentro del precio y se redondea al peso más cercano. Un impuesto inactivo deja de aplicarse a los pedidos nuevos. | ✅ |
 
 ### 6.5 Balance (`BAL`)
 Todo el balance sale de `Payments` (sección 8), que reúne en un solo lugar los pagos de pedidos y, desde la v1.2, los de reservas.
@@ -553,7 +553,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `CashClosings/{id}` | `from`, `to`, `type` (`daily` o `manual`), `expectedCash`, `countedCash`, `difference`, `note`, `closedBy`, `createdAt` | Cierre de caja (P17) | M5 |
 | `Products/{id}` | `name`, `unitPrice`, `categoryId`, `taxId`, `active` | Inventario. Se desactivan, no se borran. | M4 |
 | `Categories/{id}` | `name`, `position` | Categorías del inventario, en el orden que define el administrador (RF-INV-04) | M4 |
-| `Taxes/{id}` | `name`, `rate`, `active` | Impuestos opcionales (P14) | M4 |
+| `Taxes/{id}` | `name`, `rate`, `active` | Impuestos opcionales (P14). `rate` es un entero en centésimas de punto: 19 % es `1900` y 8,5 % es `850`. Se desactivan, no se borran. | M4 |
 | `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt` | Cada versión agrega los suyos | M6 |
 
 **Asistencia (v1.1)**
@@ -783,7 +783,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-16 | Cualquier empleado activo cierra, reabre y cobra cualquier pedido, no solo los suyos. Solo un administrador cancela. | Tabla de la sección 6.3: quien cobra en caja no es siempre quien tomó el pedido |
 | 2026-11-16 | No se puede quitar el último producto de un pedido. Si el pedido ya no va, lo cancela un administrador con un motivo. | Evitar pedidos vacíos por cobrar. Se implementa con RF-CUR-06. |
 | 2026-11-16 | "Sin conexión" en el detalle de un pedido se deduce de que Firestore esté mostrando su copia local. Los botones de cerrar, reabrir, pagar y cancelar se desactivan con un aviso (RF-CUR-12). | No hace falta código de conectividad por plataforma, y una transacción sin servidor falla de todas formas |
-| 2026-11-16 | Los impuestos por línea del pedido (`taxRate` y `taxAmount`) quedan para M4 | Los impuestos se crean en M4 (RF-INV-07) |
+| 2026-11-16 | Los impuestos por línea del pedido (`taxRate` y `taxAmount`) quedan para M4. Hechos el 2026-11-17. | Los impuestos se crean en M4 (RF-INV-07) |
 | 2026-11-16 | V6: los productos se agregan a un pedido con `arrayUnion`, una línea con id propio por cada producto agregado, y **sin** `increment` para el total. El total que muestra la app sale siempre de las líneas, y `totalPayAmount` se guarda de nuevo al cerrar la cuenta y al quitar un producto. | En la prueba, la librería envió el `increment` como número decimal y las reglas, que exigen pesos enteros, rechazaron la escritura. Sin `increment` no hay total que dos dispositivos puedan pisar. |
 | 2026-11-16 | Un producto agregado a un pedido que ya lo tiene queda como una línea aparte, sin sumar cantidades | `arrayUnion` solo fusiona bien líneas distintas, y el historial muestra cada ronda |
 | 2026-11-16 | La app guarda en el dispositivo una lista pequeña de los productos agregados sin conexión que el servidor no ha confirmado. Al abrir el menú la compara con el pedido del servidor y avisa cuáles se rechazaron. En Android y escritorio es un archivo en la carpeta de datos de la app; en iOS, las preferencias del usuario. Sin dependencias nuevas. | Firestore descarta una escritura rechazada sin avisar, y más aún si la app se cerró (V6) |
@@ -793,6 +793,10 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-16 | El inventario empieza vacío: no se cargan los 9 productos de ejemplo ni categorías por defecto. Se descarta RF-INV-06 y se elimina `StaticProductCatalog`. | Decisión del negocio: esos productos solo servían de ejemplo |
 | 2026-11-16 | Una categoría solo se borra si no tiene productos, activos o inactivos | Los productos no se borran, y quedarían sin grupo |
 | 2026-11-16 | Solo el administrador ve "Inventario" en el menú. El resto de las secciones según el rol sigue en M6 (RF-AUTH-05). | Tabla de permisos de la sección 3 |
+| 2026-11-17 | El porcentaje de un impuesto se guarda como entero en centésimas de punto (`rate`: 19 % es `1900`), con hasta dos decimales | Evitar números decimales en todo lo que termina en dinero |
+| 2026-11-17 | El impuesto de una línea se calcula hacia adentro del precio de venta y se redondea al peso más cercano: con 19 %, $11.900 tienen $1.900 de impuesto. Cada línea guarda `taxRate` y `taxAmount`, y el pedido, la suma en `taxAmount`. | RF-INV-07: el precio de venta incluye el impuesto, y el balance lo muestra aparte (RF-BAL-07) |
+| 2026-11-17 | El pedido copia el porcentaje del impuesto al agregar el producto. Cambiar o desactivar un impuesto solo afecta a lo que se pida desde entonces. | Igual que el precio: lo ya vendido no cambia |
+| 2026-11-17 | El `taxAmount` del pedido, como el total, se vuelve a guardar al cerrar la cuenta y al quitar un producto | Agregar líneas con `arrayUnion` no actualiza las sumas del pedido (V6) |
 
 ## 14. Riesgos
 
