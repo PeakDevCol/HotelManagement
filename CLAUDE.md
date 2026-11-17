@@ -69,6 +69,15 @@ Capas dentro de `shared`, con las dependencias apuntando hacia el dominio: `pres
 La app iOS completa se compila desde Xcode (`iosApp/`) en macOS. Si no estás en macOS, dilo en vez de asumir que compila.
 El CI (`.github/workflows/ci.yml`) corre los tests y compila Android y escritorio en cada PR hacia `develop`, sin `google-services.json`.
 
+## Sesiones en la nube (claude.ai/code y la app móvil)
+Una sesión en la nube parte de un clon limpio del repo: no tiene los archivos ignorados por git ni lo que haya en el computador de quien desarrolla.
+
+- **Entorno:** el script `scripts/cloud-setup.sh` instala el SDK de Android. El entorno debe permitir el dominio `dl.google.com` y definir `ANDROID_HOME=/opt/android-sdk`.
+- **Qué se puede hacer:** código, tests (`./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test`), compilar Android y escritorio, y abrir PR. iOS no compila ahí: dilo en el PR.
+- **Firebase:** sin `google-services.json` ni `desktopApp/firebase.properties`, las apps arrancan con Firebase desactivado. Si el entorno define `FIREBASE_DESKTOP_APP_ID`, `FIREBASE_DESKTOP_API_KEY`, `FIREBASE_DESKTOP_PROJECT_ID` y `FIREBASE_DESKTOP_STORAGE_BUCKET`, crea `desktopApp/firebase.properties` con ellas (ver `desktopApp/firebase.properties.example`) y nunca lo subas.
+- **Lo que queda para una sesión en el computador:** publicar reglas (lo hace una persona), comprobarlas con peticiones reales, probar los casos de uso contra Firestore y revisar las pantallas. Un PR hecho en la nube lo dice en "No verificado" y no se fusiona hasta esa comprobación.
+- **Contexto:** el estado del proyecto está en la sección 10 del PRD y las decisiones en la 13. No hay más memoria que la del repo.
+
 ## Convenciones
 - Código e identificadores en inglés. Textos que ve el usuario en español de Colombia.
 - Dinero en pesos como `Long`, nunca `Double`. Se muestra con `formatPesos` (`$24.500`).
