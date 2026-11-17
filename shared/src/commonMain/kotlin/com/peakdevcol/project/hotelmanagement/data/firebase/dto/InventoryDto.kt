@@ -2,6 +2,7 @@ package com.peakdevcol.project.hotelmanagement.data.firebase.dto
 
 import com.peakdevcol.project.hotelmanagement.domain.model.Category
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryProduct
+import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import kotlinx.serialization.Serializable
 
 /** A category stored at `Categories/{id}`. */
@@ -14,6 +15,18 @@ internal data class CategoryDto(
 internal fun Category.toDto() = CategoryDto(name = name, position = position)
 
 internal fun CategoryDto.toCategory(id: String) = Category(id = id, name = name, position = position)
+
+/** A tax stored at `Taxes/{id}`. The rate is in hundredths of a point: 19 % is 1900. */
+@Serializable
+internal data class TaxDto(
+    val name: String = "",
+    val rate: Int = 0,
+    val active: Boolean = true,
+)
+
+internal fun Tax.toDto() = TaxDto(name = name, rate = rate, active = active)
+
+internal fun TaxDto.toTax(id: String) = Tax(id = id, name = name, rate = rate, active = active)
 
 /** A product stored at `Products/{id}`. The lines of an order use [ProductDto], which copies name and price. */
 @Serializable

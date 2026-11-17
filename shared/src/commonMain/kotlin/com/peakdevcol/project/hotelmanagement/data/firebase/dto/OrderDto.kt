@@ -19,6 +19,8 @@ internal data class OrderDto(
     val dateOrder: BaseTimestamp = Timestamp.ServerTimestamp,
     val state: String,
     val totalPayAmount: Long,
+    /** RF-INV-07: the part of the total that is tax. Orders saved before M4 have none. */
+    val taxAmount: Long = 0,
 )
 
 @Serializable
@@ -30,6 +32,9 @@ internal data class ProductDto(
     val totalAmount: Long,
     /** Orders saved before RF-CUR-13 have lines without id. */
     val lineId: String? = null,
+    /** RF-INV-07: the rate the price includes, in hundredths of a point, and how much of the line is tax. */
+    val taxRate: Int = 0,
+    val taxAmount: Long = 0,
 )
 
 /** Returns null when the state or the destination is not one of section 8 of the PRD. */
@@ -56,6 +61,7 @@ internal fun List<ProductDto>.toProducts(): List<Product> = mapIndexed { index, 
         unitPrice = line.unitAmount,
         quantity = line.quantity,
         lineId = line.lineId ?: "line-$index",
+        taxRate = line.taxRate,
     )
 }
 
@@ -76,6 +82,7 @@ internal fun Order.toDto() = OrderDto(
     typeOrderNumber = destination.number(),
     state = state.code(),
     totalPayAmount = totalAmount,
+    taxAmount = taxAmount,
 )
 
 internal fun Product.toDto() = ProductDto(
@@ -85,6 +92,8 @@ internal fun Product.toDto() = ProductDto(
     unitAmount = unitPrice,
     totalAmount = totalAmount,
     lineId = lineId,
+    taxRate = taxRate,
+    taxAmount = taxAmount,
 )
 
 /**
@@ -98,6 +107,8 @@ internal fun Product.toFirestoreMap(): Map<String, Any?> = mapOf(
     "unitAmount" to unitPrice,
     "totalAmount" to totalAmount,
     "lineId" to lineId,
+    "taxRate" to taxRate,
+    "taxAmount" to taxAmount,
 )
 
 /** The state codes of section 8 of the PRD, which the Firestore rules also check. */

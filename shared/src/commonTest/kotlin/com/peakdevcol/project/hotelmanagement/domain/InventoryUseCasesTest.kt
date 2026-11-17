@@ -5,6 +5,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.Category
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryError
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryProduct
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
+import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DeleteCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.MoveCategoryUseCase
@@ -12,8 +13,10 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.MoveDirection
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveInventoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveProductUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveTaxUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeCategoryRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeProductRepository
+import com.peakdevcol.project.hotelmanagement.fakes.FakeTaxRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -32,6 +35,9 @@ class InventoryUseCasesTest {
 
     private val categories = FakeCategoryRepository(snacks, drinks, empty)
     private val products = FakeProductRepository(beer, water, chips, oldJuice)
+    private val iva = Tax(id = "iva", name = "IVA", rate = 19_00)
+    private val consumption = Tax(id = "consumption", name = "Impoconsumo", rate = 8_00, active = false)
+    private val taxes = FakeTaxRepository(iva, consumption)
 
     private fun categoryNames() = categories.categories.value.sortedBy { it.position }.map { it.name }
 
@@ -39,7 +45,7 @@ class InventoryUseCasesTest {
 
     @Test
     fun theCatalogIsGroupedByCategoryInTheOrderOfTheAdministrator() = runTest {
-        val catalog = GetProductsUseCase(products, categories)().getOrThrow()
+        val catalog = GetProductsUseCase(products, categories, taxes)().getOrThrow()
 
         assertEquals(listOf("Bebidas", "Snacks"), catalog.map { it.categoryName })
         assertEquals(listOf("Agua", "cerveza Aguila"), catalog.first().products.map { it.name })
@@ -47,7 +53,7 @@ class InventoryUseCasesTest {
 
     @Test
     fun inactiveProductsAndEmptyCategoriesAreNotOffered() = runTest {
-        val catalog = GetProductsUseCase(products, categories)().getOrThrow()
+        val catalog = GetProductsUseCase(products, categories, taxes)().getOrThrow()
 
         assertTrue(catalog.none { group -> group.products.any { it.id == "juice" } })
         assertTrue(catalog.none { it.categoryName == "Piscina" })
@@ -55,7 +61,7 @@ class InventoryUseCasesTest {
 
     @Test
     fun aCatalogProductIsReadyToBeAddedToAnOrder() = runTest {
-        val offered = GetProductsUseCase(products, categories)().getOrThrow().last().products.single()
+        val offered = GetProductsUseCase(products, categories, taxes)().getOrThrow().last().products.single()
 
         assertEquals(Product(id = "chips", name = "Papas", unitPrice = 2_500, quantity = 1), offered)
     }
@@ -64,7 +70,7 @@ class InventoryUseCasesTest {
     fun aProductWhoseCategoryIsGoneIsStillOffered() = runTest {
         categories.categories.value = listOf(drinks)
 
-        val catalog = GetProductsUseCase(products, categories)().getOrThrow()
+        val catalog = GetProductsUseCase(products, categories, taxes)().getOrThrow()
 
         assertEquals(CatalogGroup(null, listOf(Product(id = "chips", name = "Papas", unitPrice = 2_500))), catalog.last())
     }
@@ -73,14 +79,14 @@ class InventoryUseCasesTest {
     fun anInventoryThatCannotBeReadIsAFailure() = runTest {
         products.readFailure = IllegalStateException("permission denied")
 
-        assertTrue(GetProductsUseCase(products, categories)().isFailure)
+        assertTrue(GetProductsUseCase(products, categories, taxes)().isFailure)
     }
 
     // ---- RF-INV-01
 
     @Test
     fun theInventoryShowsEveryProductAlsoTheInactiveOnes() = runTest {
-        val inventory = ObserveInventoryUseCase(products, categories)().first()
+        val inventory = ObserveInventoryUseCase(products, categories, taxes)().first()
 
         assertEquals(listOf(drinks, snacks, empty), inventory.categories)
         assertEquals(listOf("Agua", "cerveza Aguila", "Jugo"), inventory.productsOf(drinks).map { it.name })
@@ -201,5 +207,63 @@ class InventoryUseCasesTest {
 
         assertEquals(InventoryError.CategoryInUse, result.exceptionOrNull())
         assertEquals(3, categories.categories.value.size)
+    }
+
+    // ---- RF-INV-07
+
+    @Test
+    fun aProductCarriesTheRateOfItsTaxIntoTheOrder() = runTest {
+        products.products.value = listOf(beer.copy(taxId = "iva"), water)
+
+        val offered = GetProductsUseCase(products, categories, taxes)().getOrThrow().single().products
+
+        assertEquals(listOf("Agua" to 0, "cerveza Aguila" to 19_00), offered.map { it.name to it.taxRate })
+    }
+
+    @Test
+    fun anInactiveTaxIsNotAppliedToNewOrders() = runTest {
+        products.products.value = listOf(beer.copy(taxId = "consumption"))
+
+        val offered = GetProductsUseCase(products, categories, taxes)().getOrThrow().single().products.single()
+
+        assertEquals(0, offered.taxRate)
+    }
+
+    @Test
+    fun theInventoryListsEveryTaxByName() = runTest {
+        val inventory = ObserveInventoryUseCase(products, categories, taxes)().first()
+
+        assertEquals(listOf(consumption, iva), inventory.taxes)
+        assertEquals(iva, inventory.taxOf(beer.copy(taxId = "iva")))
+    }
+
+    @Test
+    fun createsATaxFromThePercentageAsTyped() = runTest {
+        val emptyTaxes = FakeTaxRepository()
+
+        val result = SaveTaxUseCase(emptyTaxes)(taxId = null, name = " IVA ", rateText = "19")
+        SaveTaxUseCase(emptyTaxes)(taxId = null, name = "Reducido", rateText = "8,5")
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("IVA" to 19_00, "Reducido" to 8_50), emptyTaxes.taxes.value.map { it.name to it.rate })
+    }
+
+    @Test
+    fun editingATaxKeepsItsIdAndCanDeactivateIt() = runTest {
+        SaveTaxUseCase(taxes)(taxId = "iva", name = "IVA", rateText = "16", active = false)
+
+        assertEquals(Tax(id = "iva", name = "IVA", rate = 16_00, active = false), taxes.taxes.value.single { it.id == "iva" })
+        assertEquals(2, taxes.taxes.value.size)
+    }
+
+    @Test
+    fun aTaxNeedsANameAndAValidPercentage() = runTest {
+        val save = SaveTaxUseCase(taxes)
+
+        assertEquals(InventoryError.BlankName, save(null, "  ", "19").exceptionOrNull())
+        listOf("", "0", "abc", "101", "19,555", "-5", "1.2.3").forEach { rate ->
+            assertEquals(InventoryError.InvalidTaxRate, save(null, "IVA", rate).exceptionOrNull(), rate)
+        }
+        assertEquals(2, taxes.taxes.value.size)
     }
 }

@@ -20,6 +20,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.OrderState
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderStateChange
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.model.after
+import com.peakdevcol.project.hotelmanagement.domain.model.taxAmount
 import com.peakdevcol.project.hotelmanagement.domain.model.totalAmount
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
 import dev.gitlive.firebase.firestore.Direction
@@ -130,13 +131,14 @@ internal class FirestoreOrderRepository(
     private fun OrderStateChange.orderFields(newState: OrderState, order: Order): Array<Pair<String, Any?>> {
         val state = "state" to newState.code()
         return when (this) {
-            // Lines added from several devices do not update the stored total (V6), so closing
-            // the bill is where it is settled: the products cannot change after this.
+            // Lines added from several devices do not update the stored total or its tax (V6), so
+            // closing the bill is where they are settled: the products cannot change after this.
             is OrderStateChange.Close -> arrayOf(
                 state,
                 "closedAt" to FieldValue.serverTimestamp,
                 "closedBy" to employeeId,
                 TOTAL_FIELD to order.totalAmount,
+                TAX_FIELD to order.taxAmount,
             )
             is OrderStateChange.Reopen -> arrayOf(state)
             is OrderStateChange.Pay -> arrayOf(
@@ -200,6 +202,7 @@ internal class FirestoreOrderRepository(
             orderReference,
             PRODUCTS_FIELD to remaining.map { it.toFirestoreMap() },
             TOTAL_FIELD to remaining.totalAmount(),
+            TAX_FIELD to remaining.taxAmount(),
         )
         transaction.set(
             orderReference.collection(FirestorePaths.ORDER_EVENTS).document,
@@ -229,5 +232,6 @@ internal class FirestoreOrderRepository(
         val OPEN_STATES = listOf(OrderState.IN_PROGRESS.code(), OrderState.CLOSED.code())
         const val PRODUCTS_FIELD = "products"
         const val TOTAL_FIELD = "totalPayAmount"
+        const val TAX_FIELD = "taxAmount"
     }
 }

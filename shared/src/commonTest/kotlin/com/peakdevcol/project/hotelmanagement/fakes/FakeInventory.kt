@@ -5,8 +5,10 @@ import com.peakdevcol.project.hotelmanagement.domain.model.Category
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryError
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryProduct
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
+import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import com.peakdevcol.project.hotelmanagement.domain.repository.CategoryRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ProductRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.TaxRepository
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,12 +49,25 @@ class FakeCategoryRepository(vararg categories: Category) : CategoryRepository {
     }
 }
 
+class FakeTaxRepository(vararg taxes: Tax) : TaxRepository {
+    val taxes = MutableStateFlow(taxes.toList())
+    var saveFailure: InventoryError? = null
+
+    override fun observeTaxes(): Flow<List<Tax>> = taxes
+
+    override suspend fun save(tax: Tax): Result<Unit> {
+        saveFailure?.let { return Result.failure(it) }
+        taxes.value = taxes.value.filterNot { it.id == tax.id } + tax
+        return Result.success(Unit)
+    }
+}
+
 /** An inventory with a single category, for the screens that only need something to order. */
 class FakeCatalog(vararg products: Product) {
     val categoryName = "Bebidas"
     val productRepository = FakeProductRepository()
     private val categoryRepository = FakeCategoryRepository(Category(id = "drinks", name = categoryName, position = 0))
-    val getProducts = GetProductsUseCase(productRepository, categoryRepository)
+    val getProducts = GetProductsUseCase(productRepository, categoryRepository, FakeTaxRepository())
 
     init {
         offer(products.toList())

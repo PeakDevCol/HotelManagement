@@ -88,6 +88,7 @@ import com.peakdevcol.project.hotelmanagement.resources.order_remove_product_mes
 import com.peakdevcol.project.hotelmanagement.resources.order_reopen_action
 import com.peakdevcol.project.hotelmanagement.resources.order_reopen_message
 import com.peakdevcol.project.hotelmanagement.resources.order_reopened_done
+import com.peakdevcol.project.hotelmanagement.resources.order_tax_included
 import com.peakdevcol.project.hotelmanagement.resources.order_total
 import com.peakdevcol.project.hotelmanagement.resources.order_unit_price
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductDialog
@@ -333,6 +334,13 @@ private fun OrderDetailContent(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 8.dp),
             )
+            if (order.taxAmount > 0) {
+                Text(
+                    text = stringResource(Res.string.order_tax_included, formatPesos(order.taxAmount)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         item { SectionTitle(stringResource(Res.string.order_detail_history)) }
         items(detail.history) { event -> HistoryLine(event) }

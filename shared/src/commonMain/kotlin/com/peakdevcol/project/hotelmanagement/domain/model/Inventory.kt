@@ -23,7 +23,13 @@ data class InventoryProduct(
 data class Inventory(
     val categories: List<Category>,
     val products: List<InventoryProduct>,
+    val taxes: List<Tax> = emptyList(),
 ) {
+    fun taxOf(product: InventoryProduct): Tax? = taxes.firstOrNull { it.id == product.taxId }
+
+    /** The rate an order must copy for this product: an inactive tax no longer applies. */
+    fun appliedTaxRateOf(product: InventoryProduct): Int = taxOf(product)?.takeIf { it.active }?.rate ?: 0
+
     fun productsOf(category: Category): List<InventoryProduct> =
         products.filter { it.categoryId == category.id }.sortedBy { it.name.lowercase() }
 
@@ -48,6 +54,7 @@ sealed class InventoryError(message: String) : Exception(message) {
     data object InvalidPrice : InventoryError("The price must be greater than zero")
     data object MissingCategory : InventoryError("The product needs a category")
     data object DuplicateCategory : InventoryError("There is already a category with that name")
+    data object InvalidTaxRate : InventoryError("The rate must be a percentage above 0 and up to 100")
 
     /** A category with products is not deleted: its products would be left without group. */
     data object CategoryInUse : InventoryError("The category still has products")

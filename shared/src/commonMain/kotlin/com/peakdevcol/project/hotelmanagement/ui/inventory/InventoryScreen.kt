@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.Inventory
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryProduct
+import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import com.peakdevcol.project.hotelmanagement.domain.model.formatPesos
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.category_none
@@ -39,6 +40,7 @@ import com.peakdevcol.project.hotelmanagement.resources.inventory_error
 import com.peakdevcol.project.hotelmanagement.resources.inventory_new_product
 import com.peakdevcol.project.hotelmanagement.resources.inventory_no_categories
 import com.peakdevcol.project.hotelmanagement.resources.inventory_product_inactive
+import com.peakdevcol.project.hotelmanagement.resources.inventory_taxes
 import com.peakdevcol.project.hotelmanagement.resources.menu_inventory
 import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CenteredMessage
@@ -51,6 +53,7 @@ fun InventoryScreen(
     onBack: () -> Unit,
     onProductClick: (productId: String?) -> Unit,
     onCategoriesClick: () -> Unit,
+    onTaxesClick: () -> Unit,
     viewModel: InventoryViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -60,6 +63,7 @@ fun InventoryScreen(
             when (effect) {
                 is InventoryEffect.NavigateToProduct -> onProductClick(effect.productId)
                 InventoryEffect.NavigateToCategories -> onCategoriesClick()
+                InventoryEffect.NavigateToTaxes -> onTaxesClick()
             }
         }
     }
@@ -78,10 +82,14 @@ fun InventoryScreen(
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            TextButton(
-                onClick = { viewModel.onIntent(InventoryIntent.ManageCategories) },
-                modifier = Modifier.padding(horizontal = 8.dp),
-            ) { Text(stringResource(Res.string.inventory_categories)) }
+            Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+                TextButton(onClick = { viewModel.onIntent(InventoryIntent.ManageCategories) }) {
+                    Text(stringResource(Res.string.inventory_categories))
+                }
+                TextButton(onClick = { viewModel.onIntent(InventoryIntent.ManageTaxes) }) {
+                    Text(stringResource(Res.string.inventory_taxes))
+                }
+            }
             HorizontalDivider()
             when {
                 state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -118,12 +126,16 @@ private fun InventoryList(inventory: Inventory, onProductClick: (String) -> Unit
                     )
                 }
             }
-            items(products, key = { it.id }) { product -> ProductRow(product, onClick = { onProductClick(product.id) }) }
+            items(products, key = { it.id }) { product ->
+                ProductRow(product, tax = inventory.taxOf(product), onClick = { onProductClick(product.id) })
+            }
         }
         val withoutCategory = inventory.productsWithoutCategory
         if (withoutCategory.isNotEmpty()) {
             item(key = "category-none") { CategoryHeader(stringResource(Res.string.category_none)) }
-            items(withoutCategory, key = { it.id }) { product -> ProductRow(product, onClick = { onProductClick(product.id) }) }
+            items(withoutCategory, key = { it.id }) { product ->
+                ProductRow(product, tax = inventory.taxOf(product), onClick = { onProductClick(product.id) })
+            }
         }
     }
 }
@@ -139,7 +151,7 @@ private fun CategoryHeader(name: String) {
 }
 
 @Composable
-private fun ProductRow(product: InventoryProduct, onClick: () -> Unit) {
+private fun ProductRow(product: InventoryProduct, tax: Tax?, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -151,6 +163,13 @@ private fun ProductRow(product: InventoryProduct, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (product.active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (tax != null) {
+                Text(
+                    text = tax.label(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (!product.active) {
                 Text(
                     text = stringResource(Res.string.inventory_product_inactive),

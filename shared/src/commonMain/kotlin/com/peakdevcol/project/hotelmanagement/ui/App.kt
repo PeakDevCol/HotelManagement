@@ -43,6 +43,7 @@ import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
+import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesScreen
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginScreen
 import com.peakdevcol.project.hotelmanagement.ui.theme.HotelManagementTheme
 import kotlinx.serialization.Serializable
@@ -74,6 +75,9 @@ data class ProductFormRoute(val productId: String? = null)
 
 @Serializable
 data object CategoriesRoute
+
+@Serializable
+data object TaxesRoute
 
 @Serializable
 data class OrderDetailRoute(val orderId: String)
@@ -159,6 +163,7 @@ private fun HomeNavigation() {
                 onBack = { navController.popBackStack() },
                 onProductClick = { productId -> navController.navigate(ProductFormRoute(productId)) },
                 onCategoriesClick = { navController.navigate(CategoriesRoute) },
+                onTaxesClick = { navController.navigate(TaxesRoute) },
             )
         }
         composable<ProductFormRoute> { entry ->
@@ -169,6 +174,9 @@ private fun HomeNavigation() {
         }
         composable<CategoriesRoute> {
             CategoriesScreen(onBack = { navController.popBackStack() })
+        }
+        composable<TaxesRoute> {
+            TaxesScreen(onBack = { navController.popBackStack() })
         }
         composable<ComingSoonRoute> { entry ->
             ComingSoonScreen(

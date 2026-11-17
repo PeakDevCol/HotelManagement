@@ -17,6 +17,9 @@ data class Order(
 ) {
     val totalAmount: Long get() = products.totalAmount()
 
+    /** RF-INV-07: how much of the total is tax. */
+    val taxAmount: Long get() = products.taxAmount()
+
     companion object {
         /** Reusing the id of an order when retrying a save overwrites the same document. */
         fun newId(): String = com.peakdevcol.project.hotelmanagement.domain.model.newId()

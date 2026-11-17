@@ -98,4 +98,17 @@ class OrderDtoTest {
         assertEquals(listOf("line-0", "line-1"), first)
         assertEquals(first, second)
     }
+
+    @Test
+    fun everyLineStoresItsTaxAndTheOrderTheSum() {
+        val taxed = Product(id = "1", name = "Cerveza", unitPrice = 11_900, quantity = 2, taxRate = 19_00)
+        val untaxed = Product(id = "5", name = "Agua", unitPrice = 2_000)
+
+        val dto = Order.create("uid-1", listOf(taxed, untaxed), OrderDestination.Other).toDto()
+
+        assertEquals(listOf(19_00 to 3_800L, 0 to 0L), dto.products.map { it.taxRate to it.taxAmount })
+        assertEquals(3_800, dto.taxAmount)
+        assertEquals(25_800, dto.totalPayAmount)
+        assertEquals(3_800, dto.toOrder(isPendingToSend = false)?.taxAmount)
+    }
 }
