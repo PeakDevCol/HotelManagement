@@ -33,6 +33,18 @@ internal class FirebaseAuthRepository(
         auth.value.signOut()
     }
 
+    override suspend fun sendPasswordEmail(email: String): Result<Unit> = try {
+        auth.value.sendPasswordEmail(email)
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: FirebaseAuthInvalidUserException) {
+        // RF-AUTH-04: an email without account gets the same answer as one with it.
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e.toAuthError())
+    }
+
     private inline fun authCall(block: () -> Any?): Result<Unit> =
         try {
             block()

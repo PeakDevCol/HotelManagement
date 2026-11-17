@@ -135,13 +135,13 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Pedidos en curso | ✅ Hecho en M3 | Lista en tiempo real, filtros, detalle, cerrar, reabrir, pagar, cancelar, y agregar y quitar productos, también sin conexión. |
 | Inventario | ✅ Hecho en M4 | Productos, categorías e impuestos. Solo lo ve el administrador. |
 | Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
-| Recuperar contraseña | ⬜ Pendiente | |
-| Roles y permisos | 🔄 En parte | Desde M2 solo entra quien tiene perfil activo, y las reglas distinguen al administrador. Las secciones según el rol llegan en M6. |
+| Recuperar contraseña | ✅ Hecho en M6 | "¿Olvidaste la contraseña?" en el inicio de sesión |
+| Roles y permisos | ✅ Hecho en M6 | El menú muestra las secciones según el rol y las ordena según el área. El administrador crea y gestiona empleados desde la app. |
 | Turnos y asistencia | ⬜ Nuevo | v1.1 |
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 229 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 264 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -194,8 +194,8 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 | RF-AUTH-01 | Iniciar sesión con correo y contraseña | Un error de credenciales o de red muestra un mensaje claro. Al entrar se abre el menú. | ✅ |
 | RF-AUTH-02 | Quitar el registro abierto ([P1](#12-preguntas-abiertas)) | La pantalla de registro desaparece. Las cuentas se crean desde RF-EMP-04. | ✅ |
 | RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve a la introducción. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | ✅ |
-| RF-AUTH-04 | Recuperar contraseña | "¿Olvidaste la contraseña?" envía el correo de restablecimiento de Firebase | ⬜ |
-| RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | ⬜ |
+| RF-AUTH-04 | Recuperar contraseña | "¿Olvidaste la contraseña?" envía el correo de restablecimiento de Firebase Usa el correo escrito en el inicio de sesión y responde siempre lo mismo, exista o no la cuenta. En escritorio el correo se pide por la API REST de Firebase Auth (V1). | ✅ |
+| RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | ✅ |
 | RF-AUTH-06 | ~~Cuentas nuevas pendientes de aprobación~~ | Descartado por P1: ya no hay registro abierto | — |
 | RF-AUTH-07 | Sin documento, sin acceso | Una cuenta de Firebase Auth sin documento activo en `Users` no lee ni escribe nada, aunque se haya creado por fuera de la app. La app muestra "Tu cuenta no está activa" y solo deja cerrar sesión. | ✅ |
 
@@ -284,11 +284,11 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 ### 6.6 Administración (`EMP`)
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
-| RF-EMP-01 | Listar empleados | Nombre, correo, rol, área y si está activo | ⬜ |
-| RF-EMP-02 | Activar o desactivar | Un empleado inactivo no puede usar la app, y las reglas de Firestore lo impiden también | ⬜ |
-| RF-EMP-03 | Cambiar el rol | Entre `basic`, `reception` y `admin`. Siempre tiene que quedar al menos un administrador. | ⬜ |
-| RF-EMP-04 | Crear empleados ([P1](#12-preguntas-abiertas)) | El administrador ingresa nombre, correo, rol y área. La cuenta se crea sin cerrar la sesión del administrador (V1), y el empleado recibe el correo de Firebase para crear su contraseña, así nadie más la conoce. | ⬜ |
-| RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve y qué aparece primero en su menú. | ⬜ |
+| RF-EMP-01 | Listar empleados | Nombre, correo, rol, área y si está activo | ✅ |
+| RF-EMP-02 | Activar o desactivar | Un empleado inactivo no puede usar la app, y las reglas de Firestore lo impiden también | ✅ |
+| RF-EMP-03 | Cambiar el rol | Entre `basic`, `reception` y `admin`. Siempre tiene que quedar al menos un administrador. Se garantiza porque nadie puede cambiar su propio rol ni desactivarse, ni en la app ni en las reglas. | ✅ |
+| RF-EMP-04 | Crear empleados ([P1](#12-preguntas-abiertas)) | El administrador ingresa nombre, correo, rol y área. La cuenta se crea sin cerrar la sesión del administrador (V1), y el empleado recibe el correo de Firebase para crear su contraseña, así nadie más la conoce. Si el perfil no se puede guardar, la cuenta recién creada se elimina. Desde el empleado se puede reenviar el correo. | ✅ |
+| RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve y qué aparece primero en su menú. | ✅ El orden del menú. Las tareas de habitación llegan en la v1.3. |
 | RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo. | ⬜ |
 | RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. | ⬜ |
 
@@ -636,7 +636,7 @@ Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza reso
 | M3 | v1.0 | `feature/current-orders-1` a `-4` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
 | M4 | v1.0 | `feature/inventory-1` y `-2` | RF-INV-01 a RF-INV-04, RF-INV-07 y RF-ORD-07 | M2 |
 | M5 | v1.0 | `feature/balance` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
-| M6 | v1.0 | `feature/roles-admin` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
+| M6 | v1.0 | `feature/roles-admin-1` y `-2` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
 | M7 | v1.0 | `release/1.0.0` | Pruebas en dispositivos reales, S4, piloto de 1 a 2 semanas en un área del hotel, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V3 y V4. | M3 a M6 |
 | M8 | v1.1 | `feature/attendance` | RF-ASI-01 a RF-ASI-11 y S10. Validación V5. | M7 |
 | M9 | v1.1 | `release/1.1.0` | Pruebas de ubicación dentro y alrededor del hotel, etiqueta `v1.1.0` y merge a `main` | M8 |
@@ -672,7 +672,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 ### Validaciones técnicas
 | # | Qué hay que comprobar | Si no se cumple | Afecta | Hito |
 |---|---|---|---|---|
-| V1 | Crear cuentas sin cerrar la sesión actual: con una segunda instancia de Firebase en GitLive, o con la API REST de Firebase Auth | Usar la otra opción; las dos funcionan en Spark | RF-EMP-04, RF-ASI-11 | M6 |
+| V1 | Crear cuentas sin cerrar la sesión actual: con una segunda instancia de Firebase en GitLive, o con la API REST de Firebase Auth **Resuelta el 2026-11-17:** se cumple con una segunda instancia de Firebase, probada en escritorio: la cuenta se crea ahí y la sesión del administrador no cambia, ni tras reiniciar. En escritorio la librería no envía el correo de contraseña, así que se pide por la API REST. | Usar la otra opción; las dos funcionan en Spark | RF-EMP-04, RF-ASI-11 | M6 |
 | V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio. **Resuelta en escritorio el 2026-11-14:** se cumple, una vez que la base local sale de la carpeta temporal (sección 13). En Android se probó a mano el 2026-11-15 en modo avión, cerrando y abriendo la app: se cumple. | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
 | V3 | Que App Check no tiene proveedor para la app de escritorio (JVM) | Si lo tuviera, exigirlo; si no, dejarlo en modo de monitoreo | S4, R12 | M7 |
 | V4 | Uso real de Firestore durante el piloto, contra la cuota diaria de Spark | Reducir listeners y lecturas. Pasar a Blaze solo con una decisión nueva. | RNF-12 | M7 |
@@ -797,6 +797,12 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-17 | El impuesto de una línea se calcula hacia adentro del precio de venta y se redondea al peso más cercano: con 19 %, $11.900 tienen $1.900 de impuesto. Cada línea guarda `taxRate` y `taxAmount`, y el pedido, la suma en `taxAmount`. | RF-INV-07: el precio de venta incluye el impuesto, y el balance lo muestra aparte (RF-BAL-07) |
 | 2026-11-17 | El pedido copia el porcentaje del impuesto al agregar el producto. Cambiar o desactivar un impuesto solo afecta a lo que se pida desde entonces. | Igual que el precio: lo ya vendido no cambia |
 | 2026-11-17 | El `taxAmount` del pedido, como el total, se vuelve a guardar al cerrar la cuenta y al quitar un producto | Agregar líneas con `arrayUnion` no actualiza las sumas del pedido (V6) |
+| 2026-11-17 | M6 se entrega en dos PR: empleados, recuperar contraseña y menú por rol; y después parámetros y respaldo | El primero es lo que permite crear las cuentas del equipo |
+| 2026-11-17 | V1: las cuentas de empleados se crean en una segunda instancia de Firebase. En escritorio, el correo de contraseña se pide por la API REST de Firebase Auth. | La segunda instancia guarda su propia sesión y no toca la del administrador. La librería de escritorio no implementa el envío del correo. |
+| 2026-11-17 | El empleado nuevo recibe el correo de "restablecer contraseña" de Firebase, con la plantilla pasada a español en la consola, que sirve de bienvenida y de recuperación | Es la única plantilla que Firebase ofrece para elegir contraseña, y así el administrador nunca la conoce (RF-EMP-04) |
+| 2026-11-17 | Nadie cambia su propio rol ni se desactiva a sí mismo, ni en la app ni en las reglas | Así siempre queda al menos un administrador (RF-EMP-03), sin tener que contarlos en las reglas |
+| 2026-11-17 | El correo de un empleado no se cambia desde la app. Gestionar empleados necesita conexión. | El correo es el usuario de inicio de sesión. Un cambio que solo quede en el dispositivo podría dejar con acceso a un empleado desactivado. |
+| 2026-11-17 | Orden del menú: para el área de administración, Pedidos en curso, Balance, Inventario, Empleados y Crear pedido; para las demás áreas, Crear pedido y Pedidos en curso primero | RF-EMP-05: el área define qué aparece primero |
 
 ## 14. Riesgos
 

@@ -3,8 +3,9 @@ package com.peakdevcol.project.hotelmanagement.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakdevcol.project.hotelmanagement.domain.model.Access
+import com.peakdevcol.project.hotelmanagement.domain.model.AppSection
 import com.peakdevcol.project.hotelmanagement.domain.model.PendingAddition
-import com.peakdevcol.project.hotelmanagement.domain.model.UserType
+import com.peakdevcol.project.hotelmanagement.domain.model.menuFor
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DismissRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutOutcome
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
@@ -31,8 +32,8 @@ data class HomeState(
     val logOutDialog: LogOutDialog? = null,
     /** RF-CUR-13: products added without connection that the server did not accept. */
     val rejectedAdditions: List<PendingAddition> = emptyList(),
-    /** Only an administrator manages the inventory (PRD, section 3). */
-    val canManageInventory: Boolean = false,
+    /** RF-AUTH-05: what the role of the employee lets them see, in the order of their area. */
+    val sections: List<AppSection> = emptyList(),
 )
 
 sealed interface HomeIntent {
@@ -71,8 +72,8 @@ class HomeViewModel(
             observeAccess()
                 .catch { emit(Access.Denied) }
                 .collect { access ->
-                    val isAdministrator = (access as? Access.Granted)?.user?.type == UserType.ADMIN
-                    _state.update { it.copy(canManageInventory = isAdministrator) }
+                    val sections = (access as? Access.Granted)?.user?.let(::menuFor).orEmpty()
+                    _state.update { it.copy(sections = sections) }
                 }
         }
         viewModelScope.launch {

@@ -11,4 +11,10 @@ interface AuthRepository {
     suspend fun login(email: String, password: String): Result<Unit>
 
     suspend fun logOut()
+
+    /**
+     * RF-AUTH-04: asks Firebase to email the link to choose a password. It also succeeds when no
+     * account has that email, so nobody can find out which emails are registered.
+     */
+    suspend fun sendPasswordEmail(email: String): Result<Unit>
 }

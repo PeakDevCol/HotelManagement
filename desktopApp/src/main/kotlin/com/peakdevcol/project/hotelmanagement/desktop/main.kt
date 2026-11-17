@@ -12,7 +12,13 @@ import dev.gitlive.firebase.initialize
 
 fun main() {
     val firebaseEnabled = initFirebase()
-    initKoin(AppConfig(firebaseEnabled = firebaseEnabled, localDataDirectory = appDataDirectory().path))
+    initKoin(
+        AppConfig(
+            firebaseEnabled = firebaseEnabled,
+            localDataDirectory = appDataDirectory().path,
+            platformContext = Application(),
+        ),
+    )
 
     application {
         Window(
