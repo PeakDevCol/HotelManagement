@@ -34,10 +34,19 @@ internal class FirebaseAccountCreationRepository(
             runCatching { secondaryAuth.value.signOut() }
         }
 
-    private fun Exception.toEmployeeError(): EmployeeError = when (this) {
-        is FirebaseAuthUserCollisionException -> EmployeeError.EmailAlreadyInUse
-        is FirebaseAuthInvalidCredentialsException -> EmployeeError.InvalidEmail
-        is FirebaseNetworkException -> EmployeeError.Network
+    private fun Exception.toEmployeeError(): EmployeeError = when {
+        this is FirebaseAuthUserCollisionException || reports(EMAIL_EXISTS) -> EmployeeError.EmailAlreadyInUse
+        this is FirebaseAuthInvalidCredentialsException || reports(INVALID_EMAIL) -> EmployeeError.InvalidEmail
+        this is FirebaseNetworkException -> EmployeeError.Network
         else -> EmployeeError.Unknown
+    }
+
+    // The desktop SDK does not use the exception types of the other platforms: it only passes on
+    // the error code of the Firebase Auth server in the message.
+    private fun Exception.reports(serverCode: String): Boolean = message?.contains(serverCode) == true
+
+    private companion object {
+        const val EMAIL_EXISTS = "EMAIL_EXISTS"
+        const val INVALID_EMAIL = "INVALID_EMAIL"
     }
 }
