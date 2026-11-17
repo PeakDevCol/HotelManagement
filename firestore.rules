@@ -261,5 +261,23 @@ service cloud.firestore {
       // RF-INV-03: a product is deactivated, never deleted, so the history keeps it.
       allow delete: if false;
     }
+
+    // RF-EMP-06: the parameters of the hotel. Every active employee reads them, because they
+    // decide how each device groups the sales by day; only an administrator changes them, and
+    // every change says who made it and when.
+    match /Settings/{settingsId} {
+      function isValidHotelSettings(settings) {
+        return settings.keys().hasOnly(['operationalDayStartMinutes', 'updatedBy', 'updatedAt'])
+          && settings.operationalDayStartMinutes is int
+          && settings.operationalDayStartMinutes >= 0
+          && settings.operationalDayStartMinutes < 1440
+          && settings.updatedBy == request.auth.uid
+          && settings.updatedAt == request.time;
+      }
+
+      allow read: if isActiveEmployee();
+      allow create, update: if isAdmin() && settingsId == 'hotel' && isValidHotelSettings(request.resource.data);
+      allow delete: if false;
+    }
   }
 }

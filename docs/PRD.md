@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
 | Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
 
-Hay 264 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 292 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
 ## 5. Alcance por versión
 
@@ -289,8 +289,8 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-EMP-03 | Cambiar el rol | Entre `basic`, `reception` y `admin`. Siempre tiene que quedar al menos un administrador. Se garantiza porque nadie puede cambiar su propio rol ni desactivarse, ni en la app ni en las reglas. | ✅ |
 | RF-EMP-04 | Crear empleados ([P1](#12-preguntas-abiertas)) | El administrador ingresa nombre, correo, rol y área. La cuenta se crea sin cerrar la sesión del administrador (V1), y el empleado recibe el correo de Firebase para crear su contraseña, así nadie más la conoce. Si el perfil no se puede guardar, la cuenta recién creada se elimina. Desde el empleado se puede reenviar el correo. | ✅ |
 | RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve y qué aparece primero en su menú. | ✅ El orden del menú. Las tareas de habitación llegan en la v1.3. |
-| RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo. | ⬜ |
-| RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. | ⬜ |
+| RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo. En la v1.0, desde Menú → Configuración. | ✅ El parámetro de la v1.0. Los demás llegan con su versión. |
+| RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. El archivo queda en `Documentos/HotelManagement/Respaldos`, con cada documento tal como está en Firestore y el historial de cada pedido. "Desde una fecha" aplica a pedidos y pagos; lo demás se exporta completo. | ✅ |
 
 | Parámetro | Por defecto | Desde |
 |---|---|---|
@@ -554,7 +554,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `Products/{id}` | `name`, `unitPrice`, `categoryId`, `taxId`, `active` | Inventario. Se desactivan, no se borran. | M4 |
 | `Categories/{id}` | `name`, `position` | Categorías del inventario, en el orden que define el administrador (RF-INV-04) | M4 |
 | `Taxes/{id}` | `name`, `rate`, `active` | Impuestos opcionales (P14). `rate` es un entero en centésimas de punto: 19 % es `1900` y 8,5 % es `850`. Se desactivan, no se borran. | M4 |
-| `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt` | Cada versión agrega los suyos | M6 |
+| `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt`. En la v1.0: `operationalDayStartMinutes`, en minutos después de la medianoche (360 = 6:00 a. m.). | Cada versión agrega los suyos | M6 |
 
 **Asistencia (v1.1)**
 
@@ -803,6 +803,9 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-17 | Nadie cambia su propio rol ni se desactiva a sí mismo, ni en la app ni en las reglas | Así siempre queda al menos un administrador (RF-EMP-03), sin tener que contarlos en las reglas |
 | 2026-11-17 | El correo de un empleado no se cambia desde la app. Gestionar empleados necesita conexión. | El correo es el usuario de inicio de sesión. Un cambio que solo quede en el dispositivo podría dejar con acceso a un empleado desactivado. |
 | 2026-11-17 | Orden del menú: para el área de administración, Pedidos en curso, Balance, Inventario, Empleados y Crear pedido; para las demás áreas, Crear pedido y Pedidos en curso primero | RF-EMP-05: el área define qué aparece primero |
+| 2026-11-17 | El inicio del día operativo se guarda en minutos después de la medianoche (`operationalDayStartMinutes`) y se cambia con conexión | Un cambio que solo quede en un dispositivo haría que ese dispositivo agrupe las ventas distinto del resto |
+| 2026-11-17 | El respaldo se escribe desde escritorio en `Documentos/HotelManagement/Respaldos`, como JSON, leyendo siempre del servidor y con cada documento tal como está en Firestore. El JSON se escribe con código propio, sin dependencia nueva. | Leer de la caché podría dejar documentos por fuera sin avisar. Guardar los documentos crudos hace que el respaldo no dependa de lo que esta versión de la app sabe leer. |
+| 2026-11-17 | "Configuración" es una sección del menú solo para administradores, con los parámetros y el respaldo | RF-EMP-06 y RF-EMP-07 |
 
 ## 14. Riesgos
 
