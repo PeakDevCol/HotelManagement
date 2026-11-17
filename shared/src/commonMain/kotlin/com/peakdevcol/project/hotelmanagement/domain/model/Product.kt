@@ -13,8 +13,15 @@ data class Product(
      * A product of the catalog has none.
      */
     val lineId: String? = null,
+    /** RF-INV-07: the rate of the tax the price includes, in hundredths of a point. Zero when it has none. */
+    val taxRate: Int = 0,
 ) {
     val totalAmount: Long get() = unitPrice * quantity
+
+    /** The part of [totalAmount] that is tax. */
+    val taxAmount: Long get() = taxIncludedIn(totalAmount, taxRate)
 }
 
 fun List<Product>.totalAmount(): Long = sumOf { it.totalAmount }
+
+fun List<Product>.taxAmount(): Long = sumOf { it.taxAmount }

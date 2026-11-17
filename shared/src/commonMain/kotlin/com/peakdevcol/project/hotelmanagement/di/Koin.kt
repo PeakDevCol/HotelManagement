@@ -5,6 +5,7 @@ import com.peakdevcol.project.hotelmanagement.data.firebase.FirebaseAuthReposito
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreCategoryRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreOrderRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreProductRepository
+import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreTaxRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreUserRepository
 import com.peakdevcol.project.hotelmanagement.data.local.LocalPendingAdditionRepository
 import com.peakdevcol.project.hotelmanagement.data.local.localTextStore
@@ -13,6 +14,7 @@ import com.peakdevcol.project.hotelmanagement.domain.repository.CategoryReposito
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.PendingAdditionRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ProductRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.TaxRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.UserRepository
 import com.peakdevcol.project.hotelmanagement.domain.usecase.AddProductsToOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CancelOrderUseCase
@@ -36,6 +38,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.ReopenOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveProductUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveTaxUseCase
 import com.peakdevcol.project.hotelmanagement.ui.AppViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersViewModel
@@ -44,6 +47,7 @@ import com.peakdevcol.project.hotelmanagement.ui.home.HomeViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormViewModel
+import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesViewModel
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginViewModel
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.auth
@@ -63,6 +67,7 @@ private val dataModule = module {
     single<OrderRepository> { FirestoreOrderRepository(firestore = lazy { Firebase.firestore }) }
     single<ProductRepository> { FirestoreProductRepository(firestore = lazy { Firebase.firestore }) }
     single<CategoryRepository> { FirestoreCategoryRepository(firestore = lazy { Firebase.firestore }) }
+    single<TaxRepository> { FirestoreTaxRepository(firestore = lazy { Firebase.firestore }) }
     single<PendingAdditionRepository> {
         val config = get<AppConfig>()
         LocalPendingAdditionRepository(store = lazy { localTextStore(config.localDataDirectory, PENDING_ADDITIONS_FILE) })
@@ -90,6 +95,7 @@ private val domainModule = module {
     factoryOf(::ObserveInventoryUseCase)
     factoryOf(::SaveProductUseCase)
     factoryOf(::SaveCategoryUseCase)
+    factoryOf(::SaveTaxUseCase)
     factoryOf(::MoveCategoryUseCase)
     factoryOf(::DeleteCategoryUseCase)
 }
@@ -102,6 +108,7 @@ private val uiModule = module {
     viewModelOf(::CurrentOrdersViewModel)
     viewModelOf(::InventoryViewModel)
     viewModelOf(::CategoriesViewModel)
+    viewModelOf(::TaxesViewModel)
     viewModel { parameters ->
         ProductFormViewModel(productId = parameters.getOrNull(), observeInventory = get(), saveProduct = get())
     }

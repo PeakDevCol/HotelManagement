@@ -3,7 +3,9 @@ package com.peakdevcol.project.hotelmanagement.ui.inventory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakdevcol.project.hotelmanagement.domain.model.Category
+import com.peakdevcol.project.hotelmanagement.domain.model.Inventory
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryError
+import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveInventoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveProductUseCase
 import kotlinx.coroutines.channels.Channel
@@ -25,7 +27,10 @@ data class ProductFormState(
     val priceText: String = "",
     val categoryId: String? = null,
     val active: Boolean = true,
+    /** RF-INV-07: the tax the price includes, or null for none. */
+    val taxId: String? = null,
     val categories: List<Category> = emptyList(),
+    val taxes: List<Tax> = emptyList(),
     /** The field the last attempt to save found wrong. */
     val fieldError: InventoryError? = null,
     val isSaving: Boolean = false,
@@ -37,6 +42,9 @@ sealed interface ProductFormIntent {
     data class NameChange(val name: String) : ProductFormIntent
     data class PriceChange(val priceText: String) : ProductFormIntent
     data class CategorySelect(val categoryId: String) : ProductFormIntent
+
+    /** A null id leaves the product without tax. */
+    data class TaxSelect(val taxId: String?) : ProductFormIntent
     data class ActiveChange(val active: Boolean) : ProductFormIntent
     data object Save : ProductFormIntent
 }
@@ -58,9 +66,6 @@ class ProductFormViewModel(
     private val _effects = Channel<ProductFormEffect>(Channel.BUFFERED)
     val effects: Flow<ProductFormEffect> = _effects.receiveAsFlow()
 
-    // The product is not carried over from the edited one, so a tax set on it is kept when saving.
-    private var taxId: String? = null
-
     init {
         loadForm()
     }
@@ -71,6 +76,7 @@ class ProductFormViewModel(
             is ProductFormIntent.PriceChange ->
                 edit { it.copy(priceText = intent.priceText.filter(Char::isDigit).take(MAX_PRICE_DIGITS)) }
             is ProductFormIntent.CategorySelect -> edit { it.copy(categoryId = intent.categoryId) }
+            is ProductFormIntent.TaxSelect -> edit { it.copy(taxId = intent.taxId) }
             is ProductFormIntent.ActiveChange -> edit { it.copy(active = intent.active) }
             ProductFormIntent.Save -> save()
         }
@@ -84,10 +90,10 @@ class ProductFormViewModel(
                 return@launch
             }
             val product = inventory.products.firstOrNull { it.id == productId }
-            taxId = product?.taxId
             _state.update { state ->
                 when {
-                    productId == null -> state.copy(isLoading = false, categories = inventory.categories)
+                    productId == null ->
+                        state.copy(isLoading = false, categories = inventory.categories, taxes = inventory.selectableTaxes(null))
                     product == null -> state.copy(isLoading = false, notFound = true)
                     else -> state.copy(
                         isLoading = false,
@@ -95,12 +101,18 @@ class ProductFormViewModel(
                         priceText = product.unitPrice.toString(),
                         categoryId = product.categoryId.takeIf { id -> inventory.categories.any { it.id == id } },
                         active = product.active,
+                        taxId = product.taxId.takeIf { id -> inventory.taxes.any { it.id == id } },
                         categories = inventory.categories,
+                        taxes = inventory.selectableTaxes(product.taxId),
                     )
                 }
             }
         }
     }
+
+    // An inactive tax is offered only to the product that already has it, so it can be seen and removed.
+    private fun Inventory.selectableTaxes(currentTaxId: String?): List<Tax> =
+        taxes.filter { it.active || it.id == currentTaxId }
 
     private fun edit(change: (ProductFormState) -> ProductFormState) =
         _state.update { change(it).copy(fieldError = null) }
@@ -115,7 +127,7 @@ class ProductFormViewModel(
                 name = form.name,
                 unitPrice = form.priceText.toLongOrNull(),
                 categoryId = form.categoryId,
-                taxId = taxId,
+                taxId = form.taxId,
                 active = form.active,
             )
             val error = result.exceptionOrNull()?.let { it as? InventoryError ?: InventoryError.Unknown }

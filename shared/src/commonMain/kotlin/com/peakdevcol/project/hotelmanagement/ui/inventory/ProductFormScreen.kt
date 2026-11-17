@@ -47,6 +47,9 @@ import com.peakdevcol.project.hotelmanagement.resources.inventory_product_catego
 import com.peakdevcol.project.hotelmanagement.resources.inventory_product_name
 import com.peakdevcol.project.hotelmanagement.resources.inventory_product_not_found
 import com.peakdevcol.project.hotelmanagement.resources.inventory_product_price
+import com.peakdevcol.project.hotelmanagement.resources.inventory_product_tax
+import com.peakdevcol.project.hotelmanagement.resources.inventory_product_tax_hint
+import com.peakdevcol.project.hotelmanagement.resources.inventory_tax_none
 import com.peakdevcol.project.hotelmanagement.resources.save
 import com.peakdevcol.project.hotelmanagement.ui.components.LoadingOverlay
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
@@ -125,6 +128,9 @@ private fun ProductForm(state: ProductFormState, onIntent: (ProductFormIntent) -
                 modifier = Modifier.fillMaxWidth(),
             )
             CategoryPicker(state = state, onSelect = { onIntent(ProductFormIntent.CategorySelect(it)) })
+            if (state.taxes.isNotEmpty()) {
+                TaxPicker(state = state, onSelect = { onIntent(ProductFormIntent.TaxSelect(it)) })
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(stringResource(Res.string.inventory_product_active), style = MaterialTheme.typography.bodyLarge)
@@ -173,6 +179,37 @@ private fun CategoryPicker(state: ProductFormState, onSelect: (String) -> Unit) 
                 color = MaterialTheme.colorScheme.error,
             )
         }
+    }
+}
+
+/** RF-INV-07: a product has one tax or none, and its price already includes it. */
+@Composable
+private fun TaxPicker(state: ProductFormState, onSelect: (String?) -> Unit) {
+    Column(modifier = Modifier.selectableGroup()) {
+        Text(text = stringResource(Res.string.inventory_product_tax), style = MaterialTheme.typography.titleSmall)
+        Text(
+            text = stringResource(Res.string.inventory_product_tax_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        TaxOption(label = stringResource(Res.string.inventory_tax_none), selected = state.taxId == null, onClick = { onSelect(null) })
+        state.taxes.forEach { tax ->
+            TaxOption(label = tax.label(), selected = state.taxId == tax.id, onClick = { onSelect(tax.id) })
+        }
+    }
+}
+
+@Composable
+private fun TaxOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(label, modifier = Modifier.padding(start = 12.dp))
     }
 }
 

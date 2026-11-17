@@ -29,6 +29,7 @@ sealed interface InventoryIntent {
     data object NewProduct : InventoryIntent
     data class OpenProduct(val productId: String) : InventoryIntent
     data object ManageCategories : InventoryIntent
+    data object ManageTaxes : InventoryIntent
     data object Retry : InventoryIntent
 }
 
@@ -36,6 +37,7 @@ sealed interface InventoryEffect {
     /** A null id opens the form to create a product. */
     data class NavigateToProduct(val productId: String?) : InventoryEffect
     data object NavigateToCategories : InventoryEffect
+    data object NavigateToTaxes : InventoryEffect
 }
 
 class InventoryViewModel(
@@ -60,6 +62,7 @@ class InventoryViewModel(
                 if (_state.value.canCreateProducts) _effects.trySend(InventoryEffect.NavigateToProduct(productId = null))
             is InventoryIntent.OpenProduct -> _effects.trySend(InventoryEffect.NavigateToProduct(intent.productId))
             InventoryIntent.ManageCategories -> _effects.trySend(InventoryEffect.NavigateToCategories)
+            InventoryIntent.ManageTaxes -> _effects.trySend(InventoryEffect.NavigateToTaxes)
             InventoryIntent.Retry -> listenToInventory()
         }
     }

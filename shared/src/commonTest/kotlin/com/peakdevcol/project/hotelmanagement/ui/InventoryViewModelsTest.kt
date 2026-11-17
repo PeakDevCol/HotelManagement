@@ -3,14 +3,17 @@ package com.peakdevcol.project.hotelmanagement.ui
 import com.peakdevcol.project.hotelmanagement.domain.model.Category
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryError
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryProduct
+import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DeleteCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.MoveCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.MoveDirection
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveInventoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveProductUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveTaxUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeCategoryRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeProductRepository
+import com.peakdevcol.project.hotelmanagement.fakes.FakeTaxRepository
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesEffect
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesIntent
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesViewModel
@@ -21,6 +24,10 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormEffect
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormIntent
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormViewModel
+import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxForm
+import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesEffect
+import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesIntent
+import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -37,7 +44,10 @@ class InventoryViewModelsTest : MainDispatcherTest() {
 
     private val categories = FakeCategoryRepository(drinks, snacks)
     private val products = FakeProductRepository(beer)
-    private val observeInventory = ObserveInventoryUseCase(products, categories)
+    private val iva = Tax(id = "iva", name = "IVA", rate = 19_00)
+    private val oldTax = Tax(id = "old", name = "Impoconsumo", rate = 8_00, active = false)
+    private val taxes = FakeTaxRepository(iva, oldTax)
+    private val observeInventory = ObserveInventoryUseCase(products, categories, taxes)
 
     // ---- inventory list
 
@@ -256,5 +266,117 @@ class InventoryViewModelsTest : MainDispatcherTest() {
 
         assertNull(viewModel.state.value.dialog)
         assertEquals(2, viewModel.names().size)
+    }
+
+    // ---- RF-INV-07: tax of a product
+
+    @Test
+    fun theFormOffersTheActiveTaxesAndShowsTheOneOfTheProduct() {
+        val state = form(productId = "beer").state.value
+
+        assertEquals("iva", state.taxId)
+        assertEquals(listOf(iva), state.taxes)
+        assertEquals(listOf(iva), form(productId = null).state.value.taxes)
+    }
+
+    @Test
+    fun anInactiveTaxIsOfferedOnlyToTheProductThatHasIt() {
+        products.products.value = listOf(beer.copy(taxId = "old"))
+
+        val state = form(productId = "beer").state.value
+
+        assertEquals("old", state.taxId)
+        assertEquals(listOf(oldTax, iva), state.taxes)
+    }
+
+    @Test
+    fun theTaxOfAProductCanBeChangedOrRemoved() = runTest {
+        val viewModel = form(productId = "beer")
+
+        viewModel.onIntent(ProductFormIntent.TaxSelect(null))
+        viewModel.onIntent(ProductFormIntent.Save)
+
+        assertNull(products.products.value.single().taxId)
+        assertEquals(ProductFormEffect.Saved, viewModel.effects.first())
+    }
+
+    @Test
+    fun theInventoryOpensTheTaxes() = runTest {
+        val viewModel = inventory()
+
+        viewModel.onIntent(InventoryIntent.ManageTaxes)
+
+        assertEquals(InventoryEffect.NavigateToTaxes, viewModel.effects.first())
+        assertEquals(iva, viewModel.state.value.inventory.taxOf(beer))
+    }
+
+    // ---- taxes screen
+
+    private fun taxesScreen() = TaxesViewModel(observeInventory, SaveTaxUseCase(taxes))
+
+    @Test
+    fun createsATax() {
+        val viewModel = taxesScreen()
+        viewModel.onIntent(TaxesIntent.AddClick)
+        viewModel.onIntent(TaxesIntent.NameChange("Reducido"))
+        viewModel.onIntent(TaxesIntent.RateChange("8,5 %"))
+
+        viewModel.onIntent(TaxesIntent.Save)
+
+        assertNull(viewModel.state.value.form)
+        assertEquals(8_50, viewModel.state.value.taxes.single { it.name == "Reducido" }.rate)
+    }
+
+    @Test
+    fun editingShowsTheTaxAsItIsTypedAndCanDeactivateIt() {
+        val viewModel = taxesScreen()
+
+        viewModel.onIntent(TaxesIntent.EditClick(iva))
+        assertEquals(TaxForm(taxId = "iva", name = "IVA", rateText = "19", active = true), viewModel.state.value.form)
+
+        viewModel.onIntent(TaxesIntent.ActiveChange(false))
+        viewModel.onIntent(TaxesIntent.Save)
+
+        assertEquals(iva.copy(active = false), taxes.taxes.value.single { it.id == "iva" })
+    }
+
+    @Test
+    fun aWrongPercentageKeepsTheFormOpenWithItsError() {
+        val viewModel = taxesScreen()
+        viewModel.onIntent(TaxesIntent.AddClick)
+        viewModel.onIntent(TaxesIntent.NameChange("IVA nuevo"))
+        viewModel.onIntent(TaxesIntent.RateChange("150"))
+
+        viewModel.onIntent(TaxesIntent.Save)
+
+        assertEquals(InventoryError.InvalidTaxRate, viewModel.state.value.form?.error)
+        assertEquals(2, taxes.taxes.value.size)
+
+        viewModel.onIntent(TaxesIntent.RateChange("15"))
+        assertNull(viewModel.state.value.form?.error)
+    }
+
+    @Test
+    fun aRejectedTaxClosesTheFormAndWarns() = runTest {
+        taxes.saveFailure = InventoryError.NotAllowed
+        val viewModel = taxesScreen()
+        viewModel.onIntent(TaxesIntent.EditClick(iva))
+
+        viewModel.onIntent(TaxesIntent.Save)
+
+        assertEquals(TaxesEffect.Failed(InventoryError.NotAllowed), viewModel.effects.first())
+        assertNull(viewModel.state.value.form)
+    }
+
+    @Test
+    fun dismissingTheFormSavesNothing() {
+        val viewModel = taxesScreen()
+        viewModel.onIntent(TaxesIntent.EditClick(iva))
+        viewModel.onIntent(TaxesIntent.RateChange("5"))
+
+        viewModel.onIntent(TaxesIntent.DismissForm)
+
+        assertNull(viewModel.state.value.form)
+        assertEquals(19_00, taxes.taxes.value.single { it.id == "iva" }.rate)
     }
 }
