@@ -648,6 +648,14 @@ Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza reso
 | M15 | v1.3 | `feature/housekeeping` | RF-LIM-01 a RF-LIM-07 | M14 |
 | M16 | v1.3 | `release/1.3.0` | Pruebas, piloto con limpieza y mantenimiento, etiqueta `v1.3.0` y merge a `main` | M15 |
 
+**Estado al 2026-11-17:** M0, M1, M2, M3, M4 y M6 están terminados y fusionados en `develop`. De la v1.0 faltan M5 (balance y cierre de caja, que empieza por la validación V8) y M7 (salida a producción).
+
+Pendientes que no son código y hay que cerrar antes del piloto (M7):
+- Probar en iOS con sesión iniciada: hasta ahora solo se comprobó que compila y arranca.
+- Revisar las pantallas en modo claro y oscuro en dispositivos reales (definición de terminado, sección 11).
+- Cambiar la contraseña del primer administrador y borrar de Firestore los datos de prueba que quedaron de las comprobaciones de reglas (perfiles, productos, impuestos y pedidos marcados como "PRUEBA").
+- S4: secret scanning, push protection y App Check en modo de monitoreo.
+
 M3, M4 y M6 son independientes y pueden avanzar en paralelo. M8 y M10 también, si hay más de una persona en el equipo.
 M14 trae la base de tareas que usa la limpieza, por eso va antes que M15.
 
