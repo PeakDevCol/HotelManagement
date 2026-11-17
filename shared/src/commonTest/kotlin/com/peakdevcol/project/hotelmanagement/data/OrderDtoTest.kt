@@ -78,4 +78,24 @@ class OrderDtoTest {
         assertNull(stored.copy(typeOrder = "lobby").toOrder(isPendingToSend = false))
         assertNull(stored.copy(typeOrderNumber = null).toOrder(isPendingToSend = false))
     }
+
+    @Test
+    fun everyLineOfANewOrderIsStoredWithItsOwnId() {
+        val soda = Product(id = "3", name = "Coca-Cola", unitPrice = 3_000)
+
+        val lineIds = Order.create("uid-1", listOf(beer, soda), OrderDestination.Other).toDto().products.map { it.lineId }
+
+        assertEquals(2, lineIds.filterNotNull().distinct().size)
+    }
+
+    @Test
+    fun linesStoredWithoutIdGetAStableOneFromTheirPosition() {
+        val legacy = orderTo(OrderDestination.Other).let { dto -> dto.copy(products = dto.products.map { it.copy(lineId = null) } + dto.products.map { it.copy(lineId = null) }) }
+
+        val first = legacy.toOrder(isPendingToSend = false)!!.products.map { it.lineId }
+        val second = legacy.toOrder(isPendingToSend = false)!!.products.map { it.lineId }
+
+        assertEquals(listOf("line-0", "line-1"), first)
+        assertEquals(first, second)
+    }
 }

@@ -82,6 +82,7 @@ service cloud.firestore {
       }
 
       // RF-CUR-06 and RF-CUR-13: products and total only change while the order is in progress.
+      // Adding lines does not touch the total (V6): closing the bill settles it.
       function isProductChange() {
         return movesFrom(['in_progress'], 'in_progress')
           && changesOnly(['products', 'totalPayAmount'])
@@ -91,10 +92,12 @@ service cloud.firestore {
           && request.resource.data.totalPayAmount >= 0;
       }
 
-      // RF-CUR-04
+      // RF-CUR-04: closing settles the total from the lines, which cannot change afterwards.
       function isClosing() {
         return movesFrom(['in_progress'], 'closed')
-          && changesOnly(['state', 'closedAt', 'closedBy'])
+          && changesOnly(['state', 'closedAt', 'closedBy', 'totalPayAmount'])
+          && request.resource.data.totalPayAmount is int
+          && request.resource.data.totalPayAmount >= 0
           && request.resource.data.closedBy == request.auth.uid
           && request.resource.data.closedAt == request.time;
       }

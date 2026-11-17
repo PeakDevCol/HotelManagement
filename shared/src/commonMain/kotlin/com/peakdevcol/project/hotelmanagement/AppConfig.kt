@@ -5,7 +5,10 @@ package com.peakdevcol.project.hotelmanagement
  *
  * @param firebaseEnabled false when the platform has no Firebase configuration
  * (missing google-services.json, GoogleService-Info.plist or firebase.properties). The app still starts.
+ * @param localDataDirectory folder of the device where the app keeps its own small files,
+ * one that the operating system does not empty.
  */
 data class AppConfig(
     val firebaseEnabled: Boolean,
+    val localDataDirectory: String,
 )

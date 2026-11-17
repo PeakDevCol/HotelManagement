@@ -4,6 +4,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.Order
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderEvent
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderStateChange
+import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import kotlinx.coroutines.flow.Flow
 
 interface OrderRepository {
@@ -31,4 +32,14 @@ interface OrderRepository {
      * It fails with an [OrderActionError][com.peakdevcol.project.hotelmanagement.domain.model.OrderActionError].
      */
     suspend fun changeState(orderId: String, change: OrderStateChange): Result<Unit>
+
+    /**
+     * RF-CUR-13: adds the lines to the order on the device and tells whether the server confirmed
+     * them right away. Lines added from several devices are all kept. If the order is no longer in
+     * progress when they reach the server, the server rejects them without telling this call.
+     */
+    suspend fun addProducts(orderId: String, lines: List<Product>, employeeId: String): Result<OrderDelivery>
+
+    /** RF-CUR-06: removes one line of an order in progress. It needs the server and never leaves the order empty. */
+    suspend fun removeProduct(orderId: String, lineId: String, employeeId: String): Result<Unit>
 }

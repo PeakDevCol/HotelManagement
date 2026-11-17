@@ -2,6 +2,7 @@ package com.peakdevcol.project.hotelmanagement.domain.usecase
 
 import com.peakdevcol.project.hotelmanagement.domain.repository.AuthRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.PendingAdditionRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
@@ -19,9 +20,10 @@ enum class LogOutOutcome {
 class LogOutUseCase(
     private val authRepository: AuthRepository,
     private val orderRepository: OrderRepository,
+    private val pendingAdditionRepository: PendingAdditionRepository,
 ) {
     suspend operator fun invoke(): LogOutOutcome {
-        if (pendingOrderCount() > 0) return LogOutOutcome.BLOCKED_BY_PENDING_ORDERS
+        if (pendingOrderCount() > 0 || hasProductsWaitingToBeSent()) return LogOutOutcome.BLOCKED_BY_PENDING_ORDERS
         authRepository.logOut()
         return LogOutOutcome.LOGGED_OUT
     }
@@ -38,6 +40,9 @@ class LogOutUseCase(
             0
         }
     }
+
+    private suspend fun hasProductsWaitingToBeSent(): Boolean =
+        pendingAdditionRepository.observePendingAdditions().first().any { !it.rejected }
 
     private companion object {
         val PENDING_ORDERS_WAIT = 3.seconds

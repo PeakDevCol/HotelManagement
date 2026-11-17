@@ -28,6 +28,8 @@ internal data class ProductDto(
     val quantity: Int,
     val unitAmount: Long,
     val totalAmount: Long,
+    /** Orders saved before RF-CUR-13 have lines without id. */
+    val lineId: String? = null,
 )
 
 /** Returns null when the state or the destination is not one of section 8 of the PRD. */
@@ -37,7 +39,7 @@ internal fun OrderDto.toOrder(isPendingToSend: Boolean, isUpToDate: Boolean = tr
     return Order(
         id = id,
         employeeId = idEmployee,
-        products = products.map { it.toProduct() },
+        products = products.toProducts(),
         destination = destination,
         state = orderState,
         createdAt = (dateOrder as? Timestamp)?.let { Instant.fromEpochSeconds(it.seconds, it.nanoseconds) },
@@ -46,7 +48,16 @@ internal fun OrderDto.toOrder(isPendingToSend: Boolean, isUpToDate: Boolean = tr
     )
 }
 
-private fun ProductDto.toProduct() = Product(id = productId, name = productName, unitPrice = unitAmount, quantity = quantity)
+// A line without id gets one from its position, the same every time, so it can still be removed.
+internal fun List<ProductDto>.toProducts(): List<Product> = mapIndexed { index, line ->
+    Product(
+        id = line.productId,
+        name = line.productName,
+        unitPrice = line.unitAmount,
+        quantity = line.quantity,
+        lineId = line.lineId ?: "line-$index",
+    )
+}
 
 private fun destinationOf(type: String, number: Int?): OrderDestination? = when (type) {
     "room" -> number?.let { OrderDestination.Room(it) }
@@ -67,12 +78,26 @@ internal fun Order.toDto() = OrderDto(
     totalPayAmount = totalAmount,
 )
 
-private fun Product.toDto() = ProductDto(
+internal fun Product.toDto() = ProductDto(
     productId = id,
     productName = name,
     quantity = quantity,
     unitAmount = unitPrice,
     totalAmount = totalAmount,
+    lineId = lineId,
+)
+
+/**
+ * The line as plain Firestore values. arrayUnion and field updates take the values as they are,
+ * without going through the serializer that whole documents use.
+ */
+internal fun Product.toFirestoreMap(): Map<String, Any?> = mapOf(
+    "productId" to id,
+    "productName" to name,
+    "quantity" to quantity,
+    "unitAmount" to unitPrice,
+    "totalAmount" to totalAmount,
+    "lineId" to lineId,
 )
 
 /** The state codes of section 8 of the PRD, which the Firestore rules also check. */

@@ -8,6 +8,11 @@ class HotelManagementApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         // Firebase starts automatically only when the build had google-services.json.
-        initKoin(AppConfig(firebaseEnabled = BuildConfig.FIREBASE_CONFIGURED))
+        initKoin(
+            AppConfig(
+                firebaseEnabled = BuildConfig.FIREBASE_CONFIGURED,
+                localDataDirectory = filesDir.absolutePath,
+            ),
+        )
     }
 }

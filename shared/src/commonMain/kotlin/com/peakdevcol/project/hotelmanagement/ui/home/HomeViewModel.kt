@@ -2,9 +2,13 @@ package com.peakdevcol.project.hotelmanagement.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.peakdevcol.project.hotelmanagement.domain.model.PendingAddition
+import com.peakdevcol.project.hotelmanagement.domain.usecase.DismissRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutOutcome
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveRejectedAdditionsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ReconcilePendingAdditionsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,16 +26,22 @@ enum class LogOutDialog {
 data class HomeState(
     val pendingOrderCount: Int = 0,
     val logOutDialog: LogOutDialog? = null,
+    /** RF-CUR-13: products added without connection that the server did not accept. */
+    val rejectedAdditions: List<PendingAddition> = emptyList(),
 )
 
 sealed interface HomeIntent {
     data object LogOutClick : HomeIntent
     data object LogOutConfirm : HomeIntent
     data object LogOutDialogDismiss : HomeIntent
+    data object RejectedAdditionsRead : HomeIntent
 }
 
 class HomeViewModel(
     observePendingOrderCount: ObservePendingOrderCountUseCase,
+    observeRejectedAdditions: ObserveRejectedAdditionsUseCase,
+    reconcilePendingAdditions: ReconcilePendingAdditionsUseCase,
+    private val dismissRejectedAdditions: DismissRejectedAdditionsUseCase,
     private val logOut: LogOutUseCase,
 ) : ViewModel() {
 
@@ -47,11 +57,25 @@ class HomeViewModel(
         }
     }
 
+    init {
+        // The menu is what opens after starting the app, so this is where it finds out what the
+        // server did with the products that were added without connection.
+        viewModelScope.launch { runCatching { reconcilePendingAdditions() } }
+        viewModelScope.launch {
+            observeRejectedAdditions()
+                .catch { emit(emptyList()) }
+                .collect { rejected -> _state.update { it.copy(rejectedAdditions = rejected) } }
+        }
+    }
+
     fun onIntent(intent: HomeIntent) {
         when (intent) {
             HomeIntent.LogOutClick -> askBeforeLoggingOut()
             HomeIntent.LogOutConfirm -> confirmLogOut()
             HomeIntent.LogOutDialogDismiss -> _state.update { it.copy(logOutDialog = null) }
+            HomeIntent.RejectedAdditionsRead -> viewModelScope.launch {
+                dismissRejectedAdditions(_state.value.rejectedAdditions)
+            }
         }
     }
 

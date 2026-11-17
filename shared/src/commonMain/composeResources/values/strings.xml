@@ -104,6 +104,8 @@
     <string name="order_event_reopened">Pedido reabierto</string>
     <string name="order_event_paid">Pago registrado</string>
     <string name="order_event_cancelled">Pedido cancelado</string>
+    <string name="order_event_products_added">Productos agregados</string>
+    <string name="order_event_products_removed">Producto quitado</string>
     <string name="order_event_line">%1$s por %2$s</string>
     <string name="order_event_payment">%1$s · Propina: %2$s</string>
     <string name="order_event_cancel_reason">Motivo: %1$s</string>
@@ -133,6 +135,13 @@
     <string name="order_error_not_allowed">No tienes permiso para hacer esto.</string>
     <string name="order_error_missing_reason">Escribe el motivo de la cancelación.</string>
     <string name="order_error_invalid_tip">La propina no puede ser negativa.</string>
+    <string name="order_error_last_product">Un pedido necesita al menos un producto. Si ya no va, un administrador lo puede cancelar.</string>
+    <string name="order_remove_product_message">El producto sale del pedido y el total se recalcula.</string>
+    <string name="order_product_added">Producto agregado.</string>
+    <string name="order_product_added_offline">Producto guardado en el dispositivo. Se enviará solo cuando vuelva la conexión.</string>
+    <string name="order_product_removed">Producto quitado.</string>
+    <string name="rejected_additions_title">Productos que no se agregaron</string>
+    <string name="rejected_additions_message">Los agregaste sin conexión, pero cuando se enviaron el pedido ya no estaba En curso. Si todavía van, reabre el pedido o crea uno nuevo.</string>
 
     <string name="order_saved_title">Pedido confirmado</string>
     <string name="order_saved_message">El pedido se guardó correctamente.</string>

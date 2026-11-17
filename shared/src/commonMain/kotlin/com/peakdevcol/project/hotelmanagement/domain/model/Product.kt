@@ -8,6 +8,11 @@ data class Product(
     val name: String,
     val unitPrice: Long,
     val quantity: Int = 1,
+    /**
+     * Identifies this line inside an order, where the same product can be added more than once.
+     * A product of the catalog has none.
+     */
+    val lineId: String? = null,
 ) {
     val totalAmount: Long get() = unitPrice * quantity
 }

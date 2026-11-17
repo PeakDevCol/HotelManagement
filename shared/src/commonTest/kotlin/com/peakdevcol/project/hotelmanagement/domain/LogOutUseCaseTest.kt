@@ -4,6 +4,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutOutcome
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
+import com.peakdevcol.project.hotelmanagement.fakes.FakePendingAdditionRepository
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,7 +13,8 @@ import kotlin.test.assertNull
 class LogOutUseCaseTest {
     private val auth = FakeAuthRepository(userId = "uid-1")
     private val orders = FakeOrderRepository()
-    private val logOut = LogOutUseCase(auth, orders)
+    private val pendingAdditions = FakePendingAdditionRepository()
+    private val logOut = LogOutUseCase(auth, orders, pendingAdditions)
 
     @Test
     fun logsOutWhenEveryOrderWasSent() = runTest {

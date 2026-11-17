@@ -72,6 +72,10 @@ sealed class OrderActionError(message: String) : Exception(message) {
     data object InvalidTip : OrderActionError("The tip cannot be negative")
     data object NotFound : OrderActionError("The order does not exist")
 
+    /** A product cannot be removed when it is the only one left: the order would be empty. */
+    data object LastProduct : OrderActionError("An order needs at least one product")
+    data object NoProducts : OrderActionError("There are no products to add")
+
     /** RF-CUR-08: another device changed the order first. */
     data class StateChanged(val currentState: OrderState) : OrderActionError("The order is now $currentState")
 
