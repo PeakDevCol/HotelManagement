@@ -21,6 +21,15 @@ class FakePaymentRepository(vararg payments: Payment) : PaymentRepository {
         reads += from to until
         return Result.success(payments.filter { it.receivedAt >= from && it.receivedAt < until })
     }
+
+    /** The "after" of every read since a closing. */
+    val readsAfter = mutableListOf<Instant?>()
+
+    override suspend fun paymentsReceivedAfter(after: Instant?): Result<List<Payment>> {
+        failure?.let { return Result.failure(it) }
+        readsAfter += after
+        return Result.success(payments.filter { after == null || it.receivedAt > after })
+    }
 }
 
 val beer = Product(id = "beer", name = "Cerveza Aguila", unitPrice = 3_500, quantity = 1, lineId = "line-beer")
