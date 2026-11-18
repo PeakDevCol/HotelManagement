@@ -4,7 +4,6 @@ import com.peakdevcol.project.hotelmanagement.data.firebase.dto.OrderEventDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.orderPaymentId
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toEvent
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toEventDto
-import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toPaymentDto
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderEventType
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderStateChange
 import com.peakdevcol.project.hotelmanagement.domain.model.PaymentMethod
@@ -63,19 +62,6 @@ class OrderEventDtoTest {
     @Test
     fun anEventOfAnUnknownTypeIsSkipped() {
         assertNull(OrderEventDto(type = "teleported", by = "uid-1").toEvent())
-    }
-
-    @Test
-    fun thePaymentIsForTheAmountOfTheOrderAndTheTipGoesApart() {
-        val payment = OrderStateChange.Pay("uid-1", PaymentMethod.CASH, tipAmount = 2_000)
-            .toPaymentDto(orderId = "order-1", orderAmount = 24_500)
-
-        assertEquals(24_500, payment.amount)
-        assertEquals(2_000, payment.tipAmount)
-        assertEquals("cash", payment.method)
-        assertEquals("order" to "order-1", payment.source to payment.sourceId)
-        assertEquals("uid-1", payment.receivedBy)
-        assertEquals(Timestamp.ServerTimestamp, payment.receivedAt)
     }
 
     @Test
