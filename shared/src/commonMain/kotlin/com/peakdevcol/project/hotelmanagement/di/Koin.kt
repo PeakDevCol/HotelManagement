@@ -6,6 +6,7 @@ import com.peakdevcol.project.hotelmanagement.data.firebase.FirebaseAccountCreat
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirebaseAuthRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreCategoryRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreOrderRepository
+import com.peakdevcol.project.hotelmanagement.data.firebase.FirestorePaymentRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreProductRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreSettingsRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreTaxRepository
@@ -17,6 +18,7 @@ import com.peakdevcol.project.hotelmanagement.domain.repository.AuthRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.BackupRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.CategoryRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.PaymentRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.PendingAdditionRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ProductRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.SettingsRepository
@@ -30,6 +32,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.DeleteCategoryUseCa
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DismissRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ExportBackupUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadBalanceUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.MoveCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoginUseCase
@@ -39,6 +42,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveHotelSetting
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveInventoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOpenOrdersUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOrderDetailUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingCollectionUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReconcilePendingAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
@@ -54,6 +58,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.SendPasswordEmailUs
 import com.peakdevcol.project.hotelmanagement.domain.usecase.UpdateEmployeeUseCase
 import com.peakdevcol.project.hotelmanagement.ui.AppViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
+import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceViewModel
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersViewModel
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.OrderDetailViewModel
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormViewModel
@@ -92,6 +97,7 @@ private val dataModule = module {
     }
     single<UserRepository> { FirestoreUserRepository(firestore = lazy { Firebase.firestore }) }
     single<OrderRepository> { FirestoreOrderRepository(firestore = lazy { Firebase.firestore }) }
+    single<PaymentRepository> { FirestorePaymentRepository(firestore = lazy { Firebase.firestore }) }
     single<ProductRepository> { FirestoreProductRepository(firestore = lazy { Firebase.firestore }) }
     single<CategoryRepository> { FirestoreCategoryRepository(firestore = lazy { Firebase.firestore }) }
     single<TaxRepository> { FirestoreTaxRepository(firestore = lazy { Firebase.firestore }) }
@@ -134,6 +140,8 @@ private val domainModule = module {
     factoryOf(::SaveTaxUseCase)
     factoryOf(::MoveCategoryUseCase)
     factoryOf(::DeleteCategoryUseCase)
+    factory { LoadBalanceUseCase(paymentRepository = get(), settingsRepository = get()) }
+    factoryOf(::ObservePendingCollectionUseCase)
 }
 
 private val uiModule = module {
@@ -145,6 +153,7 @@ private val uiModule = module {
     viewModelOf(::InventoryViewModel)
     viewModelOf(::EmployeesViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::BalanceViewModel)
     viewModel { parameters ->
         EmployeeFormViewModel(
             employeeId = parameters.getOrNull(),

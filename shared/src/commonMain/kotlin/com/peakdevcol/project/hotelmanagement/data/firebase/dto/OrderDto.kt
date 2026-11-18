@@ -65,7 +65,7 @@ internal fun List<ProductDto>.toProducts(): List<Product> = mapIndexed { index, 
     )
 }
 
-private fun destinationOf(type: String, number: Int?): OrderDestination? = when (type) {
+internal fun destinationOf(type: String, number: Int?): OrderDestination? = when (type) {
     "room" -> number?.let { OrderDestination.Room(it) }
     "table" -> number?.let { OrderDestination.Table(it) }
     "pool" -> OrderDestination.Pool(number)

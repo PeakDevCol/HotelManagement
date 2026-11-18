@@ -189,7 +189,10 @@ service cloud.firestore {
       // RF-CUR-05 and RF-CUR-08: one payment per order, for its whole amount, in the same transaction
       // that moves the order from closed to paid. The tip goes apart (P15).
       function isPaymentOfAnOrder(payment) {
-        return payment.keys().hasOnly(['amount', 'tipAmount', 'method', 'source', 'sourceId', 'receivedBy', 'receivedAt'])
+        return payment.keys().hasAll(['amount', 'tipAmount', 'method', 'source', 'sourceId', 'receivedBy', 'receivedAt',
+            'taxAmount', 'typeOrder', 'typeOrderNumber', 'products'])
+          && payment.keys().hasOnly(['amount', 'tipAmount', 'method', 'source', 'sourceId', 'receivedBy', 'receivedAt',
+            'taxAmount', 'typeOrder', 'typeOrderNumber', 'products'])
           && payment.source == 'order'
           && paymentId == 'order_' + payment.sourceId
           && payment.receivedBy == request.auth.uid
@@ -199,7 +202,17 @@ service cloud.firestore {
           && payment.tipAmount >= 0
           && get(orderPath(payment)).data.state == 'closed'
           && getAfter(orderPath(payment)).data.state == 'paid'
-          && payment.amount == get(orderPath(payment)).data.totalPayAmount;
+          && payment.amount == get(orderPath(payment)).data.totalPayAmount
+          && isCopyOfTheOrder(payment, get(orderPath(payment)).data);
+      }
+
+      // RF-BAL-02 and RF-BAL-03: the balance filters and breaks down by destination, tax and product
+      // reading only the payments, so the payment carries an exact copy of what the order had.
+      function isCopyOfTheOrder(payment, order) {
+        return payment.taxAmount == order.get('taxAmount', 0)
+          && payment.typeOrder == order.typeOrder
+          && payment.typeOrderNumber == order.get('typeOrderNumber', null)
+          && payment.products == order.products;
       }
 
       allow read: if isAdmin();

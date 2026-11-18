@@ -272,13 +272,13 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
-| RF-BAL-01 | Total del periodo ([P6](#12-preguntas-abiertas)) | Por defecto muestra el mes actual: total cobrado y número de pagos (V8) | ⬜ |
-| RF-BAL-02 | Filtros | Rango de fechas, método de pago, empleado que cobró, destino, producto y, desde la v1.2, origen (consumos o alojamiento) | ⬜ |
-| RF-BAL-03 | Desglose | Por día del mes, por método de pago, por empleado y por producto | ⬜ |
-| RF-BAL-04 | Pendientes | Total de lo que está en `in_progress` y `closed`, es decir, lo que falta por cobrar | ⬜ |
+| RF-BAL-01 | Total del periodo ([P6](#12-preguntas-abiertas)) | Por defecto muestra el mes actual: total cobrado y número de pagos (V8). El periodo es de máximo 31 días y se lee una vez del servidor; sin conexión, la app lo dice en vez de mostrar cifras incompletas. | ✅ |
+| RF-BAL-02 | Filtros | Rango de fechas, método de pago, empleado que cobró, destino (por tipo), producto y, desde la v1.2, origen (consumos o alojamiento). Los filtros no vuelven a leer los pagos. Con un producto elegido se muestra lo que vendió ese producto, sin propinas. | ✅ |
+| RF-BAL-03 | Desglose | Por día operativo, por método de pago, por empleado y por producto | ✅ |
+| RF-BAL-04 | Pendientes | Total de lo que está en `in_progress` y `closed`, es decir, lo que falta por cobrar. Es lo pendiente en este momento, sin importar el periodo elegido. | ✅ |
 | RF-BAL-05 | Exportar | Queda para después: CSV o PDF del rango elegido | — |
 | RF-BAL-06 | Cierre de caja ([P17](#12-preguntas-abiertas)) | Cada cierre cubre desde el cierre anterior hasta ese momento. Lo normal es uno por día operativo, y el administrador puede hacer otros, por ejemplo al cambiar de turno (cierre manual). Ingresa el efectivo contado; la app muestra el esperado según los pagos en efectivo, con sus propinas, y guarda la diferencia con una nota. Un cierre guardado no se edita. Si un día operativo termina sin cierre, el balance lo marca. | ⬜ |
-| RF-BAL-07 | Conceptos aparte | Las propinas ([P15](#12-preguntas-abiertas)) y los impuestos ([P14](#12-preguntas-abiertas)) se muestran separados de las ventas | ⬜ |
+| RF-BAL-07 | Conceptos aparte | Las propinas ([P15](#12-preguntas-abiertas)) y los impuestos ([P14](#12-preguntas-abiertas)) se muestran separados de las ventas: ventas sin impuestos, impuestos, propinas y total recibido | ✅ |
 | RF-BAL-08 | Alojamiento (v1.2) | Los pagos de reservas aparecen con origen "alojamiento" y entran al cierre de caja como cualquier otro pago | ⬜ |
 
 ### 6.6 Administración (`EMP`)
@@ -549,7 +549,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `Users/{uid}` | `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area` (`service`, `reception`, `housekeeping`, `maintenance` o `management`), `active`, `createdAt`, `createdBy` | Reemplaza a `Users/basic/Users/{uid}` (P9). Sin campos de contraseña. M1 crea la ruta con `fullName`, `email`, `type` y `createdAt`; M2 agrega `area`, `active` y el rol `reception`, y M6, `createdBy`. | M1, M2 y M6 |
 | `Orders/{id}` | Los actuales, más `closedAt/By`, `paidAt/By`, `paymentMethod`, `tipAmount`, `taxAmount` y, al cancelar, `cancelReason` y `cancelledAt/By` | `state`: `in_progress`, `closed`, `paid` o `cancelled`. `typeOrder`: `room`, `table`, `pool`, `bar` u `other`. Cada línea tiene su propio id, `taxRate` y `taxAmount`. Cada línea tiene su `lineId` y se agrega con `arrayUnion`, para que dos dispositivos agreguen productos a la vez, incluso sin conexión, sin pisarse (RF-CUR-13, V6). El total no se incrementa al agregar: la app lo calcula de las líneas, y `totalPayAmount` se vuelve a guardar al cerrar la cuenta y al quitar un producto (sección 13). | M3 |
 | `Orders/{id}/events/{id}` | `type`, `by`, `at` y el detalle del cambio | Historial (RF-CUR-11) | M3 |
-| `Payments/{id}` | `amount`, `tipAmount`, `method` (`cash` o `transfer`), `source` (`order` o `reservation`), `sourceId`, `receivedBy`, `receivedAt` | Un registro por cada pago recibido. El balance y el cierre de caja salen de aquí. El cierre toma los pagos por `receivedAt` entre su `from` y su `to`, así que un pago nunca se edita. | M3 |
+| `Payments/{id}` | `amount`, `tipAmount`, `method` (`cash` o `transfer`), `source` (`order` o `reservation`), `sourceId`, `receivedBy`, `receivedAt` y, desde M5, `taxAmount`, `typeOrder`, `typeOrderNumber` y `products` | Un registro por cada pago recibido. El balance y el cierre de caja salen de aquí. El cierre toma los pagos por `receivedAt` entre su `from` y su `to`, así que un pago nunca se edita. Desde M5 el pago de un pedido copia su impuesto, su destino y sus líneas, tal como están en el pedido, y las reglas lo comprueban: así el balance lee un solo documento por venta. Los pagos anteriores no tienen esos campos. | M3 y M5 |
 | `CashClosings/{id}` | `from`, `to`, `type` (`daily` o `manual`), `expectedCash`, `countedCash`, `difference`, `note`, `closedBy`, `createdAt` | Cierre de caja (P17) | M5 |
 | `Products/{id}` | `name`, `unitPrice`, `categoryId`, `taxId`, `active` | Inventario. Se desactivan, no se borran. | M4 |
 | `Categories/{id}` | `name`, `position` | Categorías del inventario, en el orden que define el administrador (RF-INV-04) | M4 |
@@ -635,7 +635,7 @@ Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza reso
 | M2 | v1.0 | `feature/security-baseline` | S2, S3, S6, S7 y S8. Roles, áreas y `active` en las reglas. RF-AUTH-02 y RF-AUTH-07. | M1 |
 | M3 | v1.0 | `feature/current-orders-1` a `-4` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
 | M4 | v1.0 | `feature/inventory-1` y `-2` | RF-INV-01 a RF-INV-04, RF-INV-07 y RF-ORD-07 | M2 |
-| M5 | v1.0 | `feature/balance` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
+| M5 | v1.0 | `feature/balance-1` y `-2` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
 | M6 | v1.0 | `feature/roles-admin-1` y `-2` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
 | M7 | v1.0 | `release/1.0.0` | Pruebas en dispositivos reales, S4, piloto de 1 a 2 semanas en un área del hotel, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V3 y V4. | M3 a M6 |
 | M8 | v1.1 | `feature/attendance` | RF-ASI-01 a RF-ASI-11 y S10. Validación V5. | M7 |
@@ -648,7 +648,7 @@ Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza reso
 | M15 | v1.3 | `feature/housekeeping` | RF-LIM-01 a RF-LIM-07 | M14 |
 | M16 | v1.3 | `release/1.3.0` | Pruebas, piloto con limpieza y mantenimiento, etiqueta `v1.3.0` y merge a `main` | M15 |
 
-**Estado al 2026-11-17:** M0, M1, M2, M3, M4 y M6 están terminados y fusionados en `develop`. De la v1.0 faltan M5 (balance y cierre de caja, que empieza por la validación V8) y M7 (salida a producción).
+**Estado al 2026-11-17:** M0, M1, M2, M3, M4 y M6 están terminados y fusionados en `develop`. M5 va en dos PR: el primero, el balance (RF-BAL-01 a 04 y 07), está en revisión, y falta el cierre de caja (RF-BAL-06). Después queda M7 (salida a producción).
 
 Pendientes que no son código y hay que cerrar antes del piloto (M7):
 - Probar en iOS con sesión iniciada: hasta ahora solo se comprobó que compila y arranca.
@@ -687,7 +687,7 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 |
 | V6 | Que agregar productos sin conexión desde dos dispositivos no pise líneas ni el total (`arrayUnion` e `increment`). Y que, si otro dispositivo cerró el pedido mientras tanto, la app detecte que el servidor rechazó esos productos y avise, aunque se haya cerrado y abierto la app. **Resuelta el 2026-11-16:** se cumple con `arrayUnion` y sin `increment` (sección 13). Dos dispositivos sin conexión agregaron líneas al mismo pedido y el servidor conservó las de ambos; con el pedido cerrado mientras tanto, el servidor rechazó las líneas y la app lo detectó después de reiniciar. | Permitir agregar productos solo con conexión | RF-CUR-13 | M3 |
 | V7 | Tamaño de las fotos comprimidas, y que solo se lean al abrir el detalle | Bajar la calidad o quitar las fotos | RF-TAR-07 | M14 |
-| V8 | Si GitLive permite consultas de suma y conteo en Firestore para el balance | Sumar en el cliente, consultando solo el rango elegido | RF-BAL-01 | M5 |
+| V8 | Si GitLive permite consultas de suma y conteo en Firestore para el balance. **Resuelta el 2026-11-17:** GitLive 2.7.0 tiene `count()` y `sum()` en Android, escritorio e iOS (revisado en el código de la librería, no con una petición real), solo contra el servidor y con la suma como decimal. No se usan: solo dan totales de una consulta y no sirven para el desglose por producto (sección 13). | Sumar en el cliente, consultando solo el rango elegido | RF-BAL-01 | M5 |
 
 ### Preguntas resueltas
 | # | Pregunta | Respuesta |
@@ -814,6 +814,15 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-17 | El inicio del día operativo se guarda en minutos después de la medianoche (`operationalDayStartMinutes`) y se cambia con conexión | Un cambio que solo quede en un dispositivo haría que ese dispositivo agrupe las ventas distinto del resto |
 | 2026-11-17 | El respaldo se escribe desde escritorio en `Documentos/HotelManagement/Respaldos`, como JSON, leyendo siempre del servidor y con cada documento tal como está en Firestore. El JSON se escribe con código propio, sin dependencia nueva. | Leer de la caché podría dejar documentos por fuera sin avisar. Guardar los documentos crudos hace que el respaldo no dependa de lo que esta versión de la app sabe leer. |
 | 2026-11-17 | "Configuración" es una sección del menú solo para administradores, con los parámetros y el respaldo | RF-EMP-06 y RF-EMP-07 |
+| 2026-11-17 | V8: el balance lee una vez del servidor los pagos del periodo y suma en la app los totales, los desgloses y los filtros. No usa las consultas de suma y conteo de Firestore. Cambiar un filtro no vuelve a leer; cambiar el periodo o "Actualizar", sí. | Las agregaciones solo dan totales, y el desglose por producto necesita las líneas de cada venta. Cuesta una lectura por pago. |
+| 2026-11-17 | Desde M5, el pago de un pedido copia del pedido `taxAmount`, `typeOrder`, `typeOrderNumber` y `products`, y las reglas comprueban que sean iguales a los del pedido | El balance y el cierre leen solo `Payments`, una lectura por venta, como dice la sección 6.5. Leer también los pedidos costaría el doble. |
+| 2026-11-17 | Con un producto elegido, el balance muestra lo que vendió ese producto (cantidad, valor e impuesto), no los pagos completos que lo incluyen, y no cuenta propinas | La propina es del pago completo, no de un producto |
+| 2026-11-17 | El periodo del balance es de máximo 31 días | Una lectura por pago: un periodo largo podría gastar buena parte de la cuota diaria de Spark (RNF-12) |
+| 2026-11-17 | El balance y el cierre de caja necesitan conexión. Sin ella, la app muestra un aviso en vez de cifras de la caché del dispositivo. | Una caché incompleta daría totales equivocados sin avisar |
+| 2026-11-17 | El filtro por destino es por tipo (habitación, mesa, piscina, bar u otro), sin número. Los pagos anteriores a M5, que no tienen destino, solo quedan por fuera al elegir un destino. | Es lo que sirve para comparar las áreas del hotel |
+| 2026-11-17 | Lo pendiente por cobrar (RF-BAL-04) usa la consulta en tiempo real de pedidos abiertos que ya existe, y no depende del periodo elegido | Son pocos pedidos y no hay lecturas nuevas |
+| 2026-11-17 | Tipos de cierre de caja: al guardar, el administrador elige "Cierre del día" o "Cierre de turno". El balance marca los días operativos que tuvieron pagos y terminaron sin "Cierre del día". El primer cierre cubre todos los pagos anteriores a él. Se implementa en el segundo PR de M5. | RF-BAL-06. Por eso hay que borrar los pagos de prueba antes del piloto. |
+| 2026-11-17 | M5 se entrega en dos PR: balance (RF-BAL-01 a 04 y 07) con el cambio de `Payments`; y después cierre de caja (RF-BAL-06) con las reglas de `CashClosings` | Igual que M3, M4 y M6: cada parte se revisa y se prueba por separado |
 
 ## 14. Riesgos
 

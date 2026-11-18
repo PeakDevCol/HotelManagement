@@ -114,16 +114,16 @@ internal class FirestoreOrderRepository(
         val orderReference = orderDocument(orderId)
         val snapshot = transaction.get(orderReference)
         if (!snapshot.exists) return Result.failure(OrderActionError.NotFound)
-        val order = snapshot.data<OrderDto>(ServerTimestampBehavior.ESTIMATE).toOrder(isPendingToSend = false)
-            ?: return Result.failure(OrderActionError.NotFound)
-        val newState = order.state.after(change.action) 
+        val orderDto = snapshot.data<OrderDto>(ServerTimestampBehavior.ESTIMATE)
+        val order = orderDto.toOrder(isPendingToSend = false) ?: return Result.failure(OrderActionError.NotFound)
+        val newState = order.state.after(change.action)
             ?: return Result.failure(OrderActionError.StateChanged(order.state))
 
         transaction.update(orderReference, *change.orderFields(newState, order))
         transaction.set(orderReference.collection(FirestorePaths.ORDER_EVENTS).document, change.toEventDto())
         if (change is OrderStateChange.Pay) {
             val paymentReference = firestore.value.collection(FirestorePaths.PAYMENTS).document(orderPaymentId(orderId))
-            transaction.set(paymentReference, change.toPaymentDto(orderId, orderAmount = order.totalAmount))
+            transaction.set(paymentReference, change.toPaymentDto(orderId, orderDto, orderAmount = order.totalAmount))
         }
         return Result.success(Unit)
     }
