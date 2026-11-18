@@ -2,17 +2,18 @@
 
 | | |
 |---|---|
-| **Estado** | Alcance cerrado. Versión 1.0 del documento. |
-| **Fecha** | 2026-11-02 |
+| **Estado** | Alcance cerrado. Se construye en cuatro fases y se entrega completo en la versión 1.0.0. |
+| **Fecha** | 2026-11-02, revisado el 2026-11-17 |
 | **Repositorio** | `PeakDevCol/HotelManagement` |
 | **Responsable de producto** | Por definir |
 
 > **Cómo leer este documento.**
-> El alcance de la app, de la v1.0 a la v1.3, quedó cerrado el 2026-11-02 ([sección 5](#5-alcance-por-versión)).
+> El alcance de la app quedó cerrado el 2026-11-02 y se construye en cuatro fases ([sección 5](#5-alcance-por-fase)).
+> El hotel recibe la app una sola vez, con las cuatro fases terminadas: la versión 1.0.0, después de un piloto (M16, [sección 10](#10-hoja-de-ruta)).
 > Lo que sale del código actual se escribe como hecho. Lo demás es el diseño acordado.
 > Los valores marcados como **por defecto** los puede cambiar el administrador ([P33](#12-preguntas-abiertas), RF-EMP-06).
 > Lo que todavía hay que comprobar técnicamente está en la [sección 12](#12-preguntas-abiertas) como validaciones (V1 a V8), cada una con el hito en que se resuelve.
-> **Control de cambios:** una función nueva entra primero a la columna "Después" de la sección 5 y se anota en la [sección 13](#13-registro-de-decisiones). Solo pasa a una versión con una decisión explícita.
+> **Control de cambios:** una función nueva entra primero a la columna "Después" de la sección 5 y se anota en la [sección 13](#13-registro-de-decisiones). Solo pasa a una fase con una decisión explícita.
 > Los riesgos están en la [sección 14](#14-riesgos), el glosario en la [15](#15-glosario) y los diagramas en la [16](#16-diagramas).
 
 ---
@@ -20,12 +21,14 @@
 ## 1. Resumen
 
 Hotel Management es la app interna del **Hotel Juan Majestic** (desde 2014), un hotel de unas 30 habitaciones ([P30](#12-preguntas-abiertas)).
-Con ella los empleados toman pedidos a habitaciones, mesas, piscina y bar, siguen su estado hasta el pago, administran el catálogo de productos y consultan el balance de ventas (v1.0).
-El alcance sigue en tres versiones más:
+Con ella los empleados toman pedidos a habitaciones, mesas, piscina y bar, siguen su estado hasta el pago, administran el catálogo de productos y consultan el balance de ventas (fase 1).
+El alcance sigue en tres fases más:
 
-- **v1.1, turnos y asistencia:** horarios y registro de la hora de llegada y de salida de cada empleado.
-- **v1.2, reservas y estadías:** habitaciones, reservas, check-in y check-out.
-- **v1.3, limpieza y mantenimiento:** tareas sobre cada habitación que se asignan o que el empleado toma, bloqueo de habitaciones, mantenimiento preventivo y objetos olvidados.
+- **Fase 2, turnos y asistencia:** horarios y registro de la hora de llegada y de salida de cada empleado.
+- **Fase 3, reservas y estadías:** habitaciones, reservas, check-in y check-out.
+- **Fase 4, limpieza y mantenimiento:** tareas sobre cada habitación que se asignan o que el empleado toma, bloqueo de habitaciones, mantenimiento preventivo y objetos olvidados.
+
+Las fases ordenan la construcción. El hotel empieza a usar la app cuando las cuatro están terminadas, primero en un piloto y después como la versión 1.0.0.
 
 Es una sola base de código en Kotlin Multiplatform y Compose Multiplatform, que corre en **Android, iOS y escritorio** (macOS, Windows y Linux), con **Firebase** (Authentication y Firestore) como backend.
 Al inicio se distribuye solo en Android y escritorio ([P22](#12-preguntas-abiertas)), y todo funciona en el plan gratuito de Firebase, Spark ([P34](#12-preguntas-abiertas)).
@@ -38,17 +41,17 @@ Así es difícil saber qué está pendiente de entregar o cobrar, cuánto se ven
 Las reservas, la asistencia, la limpieza y el mantenimiento tienen el mismo problema: sin un registro compartido, una habitación se puede reservar dos veces o entregarse sin limpiar, un daño reportado se olvida y no hay forma confiable de saber a qué hora llegó y salió cada empleado.
 
 ### Objetivos
-| # | Objetivo | Métrica de éxito | Cómo se mide | Versión |
+| # | Objetivo | Métrica de éxito | Cómo se mide | Fase |
 |---|---|---|---|---|
-| O1 | Registrar todos los pedidos en la app | El 100 % de los pedidos del turno quedan en Firestore | Durante el piloto (M7), comparar en varios turnos las comandas en papel con los pedidos de la app | v1.0 |
-| O2 | Saber en todo momento qué está pendiente | Cualquier empleado ve los pedidos en curso en tiempo real | Prueba con dos dispositivos: un cambio en uno se ve en el otro en menos de 5 s (RNF-05) | v1.0 |
-| O3 | Cuadrar la caja | El balance coincide con el dinero recibido | La diferencia de cada cierre de caja (RF-BAL-06) es $0 o queda justificada en la nota | v1.0 |
-| O4 | Tomar un pedido rápido | Crear un pedido de 3 productos toma menos de 1 minuto | Cronometrar a 3 empleados durante el piloto | v1.0 |
-| O5 | Registrar la asistencia | El 100 % de los turnos tienen entrada y salida | Reporte de horas (RF-ASI-08): turnos sin marcación o corregidos por el administrador | v1.1 |
-| O6 | No reservar dos veces la misma habitación | Cero noches con dos reservas | Imposible por diseño (RF-RES-03), y revisado en el calendario durante el piloto | v1.2 |
-| O7 | Saber la ocupación en todo momento | Recepción ve el estado de cada habitación | Tablero en tiempo real (RF-HAB-04) | v1.2 |
-| O8 | Entregar siempre habitaciones limpias | Cero check-ins en habitaciones sin limpiar | La app lo impide (RF-EST-03), y cada excepción queda con motivo | v1.3 |
-| O9 | Atender los daños a tiempo | Las tareas de mantenimiento empiezan dentro del tiempo objetivo de su prioridad | Reporte de tareas (RF-TAR-09) | v1.3 |
+| O1 | Registrar todos los pedidos en la app | El 100 % de los pedidos del turno quedan en Firestore | Durante el piloto (M16), comparar en varios turnos las comandas en papel con los pedidos de la app | 1 |
+| O2 | Saber en todo momento qué está pendiente | Cualquier empleado ve los pedidos en curso en tiempo real | Prueba con dos dispositivos: un cambio en uno se ve en el otro en menos de 5 s (RNF-05) | 1 |
+| O3 | Cuadrar la caja | El balance coincide con el dinero recibido | La diferencia de cada cierre de caja (RF-BAL-06) es $0 o queda justificada en la nota | 1 |
+| O4 | Tomar un pedido rápido | Crear un pedido de 3 productos toma menos de 1 minuto | Cronometrar a 3 empleados durante el piloto | 1 |
+| O5 | Registrar la asistencia | El 100 % de los turnos tienen entrada y salida | Reporte de horas (RF-ASI-08): turnos sin marcación o corregidos por el administrador | 2 |
+| O6 | No reservar dos veces la misma habitación | Cero noches con dos reservas | Imposible por diseño (RF-RES-03), y revisado en el calendario durante el piloto | 3 |
+| O7 | Saber la ocupación en todo momento | Recepción ve el estado de cada habitación | Tablero en tiempo real (RF-HAB-04) | 3 |
+| O8 | Entregar siempre habitaciones limpias | Cero check-ins en habitaciones sin limpiar | La app lo impide (RF-EST-03), y cada excepción queda con motivo | 4 |
+| O9 | Atender los daños a tiempo | Las tareas de mantenimiento empiezan dentro del tiempo objetivo de su prioridad | Reporte de tareas (RF-TAR-09) | 4 |
 
 Antes del piloto conviene medir cuánto tarda hoy tomar un pedido en papel y cuántas diferencias de caja hay, para tener con qué comparar.
 
@@ -64,11 +67,11 @@ Antes del piloto conviene medir cuánto tarda hoy tomar un pedido en papel y cu�
 - Pedidos o reservas hechos directamente por los huéspedes.
 - Varias sedes: la app atiende un solo hotel.
 
-Lo que se dejó para más adelante está en la columna "Después" de la [sección 5](#5-alcance-por-versión).
+Lo que se dejó para más adelante está en la columna "Después" de la [sección 5](#5-alcance-por-fase).
 
 ## 3. Usuarios y roles
 
-El modelo tiene tres roles, `UserType.BASIC`, `UserType.RECEPTION` ([P23](#12-preguntas-abiertas)) y `UserType.ADMIN` (en `shared/.../domain/model/User.kt`). Desde M2 la app y las reglas exigen un perfil activo (RF-AUTH-07); mostrar u ocultar secciones según el rol llega en M6 (RF-AUTH-05).
+El modelo tiene tres roles, `UserType.BASIC`, `UserType.RECEPTION` ([P23](#12-preguntas-abiertas)) y `UserType.ADMIN` (en `shared/.../domain/model/User.kt`). Desde M2 la app y las reglas exigen un perfil activo (RF-AUTH-07), y desde M6 el menú muestra las secciones según el rol (RF-AUTH-05).
 El **rol** define los permisos. Además, cada empleado tiene un **área** (servicio, recepción, limpieza, mantenimiento o administración), que define qué tareas ve y qué aparece primero en su menú (RF-EMP-05). No hay un rol de supervisión ([P31](#12-preguntas-abiertas)).
 Las cuentas las crea solo un administrador, y el primer administrador se crea a mano en la consola de Firebase ([P1](#12-preguntas-abiertas)).
 
@@ -130,24 +133,25 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 |---|---|---|
 | Introducción, login y cerrar sesión | ✅ Migrado | La sesión de Firebase decide qué navegación se muestra |
 | Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
-| Menú principal | ✅ Migrado | Las secciones que faltan muestran "Próximamente" |
+| Menú principal | ✅ Migrado | Muestra las secciones según el rol y las ordena según el área. Las de las fases 2 a 4 se agregan a medida que se construyen. |
 | Crear pedido | ✅ Migrado | El catálogo sale del inventario en Firestore (M4). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
 | Pedidos en curso | ✅ Hecho en M3 | Lista en tiempo real, filtros, detalle, cerrar, reabrir, pagar, cancelar, y agregar y quitar productos, también sin conexión. |
 | Inventario | ✅ Hecho en M4 | Productos, categorías e impuestos. Solo lo ve el administrador. |
-| Balance | ⬜ Pendiente | En el menú muestra "Próximamente". Llega en M5. |
+| Balance | ✅ Hecho en M5 | Balance del periodo con filtros y desgloses, lo pendiente por cobrar y el cierre de caja. Solo lo ve el administrador. |
 | Recuperar contraseña | ✅ Hecho en M6 | "¿Olvidaste la contraseña?" en el inicio de sesión |
 | Roles y permisos | ✅ Hecho en M6 | El menú muestra las secciones según el rol y las ordena según el área. El administrador crea y gestiona empleados desde la app. |
-| Turnos y asistencia | ⬜ Nuevo | v1.1 |
-| Habitaciones, reservas, check-in y check-out | ⬜ Nuevo | v1.2 |
-| Limpieza y mantenimiento | ⬜ Nuevo | v1.3 |
+| Configuración y respaldo | ✅ Hecho en M6 | Inicio del día operativo, y respaldo manual en JSON desde escritorio |
+| Turnos y asistencia | ⬜ Pendiente | Fase 2 (M8) |
+| Habitaciones, reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M10 a M12) |
+| Limpieza y mantenimiento | ⬜ Pendiente | Fase 4 (M14 y M15) |
 
-Hay 292 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 362 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
 
-## 5. Alcance por versión
+## 5. Alcance por fase
 
-Alcance cerrado el 2026-11-02. Lo que está en "Después" no forma parte de la v1.0 a la v1.3.
+Alcance cerrado el 2026-11-02. Las fases ordenan la construcción, y el hotel las recibe todas juntas en la versión 1.0.0 (decisión del 2026-11-17). Lo que está en "Después" no forma parte de la versión 1.0.0.
 
-| Función | v1.0 | v1.1 | v1.2 | v1.3 | Después |
+| Función | Fase 1 | Fase 2 | Fase 3 | Fase 4 | Después |
 |---|:---:|:---:|:---:|:---:|:---:|
 | Autenticación, roles, áreas y cuentas creadas por el administrador | ✅ | | | | |
 | Recuperar contraseña | ✅ | | | | |
@@ -159,7 +163,6 @@ Alcance cerrado el 2026-11-02. Lo que está en "Después" no forma parte de la v
 | Cierre de caja diario y manual | ✅ | | | | |
 | Propinas | ✅ | | | | |
 | Administración de empleados, parámetros y respaldo manual | ✅ | | | | |
-| Distribución en Android y escritorio | ✅ | | | | |
 | Horarios y reporte de horas | | ✅ | | | |
 | Marcación desde el celular dentro del hotel o desde un computador autorizado | | ✅ | | | |
 | Habitaciones y tablero de estado | | | ✅ | | |
@@ -182,6 +185,8 @@ Alcance cerrado el 2026-11-02. Lo que está en "Después" no forma parte de la v
 | Descuentos y cortesías | | | | | ✅ (P18) |
 | Cargo de consumos a la habitación | | | | | ✅ (P16) |
 | Notas en el pedido (por ejemplo, "sin hielo") | | | | | ✅ |
+
+La distribución en Android y escritorio, las pruebas en dispositivos reales y el piloto se hacen una sola vez, en M16, con las cuatro fases terminadas.
 
 ## 6. Requisitos funcionales
 
@@ -267,19 +272,19 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 | RF-INV-07 | Impuestos opcionales ([P14](#12-preguntas-abiertas)) | El administrador define impuestos con nombre y porcentaje (por ejemplo, IVA o impuesto al consumo). Cada producto puede tener uno o ninguno. El precio de venta incluye el impuesto, y el pedido guarda cuánto impuesto tiene cada línea. El porcentaje admite hasta dos decimales. El impuesto se calcula hacia adentro del precio y se redondea al peso más cercano. Un impuesto inactivo deja de aplicarse a los pedidos nuevos. | ✅ |
 
 ### 6.5 Balance (`BAL`)
-Todo el balance sale de `Payments` (sección 8), que reúne en un solo lugar los pagos de pedidos y, desde la v1.2, los de reservas.
+Todo el balance sale de `Payments` (sección 8), que reúne en un solo lugar los pagos de pedidos y, desde la fase 3, los de reservas.
 Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora de Colombia por defecto ([P17](#12-preguntas-abiertas)), para no partir un turno nocturno.
 
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
 | RF-BAL-01 | Total del periodo ([P6](#12-preguntas-abiertas)) | Por defecto muestra el mes actual: total cobrado y número de pagos (V8). El periodo es de máximo 31 días y se lee una vez del servidor; sin conexión, la app lo dice en vez de mostrar cifras incompletas. | ✅ |
-| RF-BAL-02 | Filtros | Rango de fechas, método de pago, empleado que cobró, destino (por tipo), producto y, desde la v1.2, origen (consumos o alojamiento). Los filtros no vuelven a leer los pagos. Con un producto elegido se muestra lo que vendió ese producto, sin propinas. | ✅ |
+| RF-BAL-02 | Filtros | Rango de fechas, método de pago, empleado que cobró, destino (por tipo), producto y, desde la fase 3, origen (consumos o alojamiento). Los filtros no vuelven a leer los pagos. Con un producto elegido se muestra lo que vendió ese producto, sin propinas. | ✅ |
 | RF-BAL-03 | Desglose | Por día operativo, por método de pago, por empleado y por producto | ✅ |
 | RF-BAL-04 | Pendientes | Total de lo que está en `in_progress` y `closed`, es decir, lo que falta por cobrar. Es lo pendiente en este momento, sin importar el periodo elegido. | ✅ |
 | RF-BAL-05 | Exportar | Queda para después: CSV o PDF del rango elegido | — |
 | RF-BAL-06 | Cierre de caja ([P17](#12-preguntas-abiertas)) | Cada cierre cubre desde el cierre anterior hasta ese momento. Lo normal es uno por día operativo, y el administrador puede hacer otros, por ejemplo al cambiar de turno (cierre manual). Ingresa el efectivo contado; la app muestra el esperado según los pagos en efectivo, con sus propinas, y guarda la diferencia con una nota. Un cierre guardado no se edita. Si un día operativo termina sin cierre, el balance lo marca. Al guardar, el administrador elige "Cierre del día" o "Cierre de turno"; un día con pagos que termina sin "Cierre del día" queda marcado. La nota es obligatoria si la diferencia no es $0. | ✅ |
 | RF-BAL-07 | Conceptos aparte | Las propinas ([P15](#12-preguntas-abiertas)) y los impuestos ([P14](#12-preguntas-abiertas)) se muestran separados de las ventas: ventas sin impuestos, impuestos, propinas y total recibido | ✅ |
-| RF-BAL-08 | Alojamiento (v1.2) | Los pagos de reservas aparecen con origen "alojamiento" y entran al cierre de caja como cualquier otro pago | ⬜ |
+| RF-BAL-08 | Alojamiento (fase 3) | Los pagos de reservas aparecen con origen "alojamiento" y entran al cierre de caja como cualquier otro pago | ⬜ |
 
 ### 6.6 Administración (`EMP`)
 | ID | Requisito | Criterios de aceptación | Estado |
@@ -288,31 +293,31 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-EMP-02 | Activar o desactivar | Un empleado inactivo no puede usar la app, y las reglas de Firestore lo impiden también | ✅ |
 | RF-EMP-03 | Cambiar el rol | Entre `basic`, `reception` y `admin`. Siempre tiene que quedar al menos un administrador. Se garantiza porque nadie puede cambiar su propio rol ni desactivarse, ni en la app ni en las reglas. | ✅ |
 | RF-EMP-04 | Crear empleados ([P1](#12-preguntas-abiertas)) | El administrador ingresa nombre, correo, rol y área. La cuenta se crea sin cerrar la sesión del administrador (V1), y el empleado recibe el correo de Firebase para crear su contraseña, así nadie más la conoce. Si el perfil no se puede guardar, la cuenta recién creada se elimina. Desde el empleado se puede reenviar el correo. | ✅ |
-| RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve y qué aparece primero en su menú. | ✅ El orden del menú. Las tareas de habitación llegan en la v1.3. |
-| RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo. En la v1.0, desde Menú → Configuración. | ✅ El parámetro de la v1.0. Los demás llegan con su versión. |
+| RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve y qué aparece primero en su menú. | ✅ El orden del menú. Las tareas de habitación llegan en la fase 4. |
+| RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo, desde Menú → Configuración. | ✅ El parámetro de la fase 1. Los demás llegan con su fase. |
 | RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. El archivo queda en `Documentos/HotelManagement/Respaldos`, con cada documento tal como está en Firestore y el historial de cada pedido. "Desde una fecha" aplica a pedidos, pagos y cierres de caja; lo demás se exporta completo. | ✅ |
 
 | Parámetro | Por defecto | Desde |
 |---|---|---|
-| Inicio del día operativo | 6:00 a. m. | v1.0 |
-| Tolerancia de llegada tarde | 10 min | v1.1 |
-| Horas máximas de una entrada abierta | 16 h | v1.1 |
-| Ubicación del hotel, radio y precisión mínima del GPS | Sin ubicación, 150 m y 100 m | v1.1 |
-| Horas de check-in y check-out | 3:00 p. m. y 12:00 m. | v1.2 |
-| Repaso diario de habitaciones ocupadas | Sí | v1.3 |
-| Cambio de sábanas en una estadía | Cada 3 noches | v1.3 |
-| Limpieza profunda de cada habitación | Cada 30 días | v1.3 |
-| Volver a mostrar una habitación con "no molestar" | A las 2 h | v1.3 |
-| Listas de chequeo por tipo de limpieza | Una lista básica por tipo | v1.3 |
-| Tiempo objetivo para empezar una tarea de mantenimiento | Urgente 1 h, alta el mismo día, normal 3 días, baja sin plazo | v1.3 |
-| Tamaño máximo de una foto y días que se conserva | 200 KB y 180 días | v1.3 |
-| Días que se guarda un objeto olvidado | 90 | v1.3 |
+| Inicio del día operativo | 6:00 a. m. | Fase 1 |
+| Tolerancia de llegada tarde | 10 min | Fase 2 |
+| Horas máximas de una entrada abierta | 16 h | Fase 2 |
+| Ubicación del hotel, radio y precisión mínima del GPS | Sin ubicación, 150 m y 100 m | Fase 2 |
+| Horas de check-in y check-out | 3:00 p. m. y 12:00 m. | Fase 3 |
+| Repaso diario de habitaciones ocupadas | Sí | Fase 4 |
+| Cambio de sábanas en una estadía | Cada 3 noches | Fase 4 |
+| Limpieza profunda de cada habitación | Cada 30 días | Fase 4 |
+| Volver a mostrar una habitación con "no molestar" | A las 2 h | Fase 4 |
+| Listas de chequeo por tipo de limpieza | Una lista básica por tipo | Fase 4 |
+| Tiempo objetivo para empezar una tarea de mantenimiento | Urgente 1 h, alta el mismo día, normal 3 días, baja sin plazo | Fase 4 |
+| Tamaño máximo de una foto y días que se conserva | 200 KB y 180 días | Fase 4 |
+| Días que se guarda un objeto olvidado | 90 | Fase 4 |
 
 > **Nota técnica sobre RF-EMP-04.** Crear una cuenta desde el SDK de cliente inicia sesión con ella.
 > Hay dos opciones que funcionan en el plan Spark (V1): una segunda instancia de Firebase solo para crear cuentas, si GitLive lo permite, o la API REST de Firebase Auth, que crea la cuenta sin tocar la sesión de la app.
 > La misma técnica sirve para marcar asistencia en el computador de recepción sin cerrar la sesión de quien lo está usando (RF-ASI-11).
 
-### 6.7 Turnos y asistencia (`ASI`, v1.1)
+### 6.7 Turnos y asistencia (`ASI`, fase 2)
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
 | RF-ASI-01 | Horarios | El administrador asigna turnos a cada empleado (inicio, fin y área opcional). Un turno puede cruzar la medianoche. Se puede copiar la semana anterior. Avisa si dos turnos del mismo empleado se cruzan. | ⬜ |
@@ -327,8 +332,8 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-ASI-10 | Zona del hotel | El administrador fija la ubicación del hotel, el radio y la precisión mínima. Se acepta la marcación si el celular está dentro del radio con esa precisión; si no, pide intentar de nuevo o marcar en recepción. Rechaza ubicaciones simuladas, que Android permite detectar (V5). Solo se guardan la distancia y la precisión, no las coordenadas, y no hay rastreo fuera del momento de marcar. | ⬜ |
 | RF-ASI-11 | Computadores autorizados | El administrador autoriza el computador de recepción desde la app de escritorio, y puede revocarlo. Solo un computador autorizado muestra la opción de marcar asistencia. El empleado se identifica con su cuenta y marca, sin cerrar la sesión del computador (V1). | ⬜ |
 
-### 6.8 Habitaciones (`HAB`, v1.2)
-El estado de una habitación se guarda en tres partes independientes, para que la v1.3 no cambie el modelo:
+### 6.8 Habitaciones (`HAB`, fase 3)
+El estado de una habitación se guarda en tres partes independientes, para que la fase 4 no cambie el modelo:
 
 | Parte | Valores | Qué la cambia |
 |---|---|---|
@@ -350,11 +355,11 @@ En el tablero cada habitación muestra un solo estado ([P31](#12-preguntas-abier
 |---|---|---|---|
 | RF-HAB-01 | Tipos de habitación | Nombre, capacidad, tarifa base por noche e impuesto opcional ([P27](#12-preguntas-abiertas)) | ⬜ |
 | RF-HAB-02 | Habitaciones | Número, tipo, piso y si está activa. Solo administradores. | ⬜ |
-| RF-HAB-03 | Estado de la habitación | Según las tablas de arriba. El check-in la pasa a `occupied`, y el check-out a `vacant` y `dirty`. En la v1.2, cualquier empleado la marca limpia; desde la v1.3 eso lo hacen las tareas de limpieza. | ⬜ |
+| RF-HAB-03 | Estado de la habitación | Según las tablas de arriba. El check-in la pasa a `occupied`, y el check-out a `vacant` y `dirty`. En la fase 3, cualquier empleado la marca limpia, para poder probar el check-in; la fase 4 lo reemplaza por las tareas de limpieza. | ⬜ |
 | RF-HAB-04 | Tablero de habitaciones | Todas las habitaciones con su estado y la salida prevista y, solo para recepción y administración, el huésped actual. En tiempo real. | ⬜ |
 | RF-HAB-05 | Temporadas ([P27](#12-preguntas-abiertas)) | Después: el administrador define temporadas con fechas y tarifa por tipo de habitación, y cada noche toma la tarifa de su temporada | — |
 
-### 6.9 Reservas (`RES`, v1.2)
+### 6.9 Reservas (`RES`, fase 3)
 Una reserva es una habitación para un huésped entre dos fechas. Si el mismo huésped necesita otra habitación, se hace otra reserva ([P35](#12-preguntas-abiertas)).
 
 | Estado | Código | Significado |
@@ -383,7 +388,7 @@ confirmed ──check-in──▶ checked_in ──check-out──▶ checked_ou
 | RF-RES-08 | ~~Anticipos~~ | Aplazado por P25: por ahora no se cobran anticipos al reservar | — |
 | RF-RES-09 | Llegadas y salidas del día | Lista de check-ins y check-outs esperados hoy, con el estado de cada habitación | ⬜ |
 
-### 6.10 Estadías: check-in y check-out (`EST`, v1.2)
+### 6.10 Estadías: check-in y check-out (`EST`, fase 3)
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
 | RF-EST-01 | Check-in con reserva | Confirmar los datos y el documento del huésped, y registrar a los acompañantes (nombre y documento) y la autorización de tratamiento de datos. La reserva pasa a `checked_in` y la habitación a `occupied`, con la hora real de llegada. | ⬜ |
@@ -396,7 +401,7 @@ confirmed ──check-in──▶ checked_in ──check-out──▶ checked_ou
 | RF-EST-08 | Datos para la TRA y el SIRE | Aplazado: primero se valida con el hotel cómo hace hoy ese reporte ([P28](#12-preguntas-abiertas)) | — |
 | RF-EST-09 | Pagos de la estadía | Registrar pagos en efectivo o por transferencia en cualquier momento entre el check-in y el check-out; cada uno crea un registro en `Payments`. La app muestra noches, tarifa, impuestos, pagos y saldo. | ⬜ |
 
-### 6.11 Tareas de habitación (`TAR`, v1.3)
+### 6.11 Tareas de habitación (`TAR`, fase 4)
 La limpieza y el mantenimiento se manejan como **tareas sobre una habitación** que cambian su estado ([P31](#12-preguntas-abiertas)).
 Cada tarea se asigna a un empleado, o un empleado del área la toma de la lista. No hay rol de supervisión ni inspección.
 Por ahora solo hay tareas de habitaciones; las áreas comunes quedan para después ([P32](#12-preguntas-abiertas)).
@@ -439,7 +444,7 @@ pending o in_progress ──cancelar (solo administradores, con motivo)──▶
 | RF-TAR-08 | Historial por habitación | Todas las tareas de limpieza y mantenimiento de una habitación, para detectar problemas que se repiten. Solo lo ve el administrador ([P37](#12-preguntas-abiertas)). | ⬜ |
 | RF-TAR-09 | Reportes | Limpieza: tareas por persona y por tipo, tiempo promedio y pendientes al cierre del día. Mantenimiento: tareas abiertas por prioridad y antigüedad, porcentaje que empezó a tiempo, noches bloqueadas por habitación y costos por mes. Solo los ve el administrador ([P37](#12-preguntas-abiertas)). | ⬜ |
 
-### 6.12 Limpieza (`LIM`, v1.3)
+### 6.12 Limpieza (`LIM`, fase 4)
 | Tipo | Código | Cuándo se crea |
 |---|---|---|
 | Salida | `departure` | Al hacer el check-out. Es la más completa. |
@@ -466,7 +471,7 @@ El check-out, el repaso del día y el fin de un mantenimiento dejan la habitaci�
 > **Nota técnica sobre RF-LIM-01 y RF-MAN-05.** Sin un servidor, las tareas del día las crea el primer dispositivo que abre una pantalla de tareas ese día.
 > Cada tarea automática tiene un id fijo, armado con la habitación, el día operativo y el tipo (sección 8), así que aunque dos dispositivos la creen a la vez queda una sola.
 
-### 6.13 Mantenimiento (`MAN`, v1.3)
+### 6.13 Mantenimiento (`MAN`, fase 4)
 | Prioridad | Cuándo |
 |---|---|
 | Urgente | Riesgo para alguien, o la habitación no se puede usar: agua, electricidad, cerradura o gas |
@@ -495,12 +500,12 @@ El check-out, el repaso del día y el fin de un mantenimiento dejan la habitaci�
 | RNF-06 | Calidad | El dominio y los ViewModels tienen tests en `commonTest`. Cada PR pasa `./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test`. |
 | RNF-07 | CI | Una GitHub Action en cada PR hacia `develop` corre los tests y compila Android y escritorio. |
 | RNF-08 | Accesibilidad | Los íconos tienen descripción, los botones miden al menos 48 dp y hay modo claro y oscuro. Las pantallas de tareas se usan con una mano y con botones grandes. |
-| RNF-09 | Compatibilidad de datos | Ya no aplica al legacy: no hay datos productivos ([P9](#12-preguntas-abiertas)) y el legacy se eliminó en M1. Desde el piloto (M7), todo cambio de esquema incluye su migración. |
+| RNF-09 | Compatibilidad de datos | Ya no aplica al legacy: no hay datos productivos ([P9](#12-preguntas-abiertas)) y el legacy se eliminó en M1. Desde el piloto (M16), todo cambio de esquema incluye su migración. |
 | RNF-10 | Fechas y zona horaria | Las fechas se guardan con la hora del servidor y se muestran y agrupan en hora de Colombia (`America/Bogota`, UTC−5) en cualquier dispositivo, por día operativo. |
 | RNF-11 | Auditoría | Pedidos, pagos, reservas, marcaciones y tareas no se borran. Cada cambio guarda quién y cuándo, y una anulación o corrección conserva el motivo. |
 | RNF-12 | Costos | Todo el alcance funciona en el plan gratuito Spark ([P34](#12-preguntas-abiertas)), según la tabla de abajo. Los listeners en tiempo real se limitan a lo abierto, y los reportes consultan solo el rango elegido. El uso real se mide en el piloto (V4). |
 | RNF-13 | Índices | Los índices compuestos que necesiten las consultas (por ejemplo `state` + `dateOrder`) se versionan en `firestore.indexes.json`, junto a las reglas. |
-| RNF-14 | Datos personales | Desde la v1.1 se usa la ubicación de los empleados, solo al marcar y sin guardar coordenadas (RF-ASI-10). Desde la v1.2 se guardan datos de huéspedes, incluido su documento de identidad, que solo leen recepción y administración, con la autorización de tratamiento de datos registrada. Todo se trata según la Ley 1581 de 2012, y el hotel define por cuánto tiempo conserva los datos de huéspedes. |
+| RNF-14 | Datos personales | Con la fase 2 se usa la ubicación de los empleados, solo al marcar y sin guardar coordenadas (RF-ASI-10). Con la fase 3 se guardan datos de huéspedes, incluido su documento de identidad, que solo leen recepción y administración, con la autorización de tratamiento de datos registrada. Todo se trata según la Ley 1581 de 2012, y el hotel define por cuánto tiempo conserva los datos de huéspedes. |
 | RNF-15 | Respaldo | Respaldo manual en JSON desde la app de escritorio (RF-EMP-07). Los respaldos automáticos de Firestore exigen el plan Blaze y quedan para después. |
 | RNF-16 | Reportes oficiales | La app no maneja la TRA ni el SIRE ([P28](#12-preguntas-abiertas)). El hotel sigue con su proceso actual, que se revisará para una versión futura. |
 | RNF-17 | Fotos | Se comprimen antes de guardarlas, se guardan en Firestore y solo las ven los roles que ven la tarea o el objeto (RF-TAR-07). |
@@ -528,21 +533,22 @@ En Spark, si un día se pasa la cuota, Firestore deja de responder hasta que se 
 |---|---|---|
 | `id` | string | UUID, igual al id del documento |
 | `idEmployee` | string | `uid` de Firebase Auth |
-| `products` | array | `{productId, productName, quantity, unitAmount, totalAmount}`. El precio queda copiado en el pedido. |
+| `products` | array | `{lineId, productId, productName, quantity, unitAmount, totalAmount, taxRate, taxAmount}`. El precio y el impuesto quedan copiados en el pedido. |
 | `typeOrder` | string | `room`, `table`, `pool`, `bar` u `other` |
 | `typeOrderNumber` | int o null | Número de habitación o mesa |
 | `dateOrder` | timestamp | Lo pone el servidor |
 | `state` | string | `in_progress`, `closed`, `paid` o `cancelled`. Desde el tercer PR de M3 la app mueve el pedido por todos los estados, y guarda `closedAt/By`, `paidAt/By`, `paymentMethod`, `tipAmount`, `cancelReason` y `cancelledAt/By`. `Orders/{id}/events` y `Payments` ya existen como en el modelo objetivo. |
 | `totalPayAmount` | long | Total en pesos |
+| `taxAmount` | long | Parte del total que es impuesto (RF-INV-07) |
 
-**`Users/{uid}`**, desde M2: `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area`, `active` y `createdAt`. La app solo lo lee; hasta M6 los perfiles se crean a mano en la consola (S6).
+**`Users/{uid}`**, desde M2: `fullName`, `email`, `type` (`basic`, `reception` o `admin`), `area`, `active`, `createdAt` y, desde M6, `createdBy`. Desde M6 el administrador crea y edita los perfiles desde la app (RF-EMP-04).
 La ruta anterior, `Users/basic/Users/{uid}`, ya no se usa. Sus documentos, con contraseñas en texto plano, se borraron con los datos de prueba (S1).
 
 Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo reemplaza al actual sin migración. Los datos de prueba se borraron en M0 (S1).
 
 ### Modelo objetivo
 
-**Base y pedidos (v1.0)**
+**Base y pedidos (fase 1)**
 
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
@@ -554,9 +560,9 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `Products/{id}` | `name`, `unitPrice`, `categoryId`, `taxId`, `active` | Inventario. Se desactivan, no se borran. | M4 |
 | `Categories/{id}` | `name`, `position` | Categorías del inventario, en el orden que define el administrador (RF-INV-04) | M4 |
 | `Taxes/{id}` | `name`, `rate`, `active` | Impuestos opcionales (P14). `rate` es un entero en centésimas de punto: 19 % es `1900` y 8,5 % es `850`. Se desactivan, no se borran. | M4 |
-| `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt`. En la v1.0: `operationalDayStartMinutes`, en minutos después de la medianoche (360 = 6:00 a. m.). | Cada versión agrega los suyos | M6 |
+| `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt`. En la fase 1: `operationalDayStartMinutes`, en minutos después de la medianoche (360 = 6:00 a. m.). | Cada fase agrega los suyos | M6 |
 
-**Asistencia (v1.1)**
+**Asistencia (fase 2)**
 
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
@@ -564,7 +570,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `Attendance/{id}` | `employeeId`, `clockInAt`, `clockOutAt`, `source` (`phone` o `kiosk`), `deviceId`, `distanceMeters`, `accuracyMeters`, `offline`, `deviceTime`, `needsReview` y `correction` (`by`, `reason` y valores originales) | Marcaciones. Sin coordenadas (RF-ASI-10). | M8 |
 | `Devices/{id}` | `name`, `authorizedBy`, `authorizedAt`, `active` | Computadores autorizados para marcar (RF-ASI-11) | M8 |
 
-**Habitaciones, reservas y estadías (v1.2)**
+**Habitaciones, reservas y estadías (fase 3)**
 
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
@@ -574,7 +580,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `Reservations/{id}` | `guestId`, `roomId`, `checkInDate`, `checkOutDate`, `adults`, `children`, `companions`, `nightlyRates`, `taxAmount`, `total`, `paidAmount`, `source`, `state`, `notes`, y quién y cuándo de cada cambio | Una habitación por reserva (P35). `nightlyRates` guarda la tarifa de cada noche, así las temporadas (RF-HAB-05) no cambian el modelo. | M11 |
 | `RoomNights/{roomId}_{date}` | `reservationId` o `blockId`, y `arrival` | Un documento por habitación y noche, con `date` en formato `yyyy-MM-dd`, creado en la misma transacción que la reserva o el bloqueo. Como las reglas solo permiten crearlo si no existe, no se puede reservar ni bloquear dos veces la misma noche. `arrival` es `true` en la primera noche de una reserva, así limpieza sabe qué habitaciones tienen llegada hoy sin leer `Reservations` (RF-LIM-02). | M11 |
 
-**Limpieza y mantenimiento (v1.3)**
+**Limpieza y mantenimiento (fase 4)**
 
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
@@ -616,7 +622,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | S1 | El legacy guarda contraseñas en texto plano en `Users` | Como no hay datos productivos, una persona borra todos los datos de prueba de Firestore antes de publicar este PRD, porque el repo es público. Al eliminar el legacy (M1) se revisa que no queden. | M0 ✅ |
 | S2 | La API key de `google-services.json` está en el historial público del repo | Se decidió mitigar sin reescribir el historial: reglas de Firestore estrictas y una key por plataforma. La de Android (la expuesta) se restringe al paquete y a la SHA-1, y la de iOS, al bundle id. Escritorio se registra como app Web con su propia key, limitada por API, que se lee de `desktopApp/firebase.properties` (fuera del repo). Como la key de escritorio se puede extraer del instalador y con ella se pueden crear cuentas de Auth por la API REST, RF-AUTH-07 es obligatorio. Las keys quedaron restringidas y las reglas publicadas el 2026-11-14. | M2 ✅ |
 | S3 | Las reglas de Firestore no se sabe si están desplegadas | Versionar las reglas en el repo (`firestore.rules`) y desplegarlas. Versionadas y publicadas el 2026-11-14 para `Users` y `Orders`. | M2 ✅ |
-| S4 | Protección adicional | Secret scanning y push protection en GitHub. Firebase App Check en modo de monitoreo: no se puede exigir mientras la app de escritorio use Firestore directamente, porque no tiene proveedor de App Check (V3). | M7 |
+| S4 | Protección adicional | Secret scanning y push protection en GitHub: activos, comprobado el 2026-11-17. Falta que una persona cierre la alerta #1, la key antigua de Android en el historial, como "Won't fix" (S2). App Check no se usa en la versión 1.0.0 (V3). | M16 |
 | S5 | Módulo legacy `app` duplicado | Eliminarlo en M1: ya no quedan pantallas por migrar desde ahí ni usuarios que lo usen | M1 ✅ |
 | S6 | Primer administrador | Crearlo a mano en Firebase Auth y en `Users/{uid}` (P1). Creado el 2026-11-14. | M2 ✅ |
 | S7 | Las reglas nuevas pueden bloquear a todos o dejar huecos | ~~Tests de las reglas en el emulador de Firebase~~: descartados el 2026-11-14 (sección 13). En su lugar, antes de publicar las reglas se revisan a mano, por rol y por cada cambio de estado, con el simulador de reglas de la consola de Firebase, y se despliegan en un horario de poca operación. Las de M2 se comprobaron el 2026-11-14 con peticiones reales después de publicarlas: sin sesión, cuenta sin perfil y administrador. | M2 ✅ |
@@ -627,36 +633,39 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 ## 10. Hoja de ruta
 
 Cada hito sale de `develop` en su propia rama y vuelve con un PR, y empieza resolviendo sus validaciones de la [sección 12](#12-preguntas-abiertas).
+Las fases ordenan la construcción. El hotel no recibe la app hasta M16, que la entrega completa como la versión 1.0.0 después de un piloto (decisión del 2026-11-17).
 
-| Hito | Versión | Rama | Contenido | Depende de |
+| Hito | Fase | Rama | Contenido | Depende de |
 |---|---|---|---|---|
 | M0 | — | `task/prd` | Este PRD (primer PR) y los diagramas de la [sección 16](#16-diagramas) (segundo PR). Borrar los datos de prueba (S1). | — |
-| M1 | v1.0 | `feature/remove-legacy` | Eliminar `app` (S5), revisar que no queden datos de prueba (S1), ruta `Users/{uid}` (P9) y CI (RNF-07). Va primero porque, sin usuarios productivos, es el momento más barato. | M0 |
-| M2 | v1.0 | `feature/security-baseline` | S2, S3, S6, S7 y S8. Roles, áreas y `active` en las reglas. RF-AUTH-02 y RF-AUTH-07. | M1 |
-| M3 | v1.0 | `feature/current-orders-1` a `-4` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
-| M4 | v1.0 | `feature/inventory-1` y `-2` | RF-INV-01 a RF-INV-04, RF-INV-07 y RF-ORD-07 | M2 |
-| M5 | v1.0 | `feature/balance-1` y `-2` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
-| M6 | v1.0 | `feature/roles-admin-1` y `-2` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
-| M7 | v1.0 | `release/1.0.0` | Pruebas en dispositivos reales, S4, piloto de 1 a 2 semanas en un área del hotel, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V3 y V4. | M3 a M6 |
-| M8 | v1.1 | `feature/attendance` | RF-ASI-01 a RF-ASI-11 y S10. Validación V5. | M7 |
-| M9 | v1.1 | `release/1.1.0` | Pruebas de ubicación dentro y alrededor del hotel, etiqueta `v1.1.0` y merge a `main` | M8 |
-| M10 | v1.2 | `feature/rooms` | RF-HAB-01 a RF-HAB-04 | M7 |
-| M11 | v1.2 | `feature/reservations` | RF-RES-01 a RF-RES-07, RF-RES-09 y S9 | M10 |
-| M12 | v1.2 | `feature/stays` | RF-EST-01 a RF-EST-07, RF-EST-09 y RF-BAL-08 | M11 |
-| M13 | v1.2 | `release/1.2.0` | Pruebas, piloto en recepción, etiqueta `v1.2.0` y merge a `main` | M9 y M12 |
-| M14 | v1.3 | `feature/maintenance` | RF-TAR-01 a RF-TAR-09 y RF-MAN-01 a RF-MAN-06. Validación V7. | M13 |
-| M15 | v1.3 | `feature/housekeeping` | RF-LIM-01 a RF-LIM-07 | M14 |
-| M16 | v1.3 | `release/1.3.0` | Pruebas, piloto con limpieza y mantenimiento, etiqueta `v1.3.0` y merge a `main` | M15 |
+| M1 | 1 ✅ | `feature/remove-legacy` | Eliminar `app` (S5), revisar que no queden datos de prueba (S1), ruta `Users/{uid}` (P9) y CI (RNF-07). Va primero porque, sin usuarios productivos, es el momento más barato. | M0 |
+| M2 | 1 ✅ | `feature/security-baseline` | S2, S3, S6, S7 y S8. Roles, áreas y `active` en las reglas. RF-AUTH-02 y RF-AUTH-07. | M1 |
+| M3 | 1 ✅ | `feature/current-orders-1` a `-4` | Estados nuevos (RF-ORD-04), RF-ORD-06, RF-ORD-08, RF-ORD-09, RF-AUTH-03, RF-CUR-01 a RF-CUR-08, RF-CUR-10 a RF-CUR-13 y `Payments`. Validaciones V2 y V6. | M2 |
+| M4 | 1 ✅ | `feature/inventory-1` y `-2` | RF-INV-01 a RF-INV-04, RF-INV-07 y RF-ORD-07 | M2 |
+| M5 | 1 ✅ | `feature/balance-1` y `-2` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
+| M6 | 1 ✅ | `feature/roles-admin-1` y `-2` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
+| M7 | — | — | Era la salida de la fase 1 con su piloto. Se unió a M16 (decisión del 2026-11-17). | — |
+| M8 | 2 | `feature/attendance` | RF-ASI-01 a RF-ASI-11 y S10. Validación V5, en lo que se puede comprobar fuera del hotel: la detección de ubicaciones simuladas. | M6 |
+| M9 | — | — | Era la salida de la fase 2. Las pruebas de ubicación dentro y alrededor del hotel pasaron a M16. | — |
+| M10 | 3 | `feature/rooms` | RF-HAB-01 a RF-HAB-04 | M6 |
+| M11 | 3 | `feature/reservations` | RF-RES-01 a RF-RES-07, RF-RES-09 y S9 | M10 |
+| M12 | 3 | `feature/stays` | RF-EST-01 a RF-EST-07, RF-EST-09 y RF-BAL-08 | M11 |
+| M13 | — | — | Era la salida de la fase 3 con un piloto en recepción. Se unió a M16. | — |
+| M14 | 4 | `feature/maintenance` | RF-TAR-01 a RF-TAR-09 y RF-MAN-01 a RF-MAN-06. Validación V7. | M11 |
+| M15 | 4 | `feature/housekeeping` | RF-LIM-01 a RF-LIM-07 | M12 y M14 |
+| M16 | Todas | `release/1.0.0` | Salida a producción de la versión 1.0.0, con las cuatro fases. Pruebas en dispositivos reales (Android, Windows e iOS con sesión iniciada), S4, APK firmado con la llave de producción, instalador `.msi` generado en Windows con los módulos de Java que necesitan Firebase y la app, versión visible en el menú, guía del piloto en `docs/`, piloto de 1 a 2 semanas, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V4 y V5 (precisión del GPS en el hotel). | M5, M8 y M15 |
 
-**Estado al 2026-11-17:** M0, M1, M2, M3, M4 y M6 están terminados y fusionados en `develop`. M5 va en dos PR: el balance (RF-BAL-01 a 04 y 07) ya está fusionado, y el cierre de caja (RF-BAL-06) está en revisión. Después queda M7 (salida a producción).
+**Estado al 2026-11-17:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`: son 45 de los 99 requisitos vigentes de la sección 6. Sigue la fase 2 con M8 (asistencia). El orden de trabajo es M8, M10, M11, M12, M14, M15 y M16.
 
-Pendientes que no son código y hay que cerrar antes del piloto (M7):
+Pendientes que no son código y hay que cerrar antes del piloto (M16):
 - Probar en iOS con sesión iniciada: hasta ahora solo se comprobó que compila y arranca.
 - Revisar las pantallas en modo claro y oscuro en dispositivos reales (definición de terminado, sección 11).
-- Cambiar la contraseña del primer administrador y borrar de Firestore los datos de prueba que quedaron de las comprobaciones de reglas (perfiles, productos, impuestos y pedidos marcados como "PRUEBA").
-- S4: secret scanning, push protection y App Check en modo de monitoreo.
+- Cambiar la contraseña del primer administrador y borrar de Firestore los datos de las pruebas: las colecciones `Orders`, `Payments` y `CashClosings`, y los perfiles, productos e impuestos marcados como "PRUEBA".
+- S4: cerrar la alerta #1 de secret scanning como "Won't fix", citando S2.
+- Crear la llave de producción del APK, guardar una copia fuera del computador y agregar su SHA-1 en Firebase y en la restricción de la key de Android. Sin eso, el APK firmado no puede iniciar sesión.
+- Definir el área y las fechas del piloto (P38).
 
-M3, M4 y M6 son independientes y pueden avanzar en paralelo. M8 y M10 también, si hay más de una persona en el equipo.
+M8 y M10 son independientes y pueden avanzar en paralelo, si hay más de una persona en el equipo.
 M14 trae la base de tareas que usa la limpieza, por eso va antes que M15.
 
 ## 11. Definición de terminado
@@ -675,21 +684,28 @@ Un hito está terminado cuando:
 
 ## 12. Preguntas abiertas
 
-No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se resuelven al empezar el hito indicado.
+Queda una pregunta de negocio abierta, que se responde antes de M16. Las validaciones técnicas se resuelven al empezar el hito indicado.
+
+### Preguntas de negocio abiertas
+| # | Pregunta | Para cuándo |
+|---|---|---|
+| P38 | ¿En qué área del hotel y en qué fechas se hace el piloto? | Antes de M16 |
 
 ### Validaciones técnicas
 | # | Qué hay que comprobar | Si no se cumple | Afecta | Hito |
 |---|---|---|---|---|
 | V1 | Crear cuentas sin cerrar la sesión actual: con una segunda instancia de Firebase en GitLive, o con la API REST de Firebase Auth **Resuelta el 2026-11-17:** se cumple con una segunda instancia de Firebase, probada en escritorio: la cuenta se crea ahí y la sesión del administrador no cambia, ni tras reiniciar. En escritorio la librería no envía el correo de contraseña, así que se pide por la API REST. | Usar la otra opción; las dos funcionan en Spark | RF-EMP-04, RF-ASI-11 | M6 |
 | V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio. **Resuelta en escritorio el 2026-11-14:** se cumple, una vez que la base local sale de la carpeta temporal (sección 13). En Android se probó a mano el 2026-11-15 en modo avión, cerrando y abriendo la app: se cumple. | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
-| V3 | Que App Check no tiene proveedor para la app de escritorio (JVM) | Si lo tuviera, exigirlo; si no, dejarlo en modo de monitoreo | S4, R12 | M7 |
-| V4 | Uso real de Firestore durante el piloto, contra la cuota diaria de Spark | Reducir listeners y lecturas. Pasar a Blaze solo con una decisión nueva. | RNF-12 | M7 |
-| V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 |
+| V3 | Que App Check no tiene proveedor para la app de escritorio (JVM). **Resuelta el 2026-11-17:** no lo tiene. Firebase trae proveedores para Android (Play Integrity), Apple (DeviceCheck y App Attest) y web (reCAPTCHA); uno propio necesita un servidor, es decir, Blaze. GitLive tampoco tiene un módulo de App Check. App Check no se usa en la versión 1.0.0 (sección 13). | Si lo tuviera, exigirlo; si no, dejarlo en modo de monitoreo | S4, R12 | M16 |
+| V4 | Uso real de Firestore durante el piloto, contra la cuota diaria de Spark | Reducir listeners y lecturas. Pasar a Blaze solo con una decisión nueva. | RNF-12 | M16 |
+| V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 (detección de ubicaciones simuladas) y M16 (precisión en el hotel) |
 | V6 | Que agregar productos sin conexión desde dos dispositivos no pise líneas ni el total (`arrayUnion` e `increment`). Y que, si otro dispositivo cerró el pedido mientras tanto, la app detecte que el servidor rechazó esos productos y avise, aunque se haya cerrado y abierto la app. **Resuelta el 2026-11-16:** se cumple con `arrayUnion` y sin `increment` (sección 13). Dos dispositivos sin conexión agregaron líneas al mismo pedido y el servidor conservó las de ambos; con el pedido cerrado mientras tanto, el servidor rechazó las líneas y la app lo detectó después de reiniciar. | Permitir agregar productos solo con conexión | RF-CUR-13 | M3 |
 | V7 | Tamaño de las fotos comprimidas, y que solo se lean al abrir el detalle | Bajar la calidad o quitar las fotos | RF-TAR-07 | M14 |
 | V8 | Si GitLive permite consultas de suma y conteo en Firestore para el balance. **Resuelta el 2026-11-17:** GitLive 2.7.0 tiene `count()` y `sum()` en Android, escritorio e iOS (revisado en el código de la librería, no con una petición real), solo contra el servidor y con la suma como decimal. No se usan: solo dan totales de una consulta y no sirven para el desglose por producto (sección 13). | Sumar en el cliente, consultando solo el rango elegido | RF-BAL-01 | M5 |
 
 ### Preguntas resueltas
+Las respuestas anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las fases 1 a 4.
+
 | # | Pregunta | Respuesta |
 |---|---|---|
 | P1 | ¿Quién puede crear cuentas? | Solo el administrador. El primer administrador se crea a mano. |
@@ -731,6 +747,8 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | P37 | ¿Quién ve el reporte de horas, los reportes de limpieza y mantenimiento y el historial por habitación? | Por ahora, solo el administrador |
 
 ## 13. Registro de decisiones
+
+Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las fases 1 a 4, y M7, M9 y M13 a salidas que hoy forman parte de M16.
 
 | Fecha | Decisión | Motivo |
 |---|---|---|
@@ -827,6 +845,14 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | 2026-11-17 | Un "Cierre del día" pertenece al día operativo en que se guarda. Si el hotel suele cerrar después de la hora de inicio del día, se cambia esa hora en Configuración (RF-EMP-06). | El día operativo ya existe para no partir el turno de la noche (P17) |
 | 2026-11-17 | El tipo de cierre no tiene valor por defecto: el administrador lo elige cada vez. Antes de guardar, la app pide confirmación, porque un cierre no se edita. | Evitar que un cierre de turno quede como cierre del día por descuido |
 | 2026-11-17 | La pantalla de cierre muestra los 10 cierres más recientes, y el respaldo (RF-EMP-07) incluye `CashClosings` | Revisar los últimos cierres cuesta 10 lecturas, y el respaldo guarda todo lo que no se puede reconstruir |
+| 2026-11-17 | Se construye todo el alcance, las fases 1 a 4, antes del primer piloto. Hay un solo piloto y una sola salida a producción (M16), con la versión 1.0.0. M7, M9 y M13 se unen a M16. | Decisión del negocio: el hotel prueba y empieza a usar el producto completo |
+| 2026-11-17 | Las versiones v1.0 a v1.3 pasan a llamarse fases 1 a 4. La versión 1.0.0 es la que se instala en el hotel, con las cuatro fases. | Evitar confundir una parte de la construcción con una versión que se entrega |
+| 2026-11-17 | V3: App Check no se usa en la versión 1.0.0. La protección siguen siendo las reglas y las restricciones de cada key (S2). | Escritorio no tiene proveedor y nunca enviaría el token, así que App Check no se podría exigir. En Android exigiría una librería que no funciona en las tres plataformas. |
+| 2026-11-17 | La alerta #1 de secret scanning, la key antigua de Android en el historial, se cierra como "Won't fix" citando S2. La cierra una persona. | La key está restringida al paquete y a la SHA-1 de Android desde el 2026-11-14, y el historial no se reescribe (decisión del 2026-10-31) |
+| 2026-11-17 | El APK de producción se firma con una llave que crea una persona, con su propia contraseña, y que no se sube al repo. Su SHA-1 se agrega en Firebase y en la restricción de la key de Android. Se hace en M16. | Sin la llave no se puede actualizar la app instalada sin desinstalarla, y sin la SHA-1 la key rechaza al APK firmado |
+| 2026-11-17 | Los computadores del hotel usan Windows. El instalador `.msi` se genera a mano en un computador con Windows, sin GitHub Actions. | El CI no usa secretos, y el repo es público: un instalador hecho en GitHub quedaría a la vista de cualquiera |
+| 2026-11-17 | El menú muestra la versión de la app, y hay una guía del piloto en `docs/`: instalación, qué revisar cada día (V4), qué probar por rol, cómo reportar fallas y qué limpiar antes de empezar. Se hacen en M16. | Saber qué versión tiene cada dispositivo durante el piloto, y que el piloto no dependa de lo que alguien recuerde |
+| 2026-11-17 | Las optimizaciones de lecturas de Firestore se deciden con lo que se mida en el piloto (V4). Mientras tanto solo se mantiene el límite de 31 días del balance. | Optimizar sin datos de uso real sería adivinar, y el límite evita que una sola consulta agote la cuota del día |
 
 ## 14. Riesgos
 
@@ -835,18 +861,18 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | R1 | Los empleados siguen anotando en papel y la app queda incompleta | Alto: el balance no cuadra (O1 y O3) | Piloto en un área, capacitación corta y O4 (pedido en menos de 1 minuto) como prioridad de diseño |
 | R2 | Varios empleados comparten una sola cuenta en el computador de la caja | Medio: no se sabe quién cobró | Cerrar sesión rápido en escritorio, y un usuario por empleado como regla del hotel |
 | R3 | Las reglas nuevas bloquean a todos o dejan huecos | Alto | S6, S8 y la revisión manual de S7. Sin tests automáticos, un error puede aparecer solo después de publicar. |
-| R4 | El alcance es grande y las versiones siguientes pueden retrasar la v1.0 | Medio | Versiones separadas y alcance cerrado: la v1.0 no espera a ninguna otra |
+| R4 | Con un solo piloto al final, el hotel tarda más en usar la app, y los problemas de uso aparecen tarde y todos a la vez | Medio | Alcance cerrado, cada hito con sus tests y su revisión por PR, y un piloto de 1 a 2 semanas antes de la salida (M16). La fase 1 ya está terminada, por si el negocio decide adelantar su uso. |
 | R5 | Pedidos guardados sin conexión que nunca se envían (celular perdido o sesión cerrada) | Medio | RF-ORD-09 y RF-AUTH-03: aviso visible, y no se cierra sesión con pedidos pendientes |
 | R6 | Un día se pasa la cuota gratuita y Firestore deja de responder | Alto si pasa en plena operación | Listeners limitados, medición en el piloto (V4) y Blaze como plan B con una decisión nueva |
 | R7 | GitLive `firebase-kotlin-sdk` es una librería de terceros y puede quedarse atrás de los SDK oficiales | Medio | Mantener Firebase dentro de la capa de datos de `shared`, para poder cambiar de librería sin tocar el dominio ni la UI |
 | R8 | El comportamiento sin conexión puede no ser igual en Android, iOS y escritorio | Medio | V2, y probar RF-ORD-09, RF-ASI-05 y RF-TAR-05 en cada plataforma |
 | R9 | Dos reservas, o una reserva y un bloqueo, en la misma habitación y noche | Alto | `RoomNights` en una transacción, y reservas y bloqueos solo con conexión |
 | R10 | Filtración de datos personales de huéspedes | Alto | RNF-14, S9 y reglas por rol |
-| R11 | El hotel incumple el reporte a la TRA o al SIRE | Alto: sanciones | Queda en el proceso actual del hotel (P28). Revisarlo con el hotel antes de la v1.2. |
-| R12 | Marcaciones con ubicación falsa | Medio | RF-ASI-10 (rechaza ubicaciones simuladas) y revisión del administrador. Las reglas no pueden comprobar la ubicación, y App Check no se puede exigir mientras exista la app de escritorio (S4). |
+| R11 | El hotel incumple el reporte a la TRA o al SIRE | Alto: sanciones | Queda en el proceso actual del hotel (P28). Revisarlo con el hotel antes de la fase 3. |
+| R12 | Marcaciones con ubicación falsa | Medio | RF-ASI-10 (rechaza ubicaciones simuladas) y revisión del administrador. Las reglas no pueden comprobar la ubicación, y App Check no se usa (V3). |
 | R13 | El GPS es impreciso dentro del edificio y un empleado no logra marcar | Medio | Radio y precisión configurables (V5), y siempre la alternativa del computador de recepción |
 | R14 | Sin servidor, las tareas del día no se crean si nadie abre la app | Bajo | Se crean al abrir cualquier pantalla de tareas, con ids fijos |
-| R15 | El personal de limpieza o mantenimiento no usa la app | Alto para O8 y O9 | Pantallas simples con botones grandes (RNF-08), tareas que se pueden tomar sin esperar asignación y piloto en la v1.3 |
+| R15 | El personal de limpieza o mantenimiento no usa la app | Alto para O8 y O9 | Pantallas simples con botones grandes (RNF-08), tareas que se pueden tomar sin esperar asignación y un piloto que incluya limpieza y mantenimiento (M16) |
 | R16 | Las fotos llenan el almacenamiento gratuito | Bajo | Compresión y borrado automático según los parámetros (RF-TAR-07) |
 
 ## 15. Glosario
@@ -883,6 +909,9 @@ No quedan preguntas de negocio abiertas. Quedan validaciones técnicas, que se r
 | SIRE | Sistema de Información para el Reporte de Extranjeros, de Migración Colombia. |
 | Empleado activo | Usuario con `active: true`. Solo los activos pueden usar la app. |
 | Legacy | El módulo `app`, la app Android original en XML y Hilt, que se eliminó en M1. |
+| Fase | Cada una de las cuatro partes en que se construye el alcance (sección 5). En las decisiones anteriores al 2026-11-17 se llamaban v1.0 a v1.3. |
+| Versión 1.0.0 | La primera versión que se instala en el hotel, con las cuatro fases (M16) |
+| Piloto | Uso real de la app en un área del hotel durante 1 a 2 semanas, antes de la salida a producción (M16) |
 
 ## 16. Diagramas
 
@@ -933,7 +962,7 @@ flowchart LR
         dirty["Por limpiar · dirty"] -->|"iniciar la limpieza · RF-LIM-03"| cleaning["En limpieza · cleaning"]
         cleaning -->|"terminar la limpieza"| clean["Limpia · clean"]
         clean -->|"check-out, cambio de habitación, repaso del día o fin de un mantenimiento"| dirty
-        dirty -.->|"solo en la v1.2: cualquier empleado la marca limpia"| clean
+        dirty -.->|"solo en la fase 3: cualquier empleado la marca limpia"| clean
     end
     subgraph roomBlock ["Bloqueo"]
         unblocked["Sin bloqueo"] -->|"bloquear entre dos fechas · RF-MAN-03"| blocked["En mantenimiento"]
@@ -1022,7 +1051,7 @@ stateDiagram-v2
 ```
 
 ### 16.5 Mapa de navegación
-Pantallas de la app y quién llega a cada una según el rol y el área (secciones 3 y 6). Es el destino de la v1.3: la pantalla de registro desaparece en M2 (RF-AUTH-02).
+Pantallas de la app y quién llega a cada una según el rol y el área (secciones 3 y 6). Es el destino de la versión 1.0.0, con las cuatro fases. La pantalla de registro desapareció en M2 (RF-AUTH-02).
 
 ```mermaid
 flowchart TD
@@ -1030,44 +1059,44 @@ flowchart TD
     login -.-> forgotPassword["Recuperar contraseña · RF-AUTH-04"]
     login -->|"cuenta con documento activo en Users · RF-AUTH-07"| menu["Menú principal<br/>secciones según el rol, ordenadas según el área<br/>RF-AUTH-05, RF-EMP-05"]
 
-    subgraph orders ["Pedidos · v1.0 · todos"]
+    subgraph orders ["Pedidos · fase 1 · todos"]
         newOrder["Crear pedido"]
         currentOrders["Pedidos en curso"] --> orderDetail["Detalle del pedido<br/>editar, cerrar, reabrir y pagar"]
         orderDetail -.->|"solo administradores"| cancelOrder["Cancelar con motivo"]
     end
 
-    subgraph attendance ["Asistencia · v1.1"]
+    subgraph attendance ["Asistencia · fase 2"]
         clockInOut["Marcar entrada y salida · todos"]
         mySchedule["Mi horario · todos"]
         whoIsWorking["Quién está trabajando<br/>recepción y administración"]
     end
 
-    subgraph roomsAndReservations ["Habitaciones y reservas · v1.2"]
+    subgraph roomsAndReservations ["Habitaciones y reservas · fase 3"]
         roomBoard["Tablero de habitaciones · todos<br/>sin datos de huéspedes para basic"]
         reservationCalendar["Calendario y reservas<br/>recepción y administración"]
         arrivalsAndDepartures["Llegadas y salidas del día<br/>recepción y administración"] --> checkIn["Check-in"]
         guestsInHouse["Huéspedes en casa<br/>recepción y administración"] --> checkOut["Check-out y pagos de la estadía"]
     end
 
-    subgraph roomTasks ["Tareas de habitación · v1.3"]
+    subgraph roomTasks ["Tareas de habitación · fase 4"]
         taskList["Lista de tareas<br/>limpieza y mantenimiento ven las de su área<br/>recepción y administración ven todas"] --> taskDetail["Detalle de la tarea<br/>iniciar, devolver, terminar y lista de chequeo"]
         reportDamage["Reportar un daño · todos"]
         lostItems["Objetos olvidados<br/>todos registran; recepción y administración entregan"]
     end
 
     subgraph administration ["Administración · solo administradores"]
-        balance["Balance y cierre de caja · v1.0"]
-        inventory["Productos, categorías e impuestos · v1.0"]
-        employees["Empleados · v1.0"]
-        settings["Parámetros · v1.0"]
-        backup["Respaldo · solo escritorio · v1.0"]
-        shifts["Horarios y correcciones de asistencia · v1.1"]
-        authorizedComputers["Computadores autorizados · solo escritorio · v1.1"]
-        roomSetup["Habitaciones y tipos · v1.2"]
-        maintenancePlans["Planes preventivos y listas de chequeo · v1.3"]
-        hoursReport["Reporte de horas · v1.1"]
-        taskReports["Reportes de limpieza y mantenimiento · v1.3"]
-        roomHistory["Historial por habitación · v1.3"]
+        balance["Balance y cierre de caja · fase 1"]
+        inventory["Productos, categorías e impuestos · fase 1"]
+        employees["Empleados · fase 1"]
+        settings["Parámetros · fase 1"]
+        backup["Respaldo · solo escritorio · fase 1"]
+        shifts["Horarios y correcciones de asistencia · fase 2"]
+        authorizedComputers["Computadores autorizados · solo escritorio · fase 2"]
+        roomSetup["Habitaciones y tipos · fase 3"]
+        maintenancePlans["Planes preventivos y listas de chequeo · fase 4"]
+        hoursReport["Reporte de horas · fase 2"]
+        taskReports["Reportes de limpieza y mantenimiento · fase 4"]
+        roomHistory["Historial por habitación · fase 4"]
     end
 
     menu --> orders
@@ -1123,7 +1152,7 @@ flowchart TD
     unpaidOrders -->|"No"| zeroBalance{"¿El saldo está en cero?"}
     zeroBalance -->|"No"| settleBalance["Registrar el pago del saldo,<br/>o un administrador autoriza con motivo"]
     settleBalance --> checkedOut
-    zeroBalance -->|"Sí"| checkedOut(["Reserva checked_out y habitación vacant y dirty<br/>desde la v1.3 se crea la tarea de salida"])
+    zeroBalance -->|"Sí"| checkedOut(["Reserva checked_out y habitación vacant y dirty<br/>desde la fase 4 se crea la tarea de salida"])
 ```
 
 ### 16.8 Día de limpieza
@@ -1249,46 +1278,44 @@ flowchart TB
 ```
 
 ### 16.12 Hoja de ruta
-Hitos, versiones y dependencias (sección 10).
+Hitos, fases y dependencias (sección 10). M7, M9 y M13 se unieron a M16.
 
 ```mermaid
 flowchart LR
     M0["M0 · PRD y diagramas"]
 
-    subgraph v10 ["v1.0 · pedidos, balance y administración"]
+    subgraph phase1 ["Fase 1 · pedidos, balance y administración · terminada"]
         M1["M1 · Quitar el legacy y CI"]
         M2["M2 · Seguridad base"]
         M3["M3 · Pedidos en curso"]
         M4["M4 · Inventario"]
-        M5["M5 · Balance"]
+        M5["M5 · Balance y cierre de caja"]
         M6["M6 · Roles y administración"]
-        M7["M7 · Release 1.0.0 y piloto"]
     end
 
-    subgraph v11 ["v1.1 · asistencia"]
+    subgraph phase2 ["Fase 2 · asistencia"]
         M8["M8 · Asistencia"]
-        M9["M9 · Release 1.1.0"]
     end
 
-    subgraph v12 ["v1.2 · reservas y estadías"]
+    subgraph phase3 ["Fase 3 · reservas y estadías"]
         M10["M10 · Habitaciones"]
         M11["M11 · Reservas"]
         M12["M12 · Estadías"]
-        M13["M13 · Release 1.2.0"]
     end
 
-    subgraph v13 ["v1.3 · limpieza y mantenimiento"]
+    subgraph phase4 ["Fase 4 · limpieza y mantenimiento"]
         M14["M14 · Mantenimiento y tareas"]
         M15["M15 · Limpieza"]
-        M16["M16 · Release 1.3.0"]
     end
+
+    M16["M16 · Versión 1.0.0<br/>pruebas, piloto y salida a producción"]
 
     M0 --> M1 --> M2
     M2 --> M3 & M4 & M6
     M3 & M4 --> M5
-    M3 & M4 & M5 & M6 --> M7
-    M7 --> M8 --> M9
-    M7 --> M10 --> M11 --> M12
-    M9 & M12 --> M13
-    M13 --> M14 --> M15 --> M16
+    M6 --> M8
+    M6 --> M10 --> M11 --> M12
+    M11 --> M14
+    M12 & M14 --> M15
+    M5 & M8 & M15 --> M16
 ```
