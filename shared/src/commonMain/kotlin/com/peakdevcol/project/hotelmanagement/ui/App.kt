@@ -34,11 +34,11 @@ import com.peakdevcol.project.hotelmanagement.resources.session_error
 import com.peakdevcol.project.hotelmanagement.ui.components.AuthFrame
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
+import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.OrderDetailScreen
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesScreen
-import com.peakdevcol.project.hotelmanagement.ui.home.ComingSoonScreen
 import com.peakdevcol.project.hotelmanagement.ui.home.HomeScreen
 import com.peakdevcol.project.hotelmanagement.domain.model.AppSection
 import com.peakdevcol.project.hotelmanagement.ui.introduction.IntroductionScreen
@@ -95,13 +95,8 @@ data class EmployeeFormRoute(val employeeId: String? = null)
 @Serializable
 data class OrderDetailRoute(val orderId: String)
 
-/**
- * A menu section that is not migrated yet.
- * The section travels by name: outside Android, navigation has no argument type for enums
- * and the whole graph fails to build, which left the desktop app stuck after the login.
- */
 @Serializable
-data class ComingSoonRoute(val sectionName: String)
+data object BalanceRoute
 
 @Composable
 fun App() {
@@ -154,7 +149,7 @@ private fun HomeNavigation() {
                     AppSection.INVENTORY -> navController.navigate(InventoryRoute)
                     AppSection.EMPLOYEES -> navController.navigate(EmployeesRoute)
                     AppSection.SETTINGS -> navController.navigate(SettingsRoute)
-                    AppSection.BALANCE -> navController.navigate(ComingSoonRoute(section.name))
+                    AppSection.BALANCE -> navController.navigate(BalanceRoute)
                 }
             })
         }
@@ -208,11 +203,8 @@ private fun HomeNavigation() {
         composable<SettingsRoute> {
             SettingsScreen(onBack = { navController.popBackStack() })
         }
-        composable<ComingSoonRoute> { entry ->
-            ComingSoonScreen(
-                section = AppSection.valueOf(entry.toRoute<ComingSoonRoute>().sectionName),
-                onBack = { navController.popBackStack() },
-            )
+        composable<BalanceRoute> {
+            BalanceScreen(onBack = { navController.popBackStack() })
         }
     }
 }

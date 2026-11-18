@@ -47,7 +47,6 @@
     <string name="menu_inventory">Inventario</string>
     <string name="menu_add_order">Crear pedido</string>
     <string name="menu_current_orders">Pedidos en curso</string>
-    <string name="coming_soon">Esta sección estará disponible pronto.</string>
 
     <!-- Add order -->
     <string name="order_empty">Aún no hay productos. Toca + para agregar uno.</string>
@@ -264,4 +263,37 @@
     <string name="settings_backup_done">Respaldo guardado: %1$d documentos en %2$s</string>
     <string name="settings_backup_not_allowed">Solo un administrador puede hacer respaldos.</string>
     <string name="settings_backup_error_file">No se pudo escribir el archivo del respaldo.</string>
+
+    <!-- Balance (RF-BAL-01 to RF-BAL-04 and RF-BAL-07) -->
+    <string name="balance_period">%1$s – %2$s</string>
+    <string name="balance_period_hint">Cada día va desde las %1$s hasta antes de esa hora del día siguiente.</string>
+    <string name="balance_change_period">Cambiar fechas</string>
+    <string name="balance_pick_period">Elige el primer y el último día</string>
+    <string name="balance_period_too_long">Elige un periodo de máximo 31 días.</string>
+    <string name="balance_period_invalid">El último día no puede ser anterior al primero.</string>
+    <string name="balance_reload">Actualizar</string>
+    <string name="balance_total_received">Total recibido</string>
+    <string name="balance_payment_count">%1$d pagos</string>
+    <string name="balance_sales_without_tax">Ventas sin impuestos</string>
+    <string name="balance_taxes">Impuestos</string>
+    <string name="balance_tips">Propinas</string>
+    <string name="balance_product_sold">Vendido de %1$s</string>
+    <string name="balance_product_quantity">Cantidad vendida</string>
+    <string name="balance_product_note">Con un producto elegido, las propinas no se cuentan: son del pago completo.</string>
+    <string name="balance_pending_title">Por cobrar ahora</string>
+    <string name="balance_pending_detail">%1$d en curso (%2$s) y %3$d cerrados (%4$s)</string>
+    <string name="balance_filter_method">Método</string>
+    <string name="balance_filter_employee">Quién cobró</string>
+    <string name="balance_filter_destination">Destino</string>
+    <string name="balance_filter_product">Producto</string>
+    <string name="balance_filter_all">Todos</string>
+    <string name="balance_by_day">Por día</string>
+    <string name="balance_by_method">Por método</string>
+    <string name="balance_by_employee">Por empleado</string>
+    <string name="balance_by_product">Por producto</string>
+    <string name="balance_product_line">%1$d unidades · impuestos %2$s</string>
+    <string name="balance_empty">No hay pagos en este periodo con estos filtros.</string>
+    <string name="balance_error_no_connection">El balance necesita conexión, para no mostrar cifras incompletas. Revisa la conexión e inténtalo de nuevo.</string>
+    <string name="balance_error_not_allowed">Solo un administrador puede ver el balance.</string>
+    <string name="balance_error_unknown">No se pudo cargar el balance.</string>
 </resources>
