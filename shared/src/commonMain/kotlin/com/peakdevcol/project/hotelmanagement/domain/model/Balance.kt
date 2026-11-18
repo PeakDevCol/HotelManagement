@@ -77,7 +77,26 @@ data class BalanceReport(
     val period: BalancePeriod,
     val dayStartMinutes: Int,
     val payments: List<Payment>,
+    /** The closings saved during the period. */
+    val closings: List<CashClosing> = emptyList(),
+    /** The operational day when the report was read, which has not ended yet. */
+    val today: CalendarDate? = null,
 ) {
+    /**
+     * RF-BAL-06: the operational days that had payments and ended without a "Cierre del día".
+     * A daily closing belongs to the operational day in which it is saved.
+     */
+    fun daysWithoutDailyClosing(): Set<CalendarDate> {
+        val daysWithDailyClosing = closings
+            .filter { it.type == CashClosingType.DAILY }
+            .mapNotNull { closing -> closing.createdAt?.let { operationalDateOf(it, dayStartMinutes) } }
+            .toSet()
+        return payments.map { operationalDateOf(it.receivedAt, dayStartMinutes) }
+            .filter { day -> today == null || day < today }
+            .filterNot { it in daysWithDailyClosing }
+            .toSet()
+    }
+
     /** Who received payments in the period, by name. */
     fun employeeOptions(employeeNames: Map<String, String>): List<BalanceOption> =
         payments.map { it.receivedBy }.distinct()

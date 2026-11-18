@@ -60,6 +60,7 @@ internal class DesktopBackupRepository(
         WHOLE_COLLECTIONS.associateWith { name -> documentsOf(name, dateField = null, since = null) } + mapOf(
             FirestorePaths.ORDERS to ordersWithHistory(since),
             FirestorePaths.PAYMENTS to documentsOf(FirestorePaths.PAYMENTS, dateField = "receivedAt", since = since),
+            FirestorePaths.CASH_CLOSINGS to documentsOf(FirestorePaths.CASH_CLOSINGS, dateField = "createdAt", since = since),
         )
 
     // Source.SERVER: a backup made from the cache of the device could silently miss documents.

@@ -6,6 +6,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.BalancePeriod
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceReport
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceTotals
 import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
+import com.peakdevcol.project.hotelmanagement.domain.model.CashClosingType
 import com.peakdevcol.project.hotelmanagement.domain.model.DestinationKind
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.Payment
@@ -13,6 +14,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.PaymentMethod
 import com.peakdevcol.project.hotelmanagement.domain.model.ProductSales
 import com.peakdevcol.project.hotelmanagement.fakes.beer
 import com.peakdevcol.project.hotelmanagement.fakes.burger
+import com.peakdevcol.project.hotelmanagement.fakes.cashClosing
 import com.peakdevcol.project.hotelmanagement.fakes.payment
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -108,6 +110,26 @@ class BalanceTest {
         assertEquals(8_000, report.summary(BalanceFilter(), names).totals.salesAmount)
         assertEquals(0, report.summary(BalanceFilter(destination = DestinationKind.TABLE), names).totals.paymentCount)
         assertTrue(report.summary(BalanceFilter(), names).byProduct.isEmpty())
+    }
+
+    @Test
+    fun marksTheDaysWithPaymentsThatEndedWithoutADailyClosing() {
+        val report = reportOf(
+            payment("order_15", "2026-11-15T20:00:00Z"),
+            payment("order_16", "2026-11-16T20:00:00Z"),
+            payment("order_17", "2026-11-17T20:00:00Z"),
+        ).copy(
+            closings = listOf(
+                // A shift closing does not count as the closing of the day.
+                cashClosing(number = 1, to = "2026-11-15T20:00:00Z", createdAt = "2026-11-15T22:00:00Z", type = CashClosingType.MANUAL),
+                // 2:00 a. m. of 17 nov is still the operational day of 16 nov.
+                cashClosing(number = 2, to = "2026-11-16T20:00:00Z", createdAt = "2026-11-17T07:00:00Z"),
+            ),
+            today = CalendarDate(2026, 11, 17),
+        )
+
+        // Today has not ended, so it is not marked yet.
+        assertEquals(setOf(CalendarDate(2026, 11, 15)), report.daysWithoutDailyClosing())
     }
 
     @Test

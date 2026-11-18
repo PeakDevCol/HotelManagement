@@ -220,6 +220,50 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // RF-BAL-06: cash closings. Only an administrator reads or creates them, and they are never
+    // edited or deleted. The id is the number of the closing: 1, 2, 3… Since only a document that
+    // does not exist can be created, and each one must follow the one before, two closings can
+    // never cover the same payments.
+    match /CashClosings/{closingId} {
+      function closingPath(number) {
+        return /databases/$(database)/documents/CashClosings/$(string(number));
+      }
+
+      // The first closing covers every earlier payment; the others start where the one before ended.
+      function followsTheLastClosing(closing) {
+        return string(int(closingId)) == closingId
+          && ((int(closingId) == 1 && closing.from == null)
+            || (int(closingId) > 1
+              && exists(closingPath(int(closingId) - 1))
+              && closing.from == get(closingPath(int(closingId) - 1)).data.to));
+      }
+
+      // The rules cannot add up the payments, so the expected cash is the one the app computed.
+      // O3: a difference is either $0 or justified in the note.
+      function isValidClosing(closing) {
+        return closing.keys().hasAll(['from', 'to', 'type', 'expectedCash', 'countedCash', 'difference', 'note', 'closedBy', 'createdAt'])
+          && closing.keys().hasOnly(['from', 'to', 'type', 'expectedCash', 'countedCash', 'difference', 'note', 'closedBy', 'createdAt'])
+          && closing.type in ['daily', 'manual']
+          && closing.expectedCash is int
+          && closing.expectedCash >= 0
+          && closing.countedCash is int
+          && closing.countedCash >= 0
+          && closing.difference is int
+          && closing.difference == closing.countedCash - closing.expectedCash
+          && closing.note is string
+          && closing.note.size() <= 500
+          && (closing.difference == 0 || closing.note.size() > 0)
+          && closing.closedBy == request.auth.uid
+          && closing.createdAt == request.time
+          && (closing.to == null || (closing.to is timestamp && closing.to <= request.time))
+          && (closing.from == null || (closing.from is timestamp && closing.to != null && closing.to >= closing.from));
+      }
+
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidClosing(request.resource.data) && followsTheLastClosing(request.resource.data);
+      allow update, delete: if false;
+    }
+
     // Inventory (PRD, section 6.4). Every active employee reads it, to take orders; only an
     // administrator changes it.
     match /Categories/{categoryId} {

@@ -2,6 +2,7 @@ package com.peakdevcol.project.hotelmanagement.data.firebase
 
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.PaymentDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toPayment
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toTimestamp
 import com.peakdevcol.project.hotelmanagement.domain.model.Payment
 import com.peakdevcol.project.hotelmanagement.domain.model.PaymentReadError
 import com.peakdevcol.project.hotelmanagement.domain.repository.PaymentRepository
@@ -10,7 +11,7 @@ import dev.gitlive.firebase.firestore.FirebaseFirestoreException
 import dev.gitlive.firebase.firestore.FirestoreExceptionCode
 import dev.gitlive.firebase.firestore.ServerTimestampBehavior
 import dev.gitlive.firebase.firestore.Source
-import dev.gitlive.firebase.firestore.Timestamp
+import dev.gitlive.firebase.firestore.Query
 import dev.gitlive.firebase.firestore.code
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
@@ -25,13 +26,19 @@ internal class FirestorePaymentRepository(
 
     // Source.SERVER: totals summed from the cache of the device could leave payments out without
     // saying so. A range on a single field needs no composite index (RNF-13).
-    override suspend fun paymentsReceived(from: Instant, until: Instant): Result<List<Payment>> = try {
-        val query = firestore.value.collection(FirestorePaths.PAYMENTS).where {
-            all(
-                RECEIVED_AT_FIELD greaterThanOrEqualTo from.toTimestamp(),
-                RECEIVED_AT_FIELD lessThan until.toTimestamp(),
-            )
-        }
+    override suspend fun paymentsReceived(from: Instant, until: Instant): Result<List<Payment>> =
+        read(
+            payments.where {
+                all(RECEIVED_AT_FIELD greaterThanOrEqualTo from.toTimestamp(), RECEIVED_AT_FIELD lessThan until.toTimestamp())
+            },
+        )
+
+    override suspend fun paymentsReceivedAfter(after: Instant?): Result<List<Payment>> =
+        read(if (after == null) payments else payments.where { RECEIVED_AT_FIELD greaterThan after.toTimestamp() })
+
+    private val payments get() = firestore.value.collection(FirestorePaths.PAYMENTS)
+
+    private suspend fun read(query: Query): Result<List<Payment>> = try {
         withTimeoutOrNull(serverWait) { query.get(Source.SERVER) }
             ?.let { snapshot ->
                 Result.success(snapshot.documents.mapNotNull { it.data<PaymentDto>(ServerTimestampBehavior.ESTIMATE).toPayment(it.id) })
@@ -48,8 +55,6 @@ internal class FirestorePaymentRepository(
         FirestoreExceptionCode.PERMISSION_DENIED -> PaymentReadError.NotAllowed
         else -> PaymentReadError.Unknown
     }
-
-    private fun Instant.toTimestamp() = Timestamp(epochSeconds, nanosecondsOfSecond)
 
     private companion object {
         const val RECEIVED_AT_FIELD = "receivedAt"

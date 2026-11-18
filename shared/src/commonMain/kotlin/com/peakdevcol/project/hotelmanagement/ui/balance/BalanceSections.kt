@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceSummary
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceTotals
+import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
 import com.peakdevcol.project.hotelmanagement.domain.model.PendingCollection
 import com.peakdevcol.project.hotelmanagement.domain.model.ProductSales
 import com.peakdevcol.project.hotelmanagement.domain.model.formatCalendarDate
@@ -26,6 +27,7 @@ import com.peakdevcol.project.hotelmanagement.resources.balance_by_day
 import com.peakdevcol.project.hotelmanagement.resources.balance_by_employee
 import com.peakdevcol.project.hotelmanagement.resources.balance_by_method
 import com.peakdevcol.project.hotelmanagement.resources.balance_by_product
+import com.peakdevcol.project.hotelmanagement.resources.balance_day_without_closing
 import com.peakdevcol.project.hotelmanagement.resources.balance_empty
 import com.peakdevcol.project.hotelmanagement.resources.balance_payment_count
 import com.peakdevcol.project.hotelmanagement.resources.balance_pending_detail
@@ -103,7 +105,12 @@ fun PendingCard(pending: PendingCollection) {
 
 /** RF-BAL-03 */
 @Composable
-fun Breakdowns(summary: BalanceSummary, selected: BalanceBreakdown, onSelect: (BalanceBreakdown) -> Unit) {
+fun Breakdowns(
+    summary: BalanceSummary,
+    selected: BalanceBreakdown,
+    daysWithoutDailyClosing: Set<CalendarDate>,
+    onSelect: (BalanceBreakdown) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         PrimaryScrollableTabRow(selectedTabIndex = selected.ordinal, edgePadding = 0.dp) {
             BalanceBreakdown.entries.forEach { breakdown ->
@@ -125,7 +132,7 @@ fun Breakdowns(summary: BalanceSummary, selected: BalanceBreakdown, onSelect: (B
         }
         when (selected) {
             BalanceBreakdown.BY_DAY -> summary.byDay.forEach { day ->
-                TotalsRow(formatCalendarDate(day.date), day.totals)
+                TotalsRow(formatCalendarDate(day.date), day.totals, warning = day.date in daysWithoutDailyClosing)
             }
             BalanceBreakdown.BY_METHOD -> summary.byMethod.forEach { method ->
                 TotalsRow(stringResource(method.method.label()), method.totals)
@@ -145,20 +152,22 @@ fun Breakdowns(summary: BalanceSummary, selected: BalanceBreakdown, onSelect: (B
 }
 
 @Composable
-private fun TotalsRow(title: String, totals: BalanceTotals) {
+private fun TotalsRow(title: String, totals: BalanceTotals, warning: Boolean = false) {
     BreakdownRow(
         title = title,
         detail = stringResource(Res.string.balance_payment_count, totals.paymentCount),
         amount = formatPesos(totals.totalReceived),
+        warning = if (warning) stringResource(Res.string.balance_day_without_closing) else null,
     )
 }
 
 @Composable
-private fun BreakdownRow(title: String, detail: String, amount: String) {
+private fun BreakdownRow(title: String, detail: String, amount: String, warning: String? = null) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            warning?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
         }
         Text(amount, style = MaterialTheme.typography.titleMedium)
     }

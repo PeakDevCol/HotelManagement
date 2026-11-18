@@ -296,4 +296,44 @@
     <string name="balance_error_no_connection">El balance necesita conexión, para no mostrar cifras incompletas. Revisa la conexión e inténtalo de nuevo.</string>
     <string name="balance_error_not_allowed">Solo un administrador puede ver el balance.</string>
     <string name="balance_error_unknown">No se pudo cargar el balance.</string>
+
+    <!-- Cash closing (RF-BAL-06) -->
+    <string name="cash_closing_title">Cierre de caja</string>
+    <string name="cash_closing_open">Cierre de caja</string>
+    <string name="cash_closing_since_previous">Desde el cierre #%1$d del %2$s</string>
+    <string name="cash_closing_since_start">Es el primer cierre: cubre todos los pagos registrados hasta ahora.</string>
+    <string name="cash_closing_number">Cierre #%1$d</string>
+    <string name="cash_closing_payment_count">%1$d pagos desde el cierre anterior</string>
+    <string name="cash_closing_cash_sales">Ventas en efectivo</string>
+    <string name="cash_closing_cash_tips">Propinas en efectivo</string>
+    <string name="cash_closing_expected">Efectivo esperado</string>
+    <string name="cash_closing_transfers">Transferencias (no están en la caja)</string>
+    <string name="cash_closing_type">Tipo de cierre</string>
+    <string name="cash_closing_type_daily">Cierre del día</string>
+    <string name="cash_closing_type_manual">Cierre de turno</string>
+    <string name="cash_closing_type_hint">El cierre del día se hace antes de que termine el día operativo. Si se hace después, el balance marca ese día como sin cierre.</string>
+    <string name="cash_closing_counted">Efectivo contado</string>
+    <string name="cash_closing_difference_none">Cuadra: no hay diferencia.</string>
+    <string name="cash_closing_difference_over">Sobran %1$s.</string>
+    <string name="cash_closing_difference_short">Faltan %1$s.</string>
+    <string name="cash_closing_note">Nota</string>
+    <string name="cash_closing_note_required">Nota (obligatoria si hay diferencia)</string>
+    <string name="cash_closing_save">Guardar cierre</string>
+    <string name="cash_closing_confirm_title">¿Guardar el cierre?</string>
+    <string name="cash_closing_confirm_message">Efectivo esperado %1$s, contado %2$s. Un cierre guardado no se puede editar.</string>
+    <string name="cash_closing_saved">Cierre guardado.</string>
+    <string name="cash_closing_recent">Cierres anteriores</string>
+    <string name="cash_closing_recent_empty">Todavía no hay cierres.</string>
+    <string name="cash_closing_recent_line">%1$s · %2$s · %3$s</string>
+    <string name="cash_closing_recent_amounts">Esperado %1$s · contado %2$s · diferencia %3$s</string>
+    <string name="cash_closing_error_type">Elige si es el cierre del día o un cierre de turno.</string>
+    <string name="cash_closing_error_count">Escribe el efectivo contado.</string>
+    <string name="cash_closing_error_note">Explica la diferencia en la nota.</string>
+    <string name="cash_closing_error_note_long">La nota puede tener máximo 500 caracteres.</string>
+    <string name="cash_closing_error_already_closed">Otro administrador guardó un cierre primero. Se actualizó lo que cubre este cierre: revísalo y cuenta de nuevo.</string>
+    <string name="cash_closing_error_no_connection">El cierre de caja necesita conexión. Revisa la conexión e inténtalo de nuevo.</string>
+    <string name="cash_closing_error_not_allowed">Solo un administrador puede hacer el cierre de caja.</string>
+    <string name="cash_closing_error_unknown">No se pudo completar el cierre de caja.</string>
+    <string name="balance_days_without_closing">%1$d días con pagos terminaron sin cierre del día.</string>
+    <string name="balance_day_without_closing">Sin cierre del día</string>
 </resources>

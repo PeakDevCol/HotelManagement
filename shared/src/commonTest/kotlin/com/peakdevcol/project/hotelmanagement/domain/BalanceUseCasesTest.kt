@@ -3,15 +3,18 @@ package com.peakdevcol.project.hotelmanagement.domain
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceError
 import com.peakdevcol.project.hotelmanagement.domain.model.BalancePeriod
 import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
+import com.peakdevcol.project.hotelmanagement.domain.model.CashClosingError
 import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettings
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderState
 import com.peakdevcol.project.hotelmanagement.domain.model.PaymentReadError
 import com.peakdevcol.project.hotelmanagement.domain.model.PendingCollection
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadBalanceUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingCollectionUseCase
+import com.peakdevcol.project.hotelmanagement.fakes.FakeCashClosingRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakePaymentRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeSettingsRepository
+import com.peakdevcol.project.hotelmanagement.fakes.cashClosing
 import com.peakdevcol.project.hotelmanagement.fakes.order
 import com.peakdevcol.project.hotelmanagement.fakes.payment
 import kotlinx.coroutines.flow.first
@@ -29,11 +32,15 @@ class BalanceUseCasesTest {
         payment("order_dec", "2026-12-01T11:00:00Z"),
     )
     private val settings = FakeSettingsRepository()
+    private val closings = FakeCashClosingRepository(
+        cashClosing(number = 1, to = "2026-10-31T20:00:00Z", createdAt = "2026-11-01T02:00:00Z"),
+        cashClosing(number = 2, to = "2026-11-16T20:00:00Z", createdAt = "2026-11-16T22:00:00Z", from = "2026-10-31T20:00:00Z"),
+    )
     private val now = object : Clock {
         override fun now() = Instant.parse("2026-11-17T15:00:00Z")
     }
 
-    private fun loadBalance() = LoadBalanceUseCase(payments, settings, now)
+    private fun loadBalance() = LoadBalanceUseCase(payments, settings, closings, now)
 
     @Test
     fun opensOnTheCurrentMonthByOperationalDays() = runTest {
@@ -42,6 +49,22 @@ class BalanceUseCasesTest {
         assertEquals(BalancePeriod(CalendarDate(2026, 11, 1), CalendarDate(2026, 11, 30)), report.period)
         // 5:59 a. m. of 1 nov still belongs to October, and 6:00 a. m. of 1 dec to December.
         assertEquals(listOf("order_nov"), report.payments.map { it.id })
+    }
+
+    @Test
+    fun bringsTheClosingsSavedDuringThePeriodAndToday() = runTest {
+        val report = loadBalance()().getOrThrow()
+
+        // The first closing was saved at 9:00 p. m. of 31 oct in Colombia, before the period.
+        assertEquals(listOf(2L), report.closings.map { it.number })
+        assertEquals(CalendarDate(2026, 11, 17), report.today)
+    }
+
+    @Test
+    fun withoutConnectionToTheClosingsNothingIsShown() = runTest {
+        closings.failure = CashClosingError.NoConnection
+
+        assertEquals(PaymentReadError.NoConnection, loadBalance()().exceptionOrNull())
     }
 
     @Test

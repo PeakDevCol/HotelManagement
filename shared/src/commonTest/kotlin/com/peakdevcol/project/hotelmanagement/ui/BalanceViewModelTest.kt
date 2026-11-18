@@ -9,6 +9,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.PaymentReadError
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadBalanceUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveEmployeesUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingCollectionUseCase
+import com.peakdevcol.project.hotelmanagement.fakes.FakeCashClosingRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakePaymentRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeSettingsRepository
@@ -43,7 +44,7 @@ class BalanceViewModelTest : MainDispatcherTest() {
     }
 
     private fun viewModel() = BalanceViewModel(
-        LoadBalanceUseCase(payments, FakeSettingsRepository(), now),
+        LoadBalanceUseCase(payments, FakeSettingsRepository(), FakeCashClosingRepository(), now),
         ObservePendingCollectionUseCase(orders),
         ObserveEmployeesUseCase(users),
     )
@@ -145,6 +146,12 @@ class BalanceViewModelTest : MainDispatcherTest() {
         orders.openOrders.value = listOf(order("x", state = OrderState.CLOSED))
 
         assertEquals(7_000, viewModel.state.value.pending!!.closedAmount)
+    }
+
+    @Test
+    fun marksTheDaysThatEndedWithoutADailyClosing() {
+        // order_a is from 16 nov, which has ended; order_b is from today.
+        assertEquals(setOf(CalendarDate(2026, 11, 16)), viewModel().state.value.daysWithoutDailyClosing)
     }
 
     @Test
