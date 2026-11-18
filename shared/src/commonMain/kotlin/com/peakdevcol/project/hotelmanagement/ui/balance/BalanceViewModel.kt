@@ -45,6 +45,8 @@ data class BalanceState(
     val employeeOptions: List<BalanceOption> = emptyList(),
     val productOptions: List<BalanceOption> = emptyList(),
     val pending: PendingCollection? = null,
+    /** RF-BAL-06: the days of the period that had payments and ended without a "Cierre del día". */
+    val daysWithoutDailyClosing: Set<CalendarDate> = emptySet(),
     val breakdown: BalanceBreakdown = BalanceBreakdown.BY_DAY,
     val isPickingPeriod: Boolean = false,
 ) {
@@ -162,6 +164,7 @@ class BalanceViewModel(
         val report = report ?: return this
         return copy(
             summary = report.summary(filter, employeeNames),
+            daysWithoutDailyClosing = report.daysWithoutDailyClosing(),
             employeeOptions = report.employeeOptions(employeeNames),
             productOptions = report.productOptions(),
         )

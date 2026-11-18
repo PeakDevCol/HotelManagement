@@ -42,6 +42,8 @@ import com.peakdevcol.project.hotelmanagement.domain.model.formatCalendarDate
 import com.peakdevcol.project.hotelmanagement.domain.model.formatTimeOfDay
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.balance_change_period
+import com.peakdevcol.project.hotelmanagement.resources.balance_days_without_closing
+import com.peakdevcol.project.hotelmanagement.resources.cash_closing_open
 import com.peakdevcol.project.hotelmanagement.resources.balance_error_no_connection
 import com.peakdevcol.project.hotelmanagement.resources.balance_error_not_allowed
 import com.peakdevcol.project.hotelmanagement.resources.balance_error_unknown
@@ -61,6 +63,7 @@ import com.peakdevcol.project.hotelmanagement.resources.destination_pool
 import com.peakdevcol.project.hotelmanagement.resources.destination_room
 import com.peakdevcol.project.hotelmanagement.resources.destination_table
 import com.peakdevcol.project.hotelmanagement.resources.menu_balance
+import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CenteredMessage
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.employeeNameOrUnknown
@@ -72,7 +75,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** RF-BAL-01 to RF-BAL-04 and RF-BAL-07: only administrators open it (PRD, section 3). */
 @Composable
-fun BalanceScreen(onBack: () -> Unit, viewModel: BalanceViewModel = koinViewModel()) {
+fun BalanceScreen(onBack: () -> Unit, onCashClosingClick: () -> Unit, viewModel: BalanceViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -94,7 +97,12 @@ fun BalanceScreen(onBack: () -> Unit, viewModel: BalanceViewModel = koinViewMode
             state.report == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            else -> BalanceContent(state = state, onIntent = viewModel::onIntent, modifier = Modifier.padding(padding))
+            else -> BalanceContent(
+                state = state,
+                onIntent = viewModel::onIntent,
+                onCashClosingClick = onCashClosingClick,
+                modifier = Modifier.padding(padding),
+            )
         }
     }
 
@@ -109,7 +117,7 @@ fun BalanceScreen(onBack: () -> Unit, viewModel: BalanceViewModel = koinViewMode
 }
 
 @Composable
-private fun BalanceContent(state: BalanceState, onIntent: (BalanceIntent) -> Unit, modifier: Modifier) {
+private fun BalanceContent(state: BalanceState, onIntent: (BalanceIntent) -> Unit, onCashClosingClick: () -> Unit, modifier: Modifier) {
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -119,14 +127,27 @@ private fun BalanceContent(state: BalanceState, onIntent: (BalanceIntent) -> Uni
             state.loadError?.let { error ->
                 Text(stringResource(error.messageRes()), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
+            PrimaryButton(text = stringResource(Res.string.cash_closing_open), onClick = onCashClosingClick)
             PeriodHeader(state = state, onIntent = onIntent)
+            if (state.daysWithoutDailyClosing.isNotEmpty()) {
+                Text(
+                    text = stringResource(Res.string.balance_days_without_closing, state.daysWithoutDailyClosing.size),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             Filters(state = state, onIntent = onIntent)
             state.summary?.let { summary ->
                 TotalsCard(totals = summary.totals, productSales = summary.byProduct.singleOrNull()?.takeIf { state.filter.productId != null })
             }
             state.pending?.let { PendingCard(it) }
             state.summary?.let { summary ->
-                Breakdowns(summary = summary, selected = state.breakdown, onSelect = { onIntent(BalanceIntent.ShowBreakdown(it)) })
+                Breakdowns(
+                    summary = summary,
+                    selected = state.breakdown,
+                    daysWithoutDailyClosing = state.daysWithoutDailyClosing,
+                    onSelect = { onIntent(BalanceIntent.ShowBreakdown(it)) },
+                )
             }
         }
     }

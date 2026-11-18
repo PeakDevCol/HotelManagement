@@ -35,6 +35,7 @@ import com.peakdevcol.project.hotelmanagement.ui.components.AuthFrame
 import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceScreen
+import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.OrderDetailScreen
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormScreen
@@ -97,6 +98,9 @@ data class OrderDetailRoute(val orderId: String)
 
 @Serializable
 data object BalanceRoute
+
+@Serializable
+data object CashClosingRoute
 
 @Composable
 fun App() {
@@ -204,7 +208,13 @@ private fun HomeNavigation() {
             SettingsScreen(onBack = { navController.popBackStack() })
         }
         composable<BalanceRoute> {
-            BalanceScreen(onBack = { navController.popBackStack() })
+            BalanceScreen(
+                onBack = { navController.popBackStack() },
+                onCashClosingClick = { navController.navigate(CashClosingRoute) },
+            )
+        }
+        composable<CashClosingRoute> {
+            CashClosingScreen(onBack = { navController.popBackStack() })
         }
     }
 }
