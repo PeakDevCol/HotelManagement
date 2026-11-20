@@ -131,9 +131,9 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 ### Funciones
 | Función | Estado | Notas |
 |---|---|---|
-| Introducción, login y cerrar sesión | ✅ Migrado | La sesión de Firebase decide qué navegación se muestra |
+| Inicio de sesión y cerrar sesión | ✅ Hecho en M17 | Sin sesión la app abre en el inicio de sesión: la introducción desapareció. La sesión de Firebase decide qué navegación se muestra. |
 | Registro abierto | — Eliminado en M2 | Las cuentas las crea el administrador (P1), desde RF-EMP-04 en M6. Hasta entonces se crean a mano en la consola (S6). |
-| Menú principal | ✅ Migrado | Muestra las secciones según el rol y las ordena según el área. Las de las fases 2 a 4 se agregan a medida que se construyen. |
+| Navegación por área | ✅ Hecho en M17 | Reemplazó el menú principal: barra inferior en celular y navegación lateral en tablet y escritorio, con las secciones del rol, y la app abre en la primera del área. Las de las fases 2 a 4 se agregan a medida que se construyen. |
 | Crear pedido | ✅ Migrado | El catálogo sale del inventario en Firestore (M4). Desde M3 guarda `in_progress`, tiene destinos piscina y bar, y funciona sin conexión. |
 | Pedidos en curso | ✅ Hecho en M3 | Lista en tiempo real, filtros, detalle, cerrar, reabrir, pagar, cancelar, y agregar y quitar productos, también sin conexión. |
 | Inventario | ✅ Hecho en M4 | Productos, categorías e impuestos. Solo lo ve el administrador. |
@@ -141,7 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Recuperar contraseña | ✅ Hecho en M6 | "¿Olvidaste la contraseña?" en el inicio de sesión |
 | Roles y permisos | ✅ Hecho en M6 | El menú muestra las secciones según el rol y las ordena según el área. El administrador crea y gestiona empleados desde la app. |
 | Configuración y respaldo | ✅ Hecho en M6 | Inicio del día operativo, y respaldo manual en JSON desde escritorio |
-| Sistema de diseño Majestic | 🔄 M17 | Colores, letra Manrope, componentes y pruebas de diseño listos (primer PR). Las pantallas pasan al diseño nuevo y a la navegación por área en el segundo PR. |
+| Sistema de diseño Majestic | ✅ Hecho en M17 | Colores, letra Manrope, componentes y pruebas de diseño (primer PR), y todas las pantallas de la fase 1 con el diseño nuevo y su prueba de desbordes (segundo PR). |
 | Turnos y asistencia | ⬜ Pendiente | Fase 2 (M8) |
 | Habitaciones, reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M10 a M12) |
 | Limpieza y mantenimiento | ⬜ Pendiente | Fase 4 (M14 y M15) |
@@ -197,11 +197,11 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 ### 6.1 Autenticación (`AUTH`)
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
-| RF-AUTH-01 | Iniciar sesión con correo y contraseña | Un error de credenciales o de red muestra un mensaje claro. Al entrar se abre el menú. | ✅ |
+| RF-AUTH-01 | Iniciar sesión con correo y contraseña | Un error de credenciales o de red muestra un mensaje claro. Al entrar se abre la primera sección del área (RF-AUTH-05). | ✅ |
 | RF-AUTH-02 | Quitar el registro abierto ([P1](#12-preguntas-abiertas)) | La pantalla de registro desaparece. Las cuentas se crean desde RF-EMP-04. | ✅ |
-| RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve a la introducción. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | ✅ |
+| RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve al inicio de sesión. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | ✅ |
 | RF-AUTH-04 | Recuperar contraseña | "¿Olvidaste la contraseña?" envía el correo de restablecimiento de Firebase Usa el correo escrito en el inicio de sesión y responde siempre lo mismo, exista o no la cuenta. En escritorio el correo se pide por la API REST de Firebase Auth (V1). | ✅ |
-| RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | 🔄 M17: barra inferior en celular y navegación lateral en escritorio, por rol, sin menú intermedio |
+| RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y abre en la primera sección del área, sin menú intermedio. En celular, la barra inferior lleva las secciones del área y "Más" con el resto y con cerrar sesión; en tablet y escritorio, la navegación lateral lleva todas, agrupadas en Operación y Administración. Las reglas de Firestore aplican los mismos permisos. | ✅ |
 | RF-AUTH-06 | ~~Cuentas nuevas pendientes de aprobación~~ | Descartado por P1: ya no hay registro abierto | — |
 | RF-AUTH-07 | Sin documento, sin acceso | Una cuenta de Firebase Auth sin documento activo en `Users` no lee ni escribe nada, aunque se haya creado por fuera de la app. La app muestra "Tu cuenta no está activa" y solo deja cerrar sesión. | ✅ |
 
@@ -248,10 +248,10 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
 | RF-CUR-01 | Lista en tiempo real | Muestra los pedidos `in_progress` y `closed`, ordenados por fecha, el más antiguo primero. Un pedido creado en otro dispositivo aparece sin recargar. | ✅ |
-| RF-CUR-02 | Filtros | Mis pedidos o todos, y filtro por estado. Al abrir la lista se muestran todos. | ✅ |
+| RF-CUR-02 | Filtros | Mis pedidos o todos, y filtro por estado. Cada filtro dice cuántos pedidos muestra. Se busca por el número del destino o por el nombre de quien tomó el pedido, sobre lo ya leído. Al abrir la lista se muestran todos. | ✅ |
 | RF-CUR-03 | Detalle | Productos, cantidades, total, destino, empleado, hora e historial de cambios (RF-CUR-11) | ✅ |
 | RF-CUR-04 | Cerrar la cuenta | `in_progress` → `closed`, guardando `closedAt` y `closedBy` | ✅ |
-| RF-CUR-05 | Registrar el pago | `closed` → `paid`, con el método de pago (efectivo o transferencia, [P4](#12-preguntas-abiertas)) y la propina opcional ([P15](#12-preguntas-abiertas)), guardando `paidAt` y `paidBy`. Crea el registro en `Payments` en la misma transacción. El pedido sale de la lista. | 🔄 M17: también se cobra un pedido En curso, que se cierra y se cobra en un paso, y hay una propina sugerida del 10 % |
+| RF-CUR-05 | Registrar el pago | `closed` → `paid`, con el método de pago (efectivo o transferencia, [P4](#12-preguntas-abiertas)) y la propina opcional ([P15](#12-preguntas-abiertas)), guardando `paidAt` y `paidBy`. Crea el registro en `Payments` en la misma transacción. El pedido sale de la lista. Un pedido En curso también se cobra: se cierra y se cobra en un paso. El cobro ofrece "Sin propina" (marcada de entrada), una propina sugerida del 10 % y "Otro valor". | ✅ |
 | RF-CUR-06 | Editar un pedido | Agregar o quitar productos en `in_progress` ([P3](#12-preguntas-abiertas)). El total se recalcula. Cada producto agregado es una línea nueva, con su propio id. No se puede quitar el último producto: si el pedido ya no va, lo cancela un administrador. | ✅ |
 | RF-CUR-07 | Cancelar un pedido ([P20](#12-preguntas-abiertas)) | Solo administradores, con un motivo. Guarda `cancelReason`, `cancelledAt` y `cancelledBy`. | ✅ |
 | RF-CUR-08 | Cambios simultáneos | Si dos dispositivos cambian el estado del mismo pedido a la vez, el cambio se hace en una transacción de Firestore. El segundo ve el estado actualizado y un aviso, y nunca se registra un pago dos veces. | ✅ |
@@ -259,7 +259,7 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 | RF-CUR-10 | Reabrir | `closed` → `in_progress` para poder editar ([P3](#12-preguntas-abiertas)). Queda en el historial. | ✅ |
 | RF-CUR-11 | Historial | Cada cambio (crear, agregar o quitar productos, cerrar, reabrir, pagar o cancelar) guarda quién, cuándo y qué cambió. La creación sale del propio pedido (`idEmployee` y `dateOrder`); los demás cambios se guardan en `events`. | ✅ |
 | RF-CUR-12 | Cambios de estado con conexión | Cerrar, reabrir, pagar y cancelar necesitan conexión, porque usan transacciones. Sin conexión, esos botones se desactivan con un aviso. | ✅ |
-| RF-CUR-13 | Agregar productos sin conexión | Sin conexión se pueden agregar productos a un pedido En curso. Al sincronizar se suman a lo que haya agregado otro dispositivo, sin pisarlo (V6). Si al sincronizar el pedido ya no está En curso, las reglas rechazan esos productos y la app avisa cuáles no se agregaron. Quitar productos necesita conexión. El aviso aparece en el menú principal, aunque se haya cerrado y abierto la app, y nombra el pedido y los productos. | ✅ |
+| RF-CUR-13 | Agregar productos sin conexión | Sin conexión se pueden agregar productos a un pedido En curso. Al sincronizar se suman a lo que haya agregado otro dispositivo, sin pisarlo (V6). Si al sincronizar el pedido ya no está En curso, las reglas rechazan esos productos y la app avisa cuáles no se agregaron. Quitar productos necesita conexión. El aviso aparece al abrir la app, sobre cualquier pantalla, aunque se haya cerrado y abierto la app, y nombra el pedido y los productos. | ✅ |
 
 ### 6.4 Inventario (`INV`)
 | ID | Requisito | Criterios de aceptación | Estado |
@@ -294,7 +294,7 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-EMP-02 | Activar o desactivar | Un empleado inactivo no puede usar la app, y las reglas de Firestore lo impiden también | ✅ |
 | RF-EMP-03 | Cambiar el rol | Entre `basic`, `reception` y `admin`. Siempre tiene que quedar al menos un administrador. Se garantiza porque nadie puede cambiar su propio rol ni desactivarse, ni en la app ni en las reglas. | ✅ |
 | RF-EMP-04 | Crear empleados ([P1](#12-preguntas-abiertas)) | El administrador ingresa nombre, correo, rol y área. La cuenta se crea sin cerrar la sesión del administrador (V1), y el empleado recibe el correo de Firebase para crear su contraseña, así nadie más la conoce. Si el perfil no se puede guardar, la cuenta recién creada se elimina. Desde el empleado se puede reenviar el correo. | ✅ |
-| RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve y qué aparece primero en su menú. | 🔄 M17: el área decide la primera sección de la navegación, donde abre la app. Las tareas de habitación llegan en la fase 4. |
+| RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve, en qué sección abre la app y qué secciones van en su barra inferior (RF-AUTH-05). | ✅ La navegación. Las tareas de habitación llegan en la fase 4. |
 | RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo, desde Menú → Configuración. | ✅ El parámetro de la fase 1. Los demás llegan con su fase. |
 | RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. El archivo queda en `Documentos/HotelManagement/Respaldos`, con cada documento tal como está en Firestore y el historial de cada pedido. "Desde una fecha" aplica a pedidos, pagos y cierres de caja; lo demás se exporta completo. | ✅ |
 
@@ -658,7 +658,7 @@ Las fases ordenan la construcción. El hotel no recibe la app hasta M16, que la 
 | M16 | Todas | `release/1.0.0` | Salida a producción de la versión 1.0.0, con las cuatro fases. Pruebas en dispositivos reales (Android, Windows e iOS con sesión iniciada), S4, APK firmado con la llave de producción, instalador `.msi` generado en Windows con los módulos de Java que necesitan Firebase y la app, versión visible en el menú, guía del piloto en `docs/`, piloto de 1 a 2 semanas, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V4 y V5 (precisión del GPS en el hotel). | M5, M8 y M15 |
 | M17 | 1 | `feature/design-system-1` y `-2` | Sistema de diseño Majestic (RNF-18). Primer PR: colores claro y oscuro, letra Manrope, íconos, componentes y pruebas de diseño. Segundo PR: navegación por rol y área, y las pantallas de la fase 1 con el diseño nuevo, con cobro desde En curso y propina sugerida (RF-CUR-05, RF-AUTH-05 y RF-EMP-05). | M6 |
 
-**Estado al 2026-11-17:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`: son 45 de los 99 requisitos vigentes de la sección 6. Antes de la fase 2 va M17, el diseño nuevo, para que las fases 2 a 4 se construyan ya con él. El orden de trabajo es M17, M8, M10, M11, M12, M14, M15 y M16.
+**Estado al 2026-11-20:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`: son 45 de los 99 requisitos vigentes de la sección 6. M17, el diseño nuevo, quedó hecho en sus dos PR, para que las fases 2 a 4 se construyan ya con él. Sigue la fase 2 con M8 (asistencia). El orden de trabajo es M8, M10, M11, M12, M14, M15 y M16.
 
 Pendientes que no son código y hay que cerrar antes del piloto (M16):
 - Probar en iOS con sesión iniciada: hasta ahora solo se comprobó que compila y arranca.
@@ -865,6 +865,15 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-19 | Nada se sale de su contenedor ni queda encima de otro elemento (RNF-18). Se comprueba con pruebas de diseño en escritorio que usan `compose.uiTest`, una dependencia solo de pruebas aprobada este día. Las pruebas fallan si algo se sale o se recorta, si un texto se corta sin puntos suspensivos o si algo que se toca mide menos de 48 dp, a 320, 360 y 720 dp y con la letra al 100 % y al 130 %. | Pedido del negocio, después de ver componentes encimados en la propuesta de diseño |
 | 2026-11-19 | Los mosaicos de producto reservan siempre el espacio del selector de cantidad. El control segmentado mide 56 dp, con opciones de 48 dp, y sus textos ocupan hasta dos líneas. | Agregar un producto no mueve la grilla, y con letra grande "Cierre del día" y "Cierre de turno" no quedan iguales |
 | 2026-11-19 | M17, diseño y navegación, va antes de M8 y se entrega en dos PR: primero los colores, la letra y los componentes, y después la navegación y las pantallas de la fase 1 | Las fases 2 a 4 se construyen ya con el diseño nuevo, en vez de rehacerlas al final |
+| 2026-11-20 | El segundo PR de M17 trae juntas la navegación y las 15 pantallas de la fase 1 | Decisión del negocio |
+| 2026-11-20 | Mientras no existan Asistencia, Habitaciones ni Tareas, la barra inferior lleva solo lo que existe: los empleados ven Pedidos · Más, y los administradores de Administración, Pedidos · Caja · Más. Cada sección nueva entra en la barra de su área cuando se construye. Un administrador de otra área tiene las secciones de administración en "Más". | Decisión del negocio |
+| 2026-11-20 | Desaparece la pantalla de introducción: sin sesión la app abre en el inicio de sesión, y al cerrar sesión vuelve ahí (RF-AUTH-03) | Un paso menos, como en el diseño aprobado |
+| 2026-11-20 | La propina sugerida es el 10 % del valor del pedido sin impuestos, redondeado hacia abajo a la centena. Por ejemplo, $4.200 en un pedido de $46.000 con $3.407 de impuestos. | La Ley 1935 de 2018 limita la propina sugerida al 10 % del valor del servicio, sin decir si con impuestos o sin ellos. Así nunca pasa del tope. |
+| 2026-11-20 | Al cobrar viene marcada "Sin propina": el empleado toca "10 %" u "Otro valor" cuando el huésped la acepta. El método de pago se elige cada vez, como antes. | Que no se registren propinas que no se pagaron, que luego descuadran la caja |
+| 2026-11-20 | En tablet y escritorio, con espacio para los dos, los pedidos, los productos del inventario y los empleados abren su detalle al lado de la lista. Con menos espacio, el detalle abre en su propia pantalla. | El diseño aprobado del sistema Majestic |
+| 2026-11-20 | Agregar productos a un pedido En curso usa la misma grilla que un pedido nuevo: se eligen varios a la vez y se agregan con un toque | Menos pasos que agregar uno por uno |
+| 2026-11-20 | Las confirmaciones cortas ("Pedido enviado", "Pago registrado") salen en un mensaje abajo, que sigue visible al volver a la pantalla anterior. Al confirmar un pedido nuevo, la app vuelve a la lista. | Sin diálogos que haya que cerrar |
+| 2026-11-20 | Cada pantalla tiene su prueba de desbordes (`ScreensLayoutTest`), con datos largos, a 320, 360, 720 y 1.024 dp y con la letra al 100 % y al 130 % | RNF-18: también en las pantallas, no solo en los componentes |
 
 ## 14. Riesgos
 
@@ -1064,17 +1073,17 @@ stateDiagram-v2
 ```
 
 ### 16.5 Mapa de navegación
-Pantallas de la app y quién llega a cada una según el rol y el área (secciones 3 y 6). Es el destino de la versión 1.0.0, con las cuatro fases. La pantalla de registro desapareció en M2 (RF-AUTH-02).
+Pantallas de la app y quién llega a cada una según el rol y el área (secciones 3 y 6). Es el destino de la versión 1.0.0, con las cuatro fases. La pantalla de registro desapareció en M2 (RF-AUTH-02) y la introducción en M17.
 
 ```mermaid
 flowchart TD
-    intro["Introducción"] --> login["Iniciar sesión · RF-AUTH-01"]
+    login["Iniciar sesión · RF-AUTH-01"]
     login -.-> forgotPassword["Recuperar contraseña · RF-AUTH-04"]
-    login -->|"cuenta con documento activo en Users · RF-AUTH-07"| menu["Menú principal<br/>secciones según el rol, ordenadas según el área<br/>RF-AUTH-05, RF-EMP-05"]
+    login -->|"cuenta con documento activo en Users · RF-AUTH-07"| menu["Navegación por área<br/>barra inferior en celular, navegación lateral en escritorio<br/>abre en la primera sección del área · RF-AUTH-05, RF-EMP-05"]
 
     subgraph orders ["Pedidos · fase 1 · todos"]
         newOrder["Crear pedido"]
-        currentOrders["Pedidos en curso"] --> orderDetail["Detalle del pedido<br/>editar, cerrar, reabrir y pagar"]
+        currentOrders["Pedidos en curso"] --> orderDetail["Detalle del pedido<br/>cobrar, agregar productos, cerrar y reabrir"]
         orderDetail -.->|"solo administradores"| cancelOrder["Cancelar con motivo"]
     end
 
