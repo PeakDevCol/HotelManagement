@@ -322,12 +322,37 @@ service cloud.firestore {
     // RF-EMP-06: the parameters of the hotel. Every active employee reads them, because they
     // decide how each device groups the sales by day; only an administrator changes them, and
     // every change says who made it and when.
+    // RF-ASI-01 and RF-ASI-02 (M8).
+    match /Shifts/{shiftId} {
+      function isValidShift(shift) {
+        return shift.keys().hasAll(['employeeId', 'startAt', 'endAt', 'createdBy'])
+          && shift.keys().hasOnly(['employeeId', 'startAt', 'endAt', 'area', 'createdBy'])
+          && shift.employeeId is string
+          && shift.startAt is timestamp
+          && shift.endAt is timestamp
+          && shift.endAt > shift.startAt
+          // A shift may cross midnight, but it lasts less than a day.
+          && shift.endAt <= shift.startAt + duration.value(24, 'h')
+          && (!('area' in shift) || shift.area == null || shift.area in ['service', 'reception', 'housekeeping', 'maintenance', 'management'])
+          && shift.createdBy == request.auth.uid;
+      }
+
+      // Each employee reads only their own shifts, so the app asks for them by employeeId.
+      allow read: if isAdmin() || (isActiveEmployee() && resource.data.employeeId == request.auth.uid);
+      allow create, update: if isAdmin() && isValidShift(request.resource.data);
+      // A shift is a plan, not a record: it is deleted, unlike the attendance markings.
+      allow delete: if isAdmin();
+    }
+
     match /Settings/{settingsId} {
+      // The attendance parameters (M8) are optional, so a document saved before them is still valid.
       function isValidHotelSettings(settings) {
-        return settings.keys().hasOnly(['operationalDayStartMinutes', 'updatedBy', 'updatedAt'])
+        return settings.keys().hasOnly(['operationalDayStartMinutes', 'lateToleranceMinutes', 'maxOpenEntryHours', 'updatedBy', 'updatedAt'])
           && settings.operationalDayStartMinutes is int
           && settings.operationalDayStartMinutes >= 0
           && settings.operationalDayStartMinutes < 1440
+          && (!('lateToleranceMinutes' in settings) || (settings.lateToleranceMinutes is int && settings.lateToleranceMinutes >= 0 && settings.lateToleranceMinutes <= 120))
+          && (!('maxOpenEntryHours' in settings) || (settings.maxOpenEntryHours is int && settings.maxOpenEntryHours >= 1 && settings.maxOpenEntryHours <= 24))
           && settings.updatedBy == request.auth.uid
           && settings.updatedAt == request.time;
       }
