@@ -336,4 +336,12 @@
     <string name="cash_closing_error_unknown">No se pudo completar el cierre de caja.</string>
     <string name="balance_days_without_closing">%1$d días con pagos terminaron sin cierre del día.</string>
     <string name="balance_day_without_closing">Sin cierre del día</string>
+
+    <!-- Design system Majestic (RNF-18) -->
+    <string name="ds_hotel_name">Hotel Juan Majestic</string>
+    <string name="ds_system_name">Majestic</string>
+    <string name="ds_quantity_decrease">Restar uno</string>
+    <string name="ds_quantity_increase">Sumar uno</string>
+    <string name="ds_quantity_remove">Quitar</string>
+    <string name="ds_clear_search">Borrar la búsqueda</string>
 </resources>
