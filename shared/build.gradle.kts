@@ -61,6 +61,12 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
         }
+        // RNF-18: the design system is checked at several widths and text sizes on desktop, where
+        // Compose UI tests run without an emulator.
+        jvmTest.dependencies {
+            implementation(libs.compose.uiTest)
+            implementation(compose.desktop.currentOs)
+        }
     }
 }
 
