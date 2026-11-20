@@ -54,12 +54,16 @@ sealed interface SettingsIntent {
     data object SaveAttendanceRules : SettingsIntent
     data class BackupSinceChange(val text: String) : SettingsIntent
     data object ExportBackup : SettingsIntent
+    data object OpenHotelZone : SettingsIntent
+    data object OpenDevices : SettingsIntent
 }
 
 sealed interface SettingsEffect {
     data object Saved : SettingsEffect
     data class SaveFailed(val error: SettingsError) : SettingsEffect
     data class BackupFailed(val error: BackupError) : SettingsEffect
+    data object NavigateToHotelZone : SettingsEffect
+    data object NavigateToDevices : SettingsEffect
 }
 
 class SettingsViewModel(
@@ -96,6 +100,8 @@ class SettingsViewModel(
             is SettingsIntent.BackupSinceChange ->
                 _state.update { it.copy(backupSinceText = intent.text.take(MAX_DATE_LENGTH), showBackupDateError = false) }
             SettingsIntent.ExportBackup -> export()
+            SettingsIntent.OpenHotelZone -> _effects.trySend(SettingsEffect.NavigateToHotelZone)
+            SettingsIntent.OpenDevices -> _effects.trySend(SettingsEffect.NavigateToDevices)
         }
     }
 

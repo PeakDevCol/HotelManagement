@@ -23,11 +23,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupError
 import com.peakdevcol.project.hotelmanagement.domain.model.SettingsError
 import com.peakdevcol.project.hotelmanagement.domain.model.formatBogotaDateTime
+import com.peakdevcol.project.hotelmanagement.domain.model.formatThousands
 import com.peakdevcol.project.hotelmanagement.domain.model.formatTimeOfDay
 import com.peakdevcol.project.hotelmanagement.resources.Res
+import com.peakdevcol.project.hotelmanagement.resources.devices_title
 import com.peakdevcol.project.hotelmanagement.resources.employee_error_network
 import com.peakdevcol.project.hotelmanagement.resources.employee_error_unknown
 import com.peakdevcol.project.hotelmanagement.resources.error_check_connection
+import com.peakdevcol.project.hotelmanagement.resources.hotel_zone_error
+import com.peakdevcol.project.hotelmanagement.resources.hotel_zone_title
 import com.peakdevcol.project.hotelmanagement.resources.menu_settings
 import com.peakdevcol.project.hotelmanagement.resources.order_error_no_session
 import com.peakdevcol.project.hotelmanagement.resources.save
@@ -46,10 +50,14 @@ import com.peakdevcol.project.hotelmanagement.resources.settings_backup_title
 import com.peakdevcol.project.hotelmanagement.resources.settings_day_start_hint
 import com.peakdevcol.project.hotelmanagement.resources.settings_day_start_preview
 import com.peakdevcol.project.hotelmanagement.resources.settings_day_start_title
+import com.peakdevcol.project.hotelmanagement.resources.settings_devices_hint
 import com.peakdevcol.project.hotelmanagement.resources.settings_error
+import com.peakdevcol.project.hotelmanagement.resources.settings_hotel_zone_none
+import com.peakdevcol.project.hotelmanagement.resources.settings_hotel_zone_set
 import com.peakdevcol.project.hotelmanagement.resources.settings_hour
 import com.peakdevcol.project.hotelmanagement.resources.settings_last_change
 import com.peakdevcol.project.hotelmanagement.resources.settings_late_tolerance
+import com.peakdevcol.project.hotelmanagement.resources.settings_marking_title
 import com.peakdevcol.project.hotelmanagement.resources.settings_max_open_hours
 import com.peakdevcol.project.hotelmanagement.resources.settings_minute
 import com.peakdevcol.project.hotelmanagement.resources.settings_not_allowed
@@ -60,29 +68,46 @@ import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Banner
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.BannerTone
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ButtonStyle
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.EmptyState
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListDivider
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListGroup
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListRow
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticIcon
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticLoading
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTextField
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTopBar
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SectionCard
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SectionLabel
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcons
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSizes
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
 import com.peakdevcol.project.hotelmanagement.ui.main.AppMessagesHost
 import com.peakdevcol.project.hotelmanagement.ui.main.LocalAppMessages
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-/** RF-EMP-06 and RF-EMP-07: the parameters of the hotel and the manual backup. */
+/** RF-EMP-06, RF-EMP-07, RF-ASI-10 and RF-ASI-11: the parameters of the hotel and the manual backup. */
 @Composable
-fun SettingsScreen(onBack: (() -> Unit)? = null, viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsScreen(
+    onOpenHotelZone: () -> Unit,
+    onOpenDevices: () -> Unit,
+    onBack: (() -> Unit)? = null,
+    viewModel: SettingsViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val messages = LocalAppMessages.current
 
     LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect -> messages.show(effect.message()) }
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                SettingsEffect.NavigateToHotelZone -> onOpenHotelZone()
+                SettingsEffect.NavigateToDevices -> onOpenDevices()
+                else -> effect.message()?.let { messages.show(it) }
+            }
+        }
     }
 
     SettingsContent(state = state, onIntent = viewModel::onIntent, onBack = onBack)
@@ -115,6 +140,7 @@ fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit, on
                 ) {
                     OperationalDayStart(state = state, onIntent = onIntent)
                     AttendanceRules(state = state, onIntent = onIntent)
+                    MarkingPlaces(state = state, onIntent = onIntent)
                     Backup(state = state, onIntent = onIntent)
                 }
             }
@@ -218,6 +244,41 @@ private fun AttendanceRules(state: SettingsState, onIntent: (SettingsIntent) -> 
     }
 }
 
+/** RF-ASI-10 and RF-ASI-11: where the attendance is marked, each in its own screen. */
+@Composable
+private fun MarkingPlaces(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
+    val zone = state.detail?.settings?.zone
+    Column(verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space2)) {
+        SectionLabel(text = stringResource(Res.string.settings_marking_title))
+        ListGroup {
+            NavigationRow(
+                title = stringResource(Res.string.hotel_zone_title),
+                subtitle = zone?.let { stringResource(Res.string.settings_hotel_zone_set, formatThousands(it.radiusMeters.toLong())) } ?: stringResource(Res.string.settings_hotel_zone_none),
+                icon = MajesticIcons.myLocation,
+                onClick = { onIntent(SettingsIntent.OpenHotelZone) },
+            )
+            ListDivider()
+            NavigationRow(
+                title = stringResource(Res.string.devices_title),
+                subtitle = stringResource(Res.string.settings_devices_hint),
+                icon = MajesticIcons.computer,
+                onClick = { onIntent(SettingsIntent.OpenDevices) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavigationRow(title: String, subtitle: String, icon: DrawableResource, onClick: () -> Unit) {
+    ListRow(
+        title = title,
+        subtitle = subtitle,
+        leading = { MajesticIcon(icon = icon, contentDescription = null, tint = MajesticTheme.colors.inkMuted) },
+        trailing = { MajesticIcon(icon = MajesticIcons.chevronRight, contentDescription = null, tint = MajesticTheme.colors.inkMuted) },
+        onClick = onClick,
+    )
+}
+
 /** RF-EMP-07: the backup is written by the desktop app. */
 @Composable
 private fun Backup(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
@@ -251,12 +312,14 @@ private fun Backup(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
 
 private const val BACKUP_DATE_EXAMPLE = "2026-11-01"
 
-private suspend fun SettingsEffect.message(): String = when (this) {
+private suspend fun SettingsEffect.message(): String? = when (this) {
+    SettingsEffect.NavigateToHotelZone, SettingsEffect.NavigateToDevices -> null
     SettingsEffect.Saved -> getString(Res.string.settings_saved)
     is SettingsEffect.SaveFailed -> getString(
         when (error) {
             SettingsError.InvalidTime -> Res.string.settings_time_error
             SettingsError.InvalidAttendanceRules -> Res.string.settings_attendance_error
+            SettingsError.InvalidZone -> Res.string.hotel_zone_error
             SettingsError.NoSession -> Res.string.order_error_no_session
             SettingsError.NotAllowed -> Res.string.settings_not_allowed
             SettingsError.Network -> Res.string.employee_error_network

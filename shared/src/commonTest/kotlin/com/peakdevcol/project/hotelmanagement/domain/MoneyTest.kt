@@ -1,6 +1,7 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
 import com.peakdevcol.project.hotelmanagement.domain.model.formatPesos
+import com.peakdevcol.project.hotelmanagement.domain.model.formatThousands
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,5 +17,12 @@ class MoneyTest {
     @Test
     fun putsTheSignBeforeTheCurrencySymbol() {
         assertEquals("-$1.500", formatPesos(-1_500))
+    }
+
+    @Test
+    fun groupsThousandsOfOtherFiguresToo() {
+        assertEquals("850", formatThousands(850))
+        assertEquals("1.850", formatThousands(1_850))
+        assertEquals("-2.000", formatThousands(-2_000))
     }
 }

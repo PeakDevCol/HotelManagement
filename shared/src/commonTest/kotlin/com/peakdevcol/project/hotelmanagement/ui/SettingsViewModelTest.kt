@@ -174,4 +174,15 @@ class SettingsViewModelTest : MainDispatcherTest() {
         assertTrue(viewModel.state.value.showAttendanceError)
         assertEquals(16, settings.settings.value.maxOpenEntryHours)
     }
+
+    @Test
+    fun theZoneAndTheComputersOpenInTheirOwnScreens() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onIntent(SettingsIntent.OpenHotelZone)
+        assertEquals(SettingsEffect.NavigateToHotelZone, viewModel.effects.first())
+
+        viewModel.onIntent(SettingsIntent.OpenDevices)
+        assertEquals(SettingsEffect.NavigateToDevices, viewModel.effects.first())
+    }
 }

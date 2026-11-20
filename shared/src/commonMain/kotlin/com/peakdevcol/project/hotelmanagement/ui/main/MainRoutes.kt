@@ -52,6 +52,12 @@ data class EmployeeFormRoute(val employeeId: String? = null)
 @Serializable
 data object SettingsRoute
 
+@Serializable
+data object HotelZoneRoute
+
+@Serializable
+data object DevicesRoute
+
 /** "Más" of the phone: who is logged in, the sections that are not in the bar and logging out. */
 @Serializable
 data object MoreRoute
@@ -76,7 +82,7 @@ fun NavDestination.section(): AppSection? = when {
     hasRoute(InventoryRoute::class) || hasRoute(ProductFormRoute::class) ||
         hasRoute(CategoriesRoute::class) || hasRoute(TaxesRoute::class) -> AppSection.INVENTORY
     hasRoute(EmployeesRoute::class) || hasRoute(EmployeeFormRoute::class) -> AppSection.EMPLOYEES
-    hasRoute(SettingsRoute::class) -> AppSection.SETTINGS
+    hasRoute(SettingsRoute::class) || hasRoute(HotelZoneRoute::class) || hasRoute(DevicesRoute::class) -> AppSection.SETTINGS
     else -> null
 }
 

@@ -12,4 +12,6 @@ internal object FirestorePaths {
     const val TAXES = "Taxes"
     const val SETTINGS = "Settings"
     const val SHIFTS = "Shifts"
+    const val ATTENDANCE = "Attendance"
+    const val DEVICES = "Devices"
 }

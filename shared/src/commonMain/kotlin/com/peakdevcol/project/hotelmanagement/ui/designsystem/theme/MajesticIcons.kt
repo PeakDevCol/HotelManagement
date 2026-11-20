@@ -22,6 +22,7 @@ import com.peakdevcol.project.hotelmanagement.resources.ic_chevron_left
 import com.peakdevcol.project.hotelmanagement.resources.ic_chevron_right
 import com.peakdevcol.project.hotelmanagement.resources.ic_close
 import com.peakdevcol.project.hotelmanagement.resources.ic_cloud_upload
+import com.peakdevcol.project.hotelmanagement.resources.ic_computer
 import com.peakdevcol.project.hotelmanagement.resources.ic_content_copy
 import com.peakdevcol.project.hotelmanagement.resources.ic_delete
 import com.peakdevcol.project.hotelmanagement.resources.ic_edit
@@ -36,10 +37,12 @@ import com.peakdevcol.project.hotelmanagement.resources.ic_inventory_2
 import com.peakdevcol.project.hotelmanagement.resources.ic_inventory_2_filled
 import com.peakdevcol.project.hotelmanagement.resources.ic_local_bar
 import com.peakdevcol.project.hotelmanagement.resources.ic_local_bar_filled
+import com.peakdevcol.project.hotelmanagement.resources.ic_login
 import com.peakdevcol.project.hotelmanagement.resources.ic_logout
 import com.peakdevcol.project.hotelmanagement.resources.ic_mail
 import com.peakdevcol.project.hotelmanagement.resources.ic_menu
 import com.peakdevcol.project.hotelmanagement.resources.ic_more_vert
+import com.peakdevcol.project.hotelmanagement.resources.ic_my_location
 import com.peakdevcol.project.hotelmanagement.resources.ic_payments
 import com.peakdevcol.project.hotelmanagement.resources.ic_payments_filled
 import com.peakdevcol.project.hotelmanagement.resources.ic_percent
@@ -83,6 +86,7 @@ object MajesticIcons {
     val chevronLeft = Res.drawable.ic_chevron_left
     val chevronRight = Res.drawable.ic_chevron_right
     val close = Res.drawable.ic_close
+    val computer = Res.drawable.ic_computer
     val cloudUpload = Res.drawable.ic_cloud_upload
     val copy = Res.drawable.ic_content_copy
     val delete = Res.drawable.ic_delete
@@ -92,10 +96,12 @@ object MajesticIcons {
     val expandMore = Res.drawable.ic_expand_more
     val filter = Res.drawable.ic_filter_list
     val info = Res.drawable.ic_info
+    val logIn = Res.drawable.ic_login
     val logOut = Res.drawable.ic_logout
     val mail = Res.drawable.ic_mail
     val menu = Res.drawable.ic_menu
     val moreOptions = Res.drawable.ic_more_vert
+    val myLocation = Res.drawable.ic_my_location
     val percent = Res.drawable.ic_percent
     val person = Res.drawable.ic_person
     val pointOfSale = Res.drawable.ic_point_of_sale
