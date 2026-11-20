@@ -82,8 +82,8 @@ class ObserveOrderDetailUseCaseTest {
     fun offersTheActionsOfTheStateAndTheRole() = runTest {
         orders.openOrders.value = listOf(order("a"))
 
-        assertEquals(listOf(OrderAction.CLOSE), observeAs("uid-1")("a").first()?.availableActions)
-        assertEquals(listOf(OrderAction.CLOSE, OrderAction.CANCEL), observeAs("admin")("a").first()?.availableActions)
+        assertEquals(listOf(OrderAction.CLOSE, OrderAction.PAY), observeAs("uid-1")("a").first()?.availableActions)
+        assertEquals(listOf(OrderAction.CLOSE, OrderAction.PAY, OrderAction.CANCEL), observeAs("admin")("a").first()?.availableActions)
     }
 
     @Test

@@ -37,9 +37,12 @@ class OrderActionTest {
 
     @Test
     fun onlyAnAdministratorIsOfferedTheCancellation() {
-        assertEquals(listOf(OrderAction.CLOSE), OrderState.IN_PROGRESS.actionsFor(UserType.BASIC))
-        assertEquals(listOf(OrderAction.CLOSE), OrderState.IN_PROGRESS.actionsFor(UserType.RECEPTION))
-        assertEquals(listOf(OrderAction.CLOSE, OrderAction.CANCEL), OrderState.IN_PROGRESS.actionsFor(UserType.ADMIN))
+        assertEquals(listOf(OrderAction.CLOSE, OrderAction.PAY), OrderState.IN_PROGRESS.actionsFor(UserType.BASIC))
+        assertEquals(listOf(OrderAction.CLOSE, OrderAction.PAY), OrderState.IN_PROGRESS.actionsFor(UserType.RECEPTION))
+        assertEquals(
+            listOf(OrderAction.CLOSE, OrderAction.PAY, OrderAction.CANCEL),
+            OrderState.IN_PROGRESS.actionsFor(UserType.ADMIN),
+        )
         assertEquals(listOf(OrderAction.REOPEN, OrderAction.PAY), OrderState.CLOSED.actionsFor(UserType.BASIC))
         assertEquals(
             listOf(OrderAction.REOPEN, OrderAction.PAY, OrderAction.CANCEL),

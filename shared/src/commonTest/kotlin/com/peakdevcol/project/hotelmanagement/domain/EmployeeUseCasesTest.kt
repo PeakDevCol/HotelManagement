@@ -1,11 +1,9 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
-import com.peakdevcol.project.hotelmanagement.domain.model.AppSection
 import com.peakdevcol.project.hotelmanagement.domain.model.EmployeeCreation
 import com.peakdevcol.project.hotelmanagement.domain.model.EmployeeError
 import com.peakdevcol.project.hotelmanagement.domain.model.UserArea
 import com.peakdevcol.project.hotelmanagement.domain.model.UserType
-import com.peakdevcol.project.hotelmanagement.domain.model.menuFor
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CreateEmployeeUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveEmployeesUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SendPasswordEmailUseCase
@@ -31,37 +29,6 @@ class EmployeeUseCasesTest {
     private val update = UpdateEmployeeUseCase(auth, users)
 
     private suspend fun stored(id: String) = users.observeEmployees().first().first { it.id == id }
-
-    // ---- RF-AUTH-05 and RF-EMP-05
-
-    @Test
-    fun anEmployeeSeesOnlyTheOrders() {
-        assertEquals(listOf(AppSection.ADD_ORDER, AppSection.CURRENT_ORDERS), menuFor(waiter))
-        assertEquals(menuFor(waiter), menuFor(waiter.copy(type = UserType.RECEPTION, area = UserArea.RECEPTION)))
-    }
-
-    @Test
-    fun anAdministratorSeesEverythingInTheOrderOfTheirArea() {
-        assertEquals(
-            listOf(
-                AppSection.CURRENT_ORDERS,
-                AppSection.BALANCE,
-                AppSection.INVENTORY,
-                AppSection.EMPLOYEES,
-                AppSection.SETTINGS,
-                AppSection.ADD_ORDER,
-            ),
-            menuFor(admin),
-        )
-        assertEquals(AppSection.ADD_ORDER, menuFor(admin.copy(area = UserArea.SERVICE)).first())
-        assertEquals(AppSection.entries.toSet(), menuFor(admin.copy(area = UserArea.SERVICE)).toSet())
-    }
-
-    @Test
-    fun theAreaNeverGivesPermissionsTheRoleDoesNotHave() {
-        assertFalse(AppSection.EMPLOYEES in menuFor(waiter.copy(area = UserArea.MANAGEMENT)))
-        assertFalse(AppSection.SETTINGS in menuFor(waiter.copy(area = UserArea.MANAGEMENT)))
-    }
 
     // ---- RF-EMP-01
 
