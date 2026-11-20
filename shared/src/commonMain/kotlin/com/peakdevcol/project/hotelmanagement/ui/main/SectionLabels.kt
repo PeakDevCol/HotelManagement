@@ -7,10 +7,12 @@ import com.peakdevcol.project.hotelmanagement.resources.menu_employees
 import com.peakdevcol.project.hotelmanagement.resources.menu_inventory
 import com.peakdevcol.project.hotelmanagement.resources.menu_settings
 import com.peakdevcol.project.hotelmanagement.resources.nav_cash
+import com.peakdevcol.project.hotelmanagement.resources.nav_attendance
 import com.peakdevcol.project.hotelmanagement.resources.nav_cash_and_balance
 import com.peakdevcol.project.hotelmanagement.resources.nav_group_administration
 import com.peakdevcol.project.hotelmanagement.resources.nav_group_operation
 import com.peakdevcol.project.hotelmanagement.resources.nav_orders
+import com.peakdevcol.project.hotelmanagement.resources.nav_schedules
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcons
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
@@ -18,7 +20,9 @@ import org.jetbrains.compose.resources.StringResource
 /** The name of the section in the side navigation and on top of its screen. */
 fun AppSection.title(): StringResource = when (this) {
     AppSection.ORDERS -> Res.string.nav_orders
+    AppSection.ATTENDANCE -> Res.string.nav_attendance
     AppSection.BALANCE -> Res.string.nav_cash_and_balance
+    AppSection.SCHEDULES -> Res.string.nav_schedules
     AppSection.INVENTORY -> Res.string.menu_inventory
     AppSection.EMPLOYEES -> Res.string.menu_employees
     AppSection.SETTINGS -> Res.string.menu_settings
@@ -32,7 +36,9 @@ fun AppSection.shortTitle(): StringResource = when (this) {
 
 fun AppSection.icon(): DrawableResource = when (this) {
     AppSection.ORDERS -> MajesticIcons.receipt
+    AppSection.ATTENDANCE -> MajesticIcons.attendance
     AppSection.BALANCE -> MajesticIcons.payments
+    AppSection.SCHEDULES -> MajesticIcons.calendar
     AppSection.INVENTORY -> MajesticIcons.inventory
     AppSection.EMPLOYEES -> MajesticIcons.employees
     AppSection.SETTINGS -> MajesticIcons.settings
@@ -40,7 +46,9 @@ fun AppSection.icon(): DrawableResource = when (this) {
 
 fun AppSection.selectedIcon(): DrawableResource = when (this) {
     AppSection.ORDERS -> MajesticIcons.receiptFilled
+    AppSection.ATTENDANCE -> MajesticIcons.attendanceFilled
     AppSection.BALANCE -> MajesticIcons.paymentsFilled
+    AppSection.SCHEDULES -> MajesticIcons.calendar
     AppSection.INVENTORY -> MajesticIcons.inventoryFilled
     AppSection.EMPLOYEES -> MajesticIcons.employeesFilled
     AppSection.SETTINGS -> MajesticIcons.settingsFilled

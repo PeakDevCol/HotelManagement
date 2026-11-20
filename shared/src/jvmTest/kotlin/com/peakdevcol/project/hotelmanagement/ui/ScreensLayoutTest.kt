@@ -57,13 +57,20 @@ import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import com.peakdevcol.project.hotelmanagement.domain.model.User
 import com.peakdevcol.project.hotelmanagement.domain.model.UserArea
 import com.peakdevcol.project.hotelmanagement.domain.model.UserType
+import com.peakdevcol.project.hotelmanagement.domain.model.byStartDay
 import com.peakdevcol.project.hotelmanagement.domain.model.navigationFor
+import com.peakdevcol.project.hotelmanagement.domain.model.weekDays
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ScheduleDay
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ScheduledShift
 import com.peakdevcol.project.hotelmanagement.fakes.order
+import com.peakdevcol.project.hotelmanagement.fakes.shift
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderContent
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderState
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductsContent
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductsState
 import com.peakdevcol.project.hotelmanagement.ui.addorder.ProductPickerState
+import com.peakdevcol.project.hotelmanagement.ui.attendance.AttendanceContent
+import com.peakdevcol.project.hotelmanagement.ui.attendance.AttendanceState
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceContent
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceState
 import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingContent
@@ -103,6 +110,8 @@ import com.peakdevcol.project.hotelmanagement.ui.main.LocalWideWindow
 import com.peakdevcol.project.hotelmanagement.ui.main.MainState
 import com.peakdevcol.project.hotelmanagement.ui.main.MoreScreen
 import com.peakdevcol.project.hotelmanagement.ui.main.rememberAppMessages
+import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesContent
+import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesState
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsContent
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsState
 import kotlin.test.Test
@@ -376,6 +385,34 @@ class ScreensLayoutTest {
                 showTimeError = true,
                 backupAvailable = true,
                 lastBackup = BackupSummary(filePath = "/Users/laura/Documentos/Respaldos del hotel/hotel-2026-11-20.json", documentCount = 1_284),
+            ),
+            onIntent = {},
+        )
+    }
+
+    private val night = shift("night", "admin", "2026-11-20", "22:00", "06:00", area = UserArea.RECEPTION)
+    private val morning = shift("morning", "admin", "2026-11-21", "06:00", "14:30")
+
+    @Test
+    fun attendance() = checkEveryFrame("asistencia") {
+        AttendanceContent(
+            state = AttendanceState(isLoading = false, today = CalendarDate(2026, 11, 20), days = listOf(night, morning).byStartDay()),
+            onIntent = {},
+        )
+    }
+
+    @Test
+    fun schedules() = checkEveryFrame("horarios") {
+        val monday = CalendarDate(2026, 11, 16)
+        SchedulesContent(
+            state = SchedulesState(
+                monday = monday.plusDays(7),
+                thisMonday = monday,
+                isLoading = false,
+                days = weekDays(monday.plusDays(7)).mapIndexed { index, date ->
+                    ScheduleDay(date, if (index == 4) listOf(ScheduledShift(night, overlapsAnother = true), ScheduledShift(morning, overlapsAnother = false)) else emptyList())
+                },
+                employees = listOf(admin),
             ),
             onIntent = {},
         )

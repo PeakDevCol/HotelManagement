@@ -47,6 +47,7 @@ import com.peakdevcol.project.hotelmanagement.resources.understood
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductsScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.label
+import com.peakdevcol.project.hotelmanagement.ui.attendance.AttendanceScreen
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceScreen
 import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersScreen
@@ -71,6 +72,7 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesScreen
+import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesScreen
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsScreen
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -188,6 +190,8 @@ private fun MainNavHost(navController: NavHostController, navigation: AppNavigat
         }
         composable<NewOrderRoute> { AddOrderScreen(onClose = back) }
         composable<AddProductsRoute> { entry -> AddProductsScreen(orderId = entry.toRoute<AddProductsRoute>().orderId, onClose = back) }
+        composable<AttendanceRoute> { AttendanceScreen() }
+        composable<SchedulesRoute> { SchedulesScreen() }
         composable<BalanceRoute> { BalanceScreen(onCashClosingClick = { navController.navigate(CashClosingRoute) }) }
         composable<CashClosingRoute> { CashClosingScreen(onBack = back) }
         composable<InventoryRoute> {
