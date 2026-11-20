@@ -31,6 +31,9 @@ import com.peakdevcol.project.hotelmanagement.resources.error_check_connection
 import com.peakdevcol.project.hotelmanagement.resources.menu_settings
 import com.peakdevcol.project.hotelmanagement.resources.order_error_no_session
 import com.peakdevcol.project.hotelmanagement.resources.save
+import com.peakdevcol.project.hotelmanagement.resources.settings_attendance_error
+import com.peakdevcol.project.hotelmanagement.resources.settings_attendance_hint
+import com.peakdevcol.project.hotelmanagement.resources.settings_attendance_title
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_date
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_date_error
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_done
@@ -46,6 +49,8 @@ import com.peakdevcol.project.hotelmanagement.resources.settings_day_start_title
 import com.peakdevcol.project.hotelmanagement.resources.settings_error
 import com.peakdevcol.project.hotelmanagement.resources.settings_hour
 import com.peakdevcol.project.hotelmanagement.resources.settings_last_change
+import com.peakdevcol.project.hotelmanagement.resources.settings_late_tolerance
+import com.peakdevcol.project.hotelmanagement.resources.settings_max_open_hours
 import com.peakdevcol.project.hotelmanagement.resources.settings_minute
 import com.peakdevcol.project.hotelmanagement.resources.settings_not_allowed
 import com.peakdevcol.project.hotelmanagement.resources.settings_saved
@@ -108,6 +113,7 @@ fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
                 ) {
                     OperationalDayStart(state = state, onIntent = onIntent)
+                    AttendanceRules(state = state, onIntent = onIntent)
                     Backup(state = state, onIntent = onIntent)
                 }
             }
@@ -162,7 +168,11 @@ private fun OperationalDayStart(state: SettingsState, onIntent: (SettingsIntent)
 }
 
 @Composable
-private fun TimeField(value: String, label: String, onChange: (String) -> Unit, hasError: Boolean, modifier: Modifier) {
+private fun TimeField(value: String, label: String, onChange: (String) -> Unit, hasError: Boolean, modifier: Modifier) =
+    NumberField(value = value, label = label, onChange = onChange, hasError = hasError, modifier = modifier)
+
+@Composable
+private fun NumberField(value: String, label: String, onChange: (String) -> Unit, hasError: Boolean, modifier: Modifier) {
     MajesticTextField(
         value = value,
         onValueChange = onChange,
@@ -172,6 +182,39 @@ private fun TimeField(value: String, label: String, onChange: (String) -> Unit, 
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = modifier,
     )
+}
+
+/** RF-ASI-06 and RF-ASI-08: when an entry counts as late, and when one without exit is forgotten. */
+@Composable
+private fun AttendanceRules(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
+    SectionCard(title = stringResource(Res.string.settings_attendance_title), help = stringResource(Res.string.settings_attendance_hint)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(MajesticSpacing.space3)) {
+            NumberField(
+                value = state.toleranceText,
+                label = stringResource(Res.string.settings_late_tolerance),
+                hasError = state.showAttendanceError,
+                onChange = { onIntent(SettingsIntent.ToleranceChange(it)) },
+                modifier = Modifier.weight(1f),
+            )
+            NumberField(
+                value = state.maxOpenHoursText,
+                label = stringResource(Res.string.settings_max_open_hours),
+                hasError = state.showAttendanceError,
+                onChange = { onIntent(SettingsIntent.MaxOpenHoursChange(it)) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (state.showAttendanceError) {
+            Text(text = stringResource(Res.string.settings_attendance_error), style = MajesticTheme.typography.caption, color = MajesticTheme.colors.danger)
+        }
+        MajesticButton(
+            text = stringResource(Res.string.save),
+            onClick = { onIntent(SettingsIntent.SaveAttendanceRules) },
+            enabled = !state.isWorking,
+            loading = state.isSavingRules,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }
 
 /** RF-EMP-07: the backup is written by the desktop app. */
@@ -212,6 +255,7 @@ private suspend fun SettingsEffect.message(): String = when (this) {
     is SettingsEffect.SaveFailed -> getString(
         when (error) {
             SettingsError.InvalidTime -> Res.string.settings_time_error
+            SettingsError.InvalidAttendanceRules -> Res.string.settings_attendance_error
             SettingsError.NoSession -> Res.string.order_error_no_session
             SettingsError.NotAllowed -> Res.string.settings_not_allowed
             SettingsError.Network -> Res.string.employee_error_network
