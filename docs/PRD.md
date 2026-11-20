@@ -142,7 +142,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Roles y permisos | ✅ Hecho en M6 | El menú muestra las secciones según el rol y las ordena según el área. El administrador crea y gestiona empleados desde la app. |
 | Configuración y respaldo | ✅ Hecho en M6 | Inicio del día operativo, y respaldo manual en JSON desde escritorio |
 | Sistema de diseño Majestic | ✅ Hecho en M17 | Colores, letra Manrope, componentes y pruebas de diseño (primer PR), y todas las pantallas de la fase 1 con el diseño nuevo y su prueba de desbordes (segundo PR). |
-| Turnos y asistencia | ⬜ Pendiente | Fase 2 (M8) |
+| Turnos y asistencia | 🔄 M8 | Horarios del equipo, "Mi horario" y los parámetros de asistencia (primer PR de tres). Faltan la marcación y el seguimiento. |
 | Habitaciones, reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M10 a M12) |
 | Limpieza y mantenimiento | ⬜ Pendiente | Fase 4 (M14 y M15) |
 
@@ -321,8 +321,8 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 ### 6.7 Turnos y asistencia (`ASI`, fase 2)
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
-| RF-ASI-01 | Horarios | El administrador asigna turnos a cada empleado (inicio, fin y área opcional). Un turno puede cruzar la medianoche. Se puede copiar la semana anterior. Avisa si dos turnos del mismo empleado se cruzan. | ⬜ |
-| RF-ASI-02 | Mi horario | Cada empleado ve sus turnos de las próximas dos semanas | ⬜ |
+| RF-ASI-01 | Horarios | El administrador asigna turnos a cada empleado (inicio, fin y área opcional). Un turno puede cruzar la medianoche. Se puede copiar la semana anterior. Avisa si dos turnos del mismo empleado se cruzan. | ✅ En "Horarios" |
+| RF-ASI-02 | Mi horario | Cada empleado ve sus turnos de las próximas dos semanas | ✅ En "Asistencia" |
 | RF-ASI-03 | Marcar entrada ([P29](#12-preguntas-abiertas)) | Desde el celular, solo dentro de la zona del hotel (RF-ASI-10). Desde un computador autorizado de recepción, sin ubicación (RF-ASI-11). Si el celular no da ubicación, la app indica que marque en recepción. Usa la hora del servidor y no deja marcar otra entrada si hay una abierta. | ⬜ |
 | RF-ASI-04 | Marcar salida | Con las mismas condiciones de RF-ASI-03. Cierra la entrada abierta y muestra las horas trabajadas. | ⬜ |
 | RF-ASI-05 | Marcación sin conexión | En el celular, la ubicación funciona sin internet, así que la marcación se valida igual. Se guarda con la hora del dispositivo y queda "por revisar", porque la hora del servidor solo se conoce al sincronizar. | ⬜ |
@@ -562,7 +562,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `Products/{id}` | `name`, `unitPrice`, `categoryId`, `taxId`, `active` | Inventario. Se desactivan, no se borran. | M4 |
 | `Categories/{id}` | `name`, `position` | Categorías del inventario, en el orden que define el administrador (RF-INV-04) | M4 |
 | `Taxes/{id}` | `name`, `rate`, `active` | Impuestos opcionales (P14). `rate` es un entero en centésimas de punto: 19 % es `1900` y 8,5 % es `850`. Se desactivan, no se borran. | M4 |
-| `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt`. En la fase 1: `operationalDayStartMinutes`, en minutos después de la medianoche (360 = 6:00 a. m.). | Cada fase agrega los suyos | M6 |
+| `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt`. En la fase 1: `operationalDayStartMinutes`, en minutos después de la medianoche (360 = 6:00 a. m.). En M8: `lateToleranceMinutes` y `maxOpenEntryHours`. | Cada fase agrega los suyos | M6 |
 
 **Asistencia (fase 2)**
 
@@ -647,7 +647,7 @@ Las fases ordenan la construcción. El hotel no recibe la app hasta M16, que la 
 | M5 | 1 ✅ | `feature/balance-1` y `-2` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
 | M6 | 1 ✅ | `feature/roles-admin-1` y `-2` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
 | M7 | — | — | Era la salida de la fase 1 con su piloto. Se unió a M16 (decisión del 2026-11-17). | — |
-| M8 | 2 | `feature/attendance` | RF-ASI-01 a RF-ASI-11 y S10. Validación V5, en lo que se puede comprobar fuera del hotel: la detección de ubicaciones simuladas. | M6 |
+| M8 | 2 | `feature/attendance-1` a `-3` | RF-ASI-01 a RF-ASI-11 y S10, en tres PR: horarios y parámetros (RF-ASI-01 y 02); marcación desde el celular y desde recepción (RF-ASI-03, 04, 05, 10 y 11, y S10); y seguimiento (RF-ASI-06 a 09). Validación V5, en lo que se puede comprobar fuera del hotel: la detección de ubicaciones simuladas. | M6 |
 | M9 | — | — | Era la salida de la fase 2. Las pruebas de ubicación dentro y alrededor del hotel pasaron a M16. | — |
 | M10 | 3 | `feature/rooms` | RF-HAB-01 a RF-HAB-04 | M6 |
 | M11 | 3 | `feature/reservations` | RF-RES-01 a RF-RES-07, RF-RES-09 y S9 | M10 |
@@ -658,7 +658,7 @@ Las fases ordenan la construcción. El hotel no recibe la app hasta M16, que la 
 | M16 | Todas | `release/1.0.0` | Salida a producción de la versión 1.0.0, con las cuatro fases. Pruebas en dispositivos reales (Android, Windows e iOS con sesión iniciada), S4, APK firmado con la llave de producción, instalador `.msi` generado en Windows con los módulos de Java que necesitan Firebase y la app, versión visible en el menú, guía del piloto en `docs/`, piloto de 1 a 2 semanas, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V4 y V5 (precisión del GPS en el hotel). | M5, M8 y M15 |
 | M17 | 1 | `feature/design-system-1` y `-2` | Sistema de diseño Majestic (RNF-18). Primer PR: colores claro y oscuro, letra Manrope, íconos, componentes y pruebas de diseño. Segundo PR: navegación por rol y área, y las pantallas de la fase 1 con el diseño nuevo, con cobro desde En curso y propina sugerida (RF-CUR-05, RF-AUTH-05 y RF-EMP-05). | M6 |
 
-**Estado al 2026-11-20:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`: son 45 de los 99 requisitos vigentes de la sección 6. M17, el diseño nuevo, quedó hecho en sus dos PR, para que las fases 2 a 4 se construyan ya con él. Sigue la fase 2 con M8 (asistencia). El orden de trabajo es M8, M10, M11, M12, M14, M15 y M16.
+**Estado al 2026-11-20:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`: son 45 de los 99 requisitos vigentes de la sección 6. M17, el diseño nuevo, quedó hecho en sus dos PR, para que las fases 2 a 4 se construyan ya con él. La fase 2 empezó: M8 (asistencia) va en su primer PR de tres, con RF-ASI-01 y RF-ASI-02. El orden de trabajo es M8, M10, M11, M12, M14, M15 y M16.
 
 Pendientes que no son código y hay que cerrar antes del piloto (M16):
 - Probar en iOS con sesión iniciada: hasta ahora solo se comprobó que compila y arranca.
@@ -874,6 +874,14 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-20 | Agregar productos a un pedido En curso usa la misma grilla que un pedido nuevo: se eligen varios a la vez y se agregan con un toque | Menos pasos que agregar uno por uno |
 | 2026-11-20 | Las confirmaciones cortas ("Pedido enviado", "Pago registrado") salen en un mensaje abajo, que sigue visible al volver a la pantalla anterior. Al confirmar un pedido nuevo, la app vuelve a la lista. | Sin diálogos que haya que cerrar |
 | 2026-11-20 | Cada pantalla tiene su prueba de desbordes (`ScreensLayoutTest`), con datos largos, a 320, 360, 720 y 1.024 dp y con la letra al 100 % y al 130 % | RNF-18: también en las pantallas, no solo en los componentes |
+| 2026-11-20 | M8 se entrega en tres PR: horarios y parámetros; marcación desde el celular y desde recepción; y seguimiento (salidas olvidadas, correcciones, reporte de horas y quién está trabajando) | Decisión del negocio, como en M17 |
+| 2026-11-20 | La ubicación del celular se lee con el servicio del sistema (Android y Core Location en iOS), sin librerías nuevas | Las dependencias deben funcionar en las tres plataformas, y Google Play Services es solo de Android |
+| 2026-11-20 | El administrador fija la ubicación del hotel con "Usar mi ubicación actual", estando en el hotel, o escribiendo la latitud y la longitud | Decisión del negocio |
+| 2026-11-20 | Cada marcación guarda la hora del servidor y la del celular. Si difieren en más de 5 minutos, queda "por revisar", y el reporte usa la hora del celular hasta que el administrador la confirme (RF-ASI-05). | Cubre la falta de conexión y también un celular con la hora mal |
+| 2026-11-20 | V5, la parte técnica: Android detecta una ubicación simulada (`isMock`, o `isFromMockProvider` antes de Android 12) e iOS también (`isSimulatedBySoftware`, desde iOS 15; la app pide 15.3), sin librerías nuevas. La precisión dentro del hotel se mide en M16. | Resultado de V5 fuera del hotel |
+| 2026-11-20 | "Mi horario" va en la sección Asistencia, donde después se marca. En servicio, recepción, limpieza y mantenimiento, la barra inferior queda Pedidos · Asistencia · Más. Administración tiene Asistencia y Horarios en "Más". | Un toque desde la barra para ver el turno y, en el segundo PR, marcarlo |
+| 2026-11-20 | Los horarios se ven por semana, de lunes a domingo. "Copiar semana anterior" agrega los turnos que falten, sin repetir los que ya están. Un turno se borra, porque es un plan; las marcaciones no se borran. | Lo más común es repetir la semana y ajustar lo que cambia |
+| 2026-11-20 | Las horas de un turno se escriben en formato de 24 horas, con o sin dos puntos (06:00 o 0600), porque el teclado numérico del celular no tiene dos puntos. Si el fin es antes del inicio, el turno termina al día siguiente. | Menos toques que un selector de hora |
 
 ## 14. Riesgos
 
