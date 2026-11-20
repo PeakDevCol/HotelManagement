@@ -15,15 +15,21 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/** An employee open beside the list, on wide windows. A null [employeeId] is a new employee. */
+data class OpenEmployee(val employeeId: String?)
+
 data class EmployeesState(
     val isLoading: Boolean = true,
     val loadFailed: Boolean = false,
     val employees: List<User> = emptyList(),
+    val openEmployee: OpenEmployee? = null,
 )
 
 sealed interface EmployeesIntent {
-    data object NewEmployee : EmployeesIntent
-    data class OpenEmployee(val employeeId: String) : EmployeesIntent
+    /** [besideList] when the window shows the employee next to the list instead of on its own screen. */
+    data class NewEmployee(val besideList: Boolean) : EmployeesIntent
+    data class SelectEmployee(val employeeId: String, val besideList: Boolean) : EmployeesIntent
+    data object CloseEmployee : EmployeesIntent
     data object Retry : EmployeesIntent
 }
 
@@ -50,9 +56,18 @@ class EmployeesViewModel(
 
     fun onIntent(intent: EmployeesIntent) {
         when (intent) {
-            EmployeesIntent.NewEmployee -> _effects.trySend(EmployeesEffect.NavigateToEmployee(employeeId = null))
-            is EmployeesIntent.OpenEmployee -> _effects.trySend(EmployeesEffect.NavigateToEmployee(intent.employeeId))
+            is EmployeesIntent.NewEmployee -> open(employeeId = null, besideList = intent.besideList)
+            is EmployeesIntent.SelectEmployee -> open(intent.employeeId, intent.besideList)
+            EmployeesIntent.CloseEmployee -> _state.update { it.copy(openEmployee = null) }
             EmployeesIntent.Retry -> listenToEmployees()
+        }
+    }
+
+    private fun open(employeeId: String?, besideList: Boolean) {
+        if (besideList) {
+            _state.update { it.copy(openEmployee = OpenEmployee(employeeId)) }
+        } else {
+            _effects.trySend(EmployeesEffect.NavigateToEmployee(employeeId))
         }
     }
 

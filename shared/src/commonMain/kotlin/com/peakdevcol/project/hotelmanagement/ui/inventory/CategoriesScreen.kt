@@ -1,36 +1,25 @@
 package com.peakdevcol.project.hotelmanagement.ui.inventory
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.Category
 import com.peakdevcol.project.hotelmanagement.domain.usecase.MoveDirection
@@ -39,156 +28,184 @@ import com.peakdevcol.project.hotelmanagement.resources.cancel
 import com.peakdevcol.project.hotelmanagement.resources.categories_delete
 import com.peakdevcol.project.hotelmanagement.resources.categories_delete_message
 import com.peakdevcol.project.hotelmanagement.resources.categories_empty
+import com.peakdevcol.project.hotelmanagement.resources.categories_empty_title
 import com.peakdevcol.project.hotelmanagement.resources.categories_move_down
 import com.peakdevcol.project.hotelmanagement.resources.categories_move_up
 import com.peakdevcol.project.hotelmanagement.resources.categories_name
 import com.peakdevcol.project.hotelmanagement.resources.categories_new
 import com.peakdevcol.project.hotelmanagement.resources.categories_rename
-import com.peakdevcol.project.hotelmanagement.resources.ic_add
-import com.peakdevcol.project.hotelmanagement.resources.ic_arrow_back
-import com.peakdevcol.project.hotelmanagement.resources.ic_delete
-import com.peakdevcol.project.hotelmanagement.resources.ic_edit
+import com.peakdevcol.project.hotelmanagement.resources.error_check_connection
 import com.peakdevcol.project.hotelmanagement.resources.inventory_categories
 import com.peakdevcol.project.hotelmanagement.resources.inventory_error
 import com.peakdevcol.project.hotelmanagement.resources.save
-import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
-import com.peakdevcol.project.hotelmanagement.ui.currentorders.CenteredMessage
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ButtonStyle
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ConfirmDialog
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.EmptyState
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListDivider
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListGroup
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListRow
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticFloatingActionButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticIconButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticLoading
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTextField
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTopBar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.TaskSheet
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcons
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSizes
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
+import com.peakdevcol.project.hotelmanagement.ui.main.AppMessagesHost
+import com.peakdevcol.project.hotelmanagement.ui.main.LocalAppMessages
+import com.peakdevcol.project.hotelmanagement.ui.main.LocalWideWindow
 import org.jetbrains.compose.resources.getString
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+/** RF-INV-04: the categories, in the order the product picker shows them. */
 @Composable
 fun CategoriesScreen(onBack: () -> Unit, viewModel: CategoriesViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val messages = LocalAppMessages.current
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                is CategoriesEffect.Failed -> snackbarHostState.showSnackbar(getString(effect.error.message()))
+                is CategoriesEffect.Failed -> messages.show(getString(effect.error.message()))
             }
         }
     }
 
+    CategoriesContent(state = state, onIntent = viewModel::onIntent, onBack = onBack)
+}
+
+@Composable
+fun CategoriesContent(state: CategoriesState, onIntent: (CategoriesIntent) -> Unit, onBack: () -> Unit) {
     Scaffold(
-        topBar = { ScreenTopBar(title = stringResource(Res.string.inventory_categories), onBack = onBack) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = { MajesticTopBar(title = stringResource(Res.string.inventory_categories), onBack = onBack) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.onIntent(CategoriesIntent.AddClick) }) {
-                Icon(painter = painterResource(Res.drawable.ic_add), contentDescription = stringResource(Res.string.categories_new))
-            }
+            MajesticFloatingActionButton(
+                text = stringResource(Res.string.categories_new),
+                icon = MajesticIcons.add,
+                onClick = { onIntent(CategoriesIntent.AddClick) },
+            )
         },
+        snackbarHost = { AppMessagesHost() },
+        containerColor = MajesticTheme.colors.surface,
     ) { padding ->
         when {
-            state.isLoading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            state.loadFailed -> CenteredMessage(stringResource(Res.string.inventory_error), Modifier.padding(padding))
-            state.categories.isEmpty() -> CenteredMessage(stringResource(Res.string.categories_empty), Modifier.padding(padding))
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 88.dp),
-            ) {
-                itemsIndexed(state.categories, key = { _, category -> category.id }) { index, category ->
-                    CategoryRow(
-                        category = category,
-                        isFirst = index == 0,
-                        isLast = index == state.categories.lastIndex,
-                        enabled = !state.isWorking,
-                        onIntent = viewModel::onIntent,
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            state.isLoading -> MajesticLoading(Modifier.padding(padding))
+            state.loadFailed -> EmptyState(
+                icon = MajesticIcons.error,
+                title = stringResource(Res.string.inventory_error),
+                message = stringResource(Res.string.error_check_connection),
+                modifier = Modifier.padding(padding),
+            )
+            state.categories.isEmpty() -> EmptyState(
+                icon = MajesticIcons.category,
+                title = stringResource(Res.string.categories_empty_title),
+                message = stringResource(Res.string.categories_empty),
+                modifier = Modifier.padding(padding),
+            )
+            else -> Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = MajesticSizes.content)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = MajesticSpacing.space4, end = MajesticSpacing.space4, top = MajesticSpacing.space2, bottom = MajesticSizes.floatingActionButtonClearance),
+                ) {
+                    ListGroup {
+                        state.categories.forEachIndexed { index, category ->
+                            if (index > 0) ListDivider()
+                            CategoryRow(
+                                category = category,
+                                isFirst = index == 0,
+                                isLast = index == state.categories.lastIndex,
+                                enabled = !state.isWorking,
+                                onIntent = onIntent,
+                            )
+                        }
+                    }
                 }
             }
         }
     }
+    CategoryDialogs(state = state, onIntent = onIntent)
+}
 
+/** Touching the name renames it; the arrows change its place and the bin deletes it. */
+@Composable
+private fun CategoryRow(category: Category, isFirst: Boolean, isLast: Boolean, enabled: Boolean, onIntent: (CategoriesIntent) -> Unit) {
+    val colors = MajesticTheme.colors
+    ListRow(
+        title = category.name,
+        onClick = if (enabled) ({ onIntent(CategoriesIntent.RenameClick(category)) }) else null,
+        trailing = {
+            Row {
+                MajesticIconButton(
+                    icon = MajesticIcons.arrowUp,
+                    contentDescription = stringResource(Res.string.categories_move_up, category.name),
+                    onClick = { onIntent(CategoriesIntent.Move(category.id, MoveDirection.UP)) },
+                    tint = colors.inkMuted,
+                    enabled = enabled && !isFirst,
+                )
+                MajesticIconButton(
+                    icon = MajesticIcons.arrowDown,
+                    contentDescription = stringResource(Res.string.categories_move_down, category.name),
+                    onClick = { onIntent(CategoriesIntent.Move(category.id, MoveDirection.DOWN)) },
+                    tint = colors.inkMuted,
+                    enabled = enabled && !isLast,
+                )
+                MajesticIconButton(
+                    icon = MajesticIcons.delete,
+                    contentDescription = stringResource(Res.string.categories_delete, category.name),
+                    onClick = { onIntent(CategoriesIntent.DeleteClick(category)) },
+                    tint = colors.danger,
+                    enabled = enabled,
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun CategoryDialogs(state: CategoriesState, onIntent: (CategoriesIntent) -> Unit) {
+    val dismiss = { onIntent(CategoriesIntent.DismissDialog) }
     when (val dialog = state.dialog) {
-        is CategoryDialog.Name -> CategoryNameDialog(dialog, enabled = !state.isWorking, onIntent = viewModel::onIntent)
-        is CategoryDialog.Delete -> AlertDialog(
-            onDismissRequest = { viewModel.onIntent(CategoriesIntent.DismissDialog) },
-            title = { Text(stringResource(Res.string.categories_delete, dialog.category.name)) },
-            text = { Text(stringResource(Res.string.categories_delete_message)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.onIntent(CategoriesIntent.ConfirmDialog) }) {
-                    Text(stringResource(Res.string.categories_delete, dialog.category.name))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.onIntent(CategoriesIntent.DismissDialog) }) { Text(stringResource(Res.string.cancel)) }
-            },
+        is CategoryDialog.Name -> TaskSheet(
+            title = dialog.category?.let { stringResource(Res.string.categories_rename, it.name) } ?: stringResource(Res.string.categories_new),
+            onDismiss = dismiss,
+            asDialog = LocalWideWindow.current,
+        ) {
+            MajesticTextField(
+                value = dialog.text,
+                onValueChange = { onIntent(CategoriesIntent.NameChange(it)) },
+                label = stringResource(Res.string.categories_name),
+                error = dialog.error?.let { stringResource(it.message()) },
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onIntent(CategoriesIntent.ConfirmDialog) }),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(MajesticSpacing.space2, Alignment.End)) {
+                MajesticButton(text = stringResource(Res.string.cancel), onClick = dismiss, style = ButtonStyle.Text)
+                MajesticButton(
+                    text = stringResource(Res.string.save),
+                    onClick = { onIntent(CategoriesIntent.ConfirmDialog) },
+                    enabled = !state.isWorking,
+                    loading = state.isWorking,
+                )
+            }
+        }
+        is CategoryDialog.Delete -> ConfirmDialog(
+            title = stringResource(Res.string.categories_delete, dialog.category.name),
+            message = stringResource(Res.string.categories_delete_message),
+            confirmText = stringResource(Res.string.categories_delete, dialog.category.name),
+            dismissText = stringResource(Res.string.cancel),
+            onConfirm = { onIntent(CategoriesIntent.ConfirmDialog) },
+            onDismiss = dismiss,
+            destructive = true,
         )
         null -> Unit
     }
-}
-
-@Composable
-private fun CategoryRow(
-    category: Category,
-    isFirst: Boolean,
-    isLast: Boolean,
-    enabled: Boolean,
-    onIntent: (CategoriesIntent) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = category.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        // The back arrow, turned, stands for "up" and "down": the project has no other arrow drawing.
-        IconButton(onClick = { onIntent(CategoriesIntent.Move(category.id, MoveDirection.UP)) }, enabled = enabled && !isFirst) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_arrow_back),
-                contentDescription = stringResource(Res.string.categories_move_up, category.name),
-                modifier = Modifier.rotate(90f),
-            )
-        }
-        IconButton(onClick = { onIntent(CategoriesIntent.Move(category.id, MoveDirection.DOWN)) }, enabled = enabled && !isLast) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_arrow_back),
-                contentDescription = stringResource(Res.string.categories_move_down, category.name),
-                modifier = Modifier.rotate(-90f),
-            )
-        }
-        IconButton(onClick = { onIntent(CategoriesIntent.RenameClick(category)) }, enabled = enabled) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_edit),
-                contentDescription = stringResource(Res.string.categories_rename, category.name),
-            )
-        }
-        IconButton(onClick = { onIntent(CategoriesIntent.DeleteClick(category)) }, enabled = enabled) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_delete),
-                contentDescription = stringResource(Res.string.categories_delete, category.name),
-            )
-        }
-    }
-}
-
-@Composable
-private fun CategoryNameDialog(dialog: CategoryDialog.Name, enabled: Boolean, onIntent: (CategoriesIntent) -> Unit) {
-    val title = dialog.category?.let { stringResource(Res.string.categories_rename, it.name) } ?: stringResource(Res.string.categories_new)
-    AlertDialog(
-        onDismissRequest = { onIntent(CategoriesIntent.DismissDialog) },
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = dialog.text,
-                onValueChange = { onIntent(CategoriesIntent.NameChange(it)) },
-                label = { Text(stringResource(Res.string.categories_name)) },
-                isError = dialog.error != null,
-                supportingText = dialog.error?.let { error -> { Text(stringResource(error.message())) } },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onIntent(CategoriesIntent.ConfirmDialog) }, enabled = enabled) { Text(stringResource(Res.string.save)) }
-        },
-        dismissButton = {
-            TextButton(onClick = { onIntent(CategoriesIntent.DismissDialog) }) { Text(stringResource(Res.string.cancel)) }
-        },
-    )
 }

@@ -21,6 +21,7 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoryDialog
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryEffect
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryIntent
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryViewModel
+import com.peakdevcol.project.hotelmanagement.ui.inventory.OpenProduct
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormEffect
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormIntent
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormViewModel
@@ -70,7 +71,7 @@ class InventoryViewModelsTest : MainDispatcherTest() {
         products.products.value = emptyList()
         val viewModel = inventory()
 
-        viewModel.onIntent(InventoryIntent.NewProduct)
+        viewModel.onIntent(InventoryIntent.NewProduct(besideList = false))
         viewModel.onIntent(InventoryIntent.ManageCategories)
 
         assertTrue(viewModel.state.value.needsCategories)
@@ -82,11 +83,25 @@ class InventoryViewModelsTest : MainDispatcherTest() {
     fun opensTheFormToCreateOrEditAProduct() = runTest {
         val viewModel = inventory()
 
-        viewModel.onIntent(InventoryIntent.NewProduct)
+        viewModel.onIntent(InventoryIntent.NewProduct(besideList = false))
         assertEquals(InventoryEffect.NavigateToProduct(productId = null), viewModel.effects.first())
 
-        viewModel.onIntent(InventoryIntent.OpenProduct("beer"))
+        viewModel.onIntent(InventoryIntent.SelectProduct("beer", besideList = false))
         assertEquals(InventoryEffect.NavigateToProduct("beer"), viewModel.effects.first())
+    }
+
+    @Test
+    fun onWideWindowsTheProductOpensBesideTheListAndCloses() {
+        val viewModel = inventory()
+
+        viewModel.onIntent(InventoryIntent.SelectProduct("beer", besideList = true))
+        assertEquals(OpenProduct("beer"), viewModel.state.value.openProduct)
+
+        viewModel.onIntent(InventoryIntent.NewProduct(besideList = true))
+        assertEquals(OpenProduct(productId = null), viewModel.state.value.openProduct)
+
+        viewModel.onIntent(InventoryIntent.CloseProduct)
+        assertNull(viewModel.state.value.openProduct)
     }
 
     @Test

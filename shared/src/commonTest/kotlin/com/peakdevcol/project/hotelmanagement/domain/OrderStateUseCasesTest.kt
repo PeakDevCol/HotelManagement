@@ -6,8 +6,8 @@ import com.peakdevcol.project.hotelmanagement.domain.model.OrderStateChange
 import com.peakdevcol.project.hotelmanagement.domain.model.PaymentMethod
 import com.peakdevcol.project.hotelmanagement.domain.model.UserType
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CancelOrderUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ChargeOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CloseOrderUseCase
-import com.peakdevcol.project.hotelmanagement.domain.usecase.RegisterPaymentUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReopenOrderUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
@@ -57,9 +57,11 @@ class OrderStateUseCasesTest {
         assertEquals(OrderState.IN_PROGRESS, stateOf("closed"))
     }
 
+    private fun orderNamed(orderId: String) = orders.openOrders.value.first { it.id == orderId }
+
     @Test
-    fun payingRecordsTheMethodAndTheTip() = runTest {
-        val result = RegisterPaymentUseCase(auth, orders)("closed", PaymentMethod.TRANSFER, tipAmount = 2_000)
+    fun chargingRecordsTheMethodAndTheTip() = runTest {
+        val result = ChargeOrderUseCase(auth, orders)(orderNamed("closed"), PaymentMethod.TRANSFER, tipAmount = 2_000)
 
         assertTrue(result.isSuccess)
         assertEquals(OrderState.PAID, stateOf("closed"))
@@ -71,35 +73,58 @@ class OrderStateUseCasesTest {
 
     @Test
     fun theTipIsOptional() = runTest {
-        RegisterPaymentUseCase(auth, orders)("closed", PaymentMethod.CASH)
+        ChargeOrderUseCase(auth, orders)(orderNamed("closed"), PaymentMethod.CASH)
 
         assertEquals(0, (orders.appliedChanges.single().second as OrderStateChange.Pay).tipAmount)
     }
 
     @Test
     fun aNegativeTipIsRejectedBeforeReachingTheServer() = runTest {
-        val result = RegisterPaymentUseCase(auth, orders)("closed", PaymentMethod.CASH, tipAmount = -1)
+        val result = ChargeOrderUseCase(auth, orders)(orderNamed("open"), PaymentMethod.CASH, tipAmount = -1)
 
         assertEquals(OrderActionError.InvalidTip, result.exceptionOrNull())
-        assertEquals(OrderState.CLOSED, stateOf("closed"))
+        assertEquals(OrderState.IN_PROGRESS, stateOf("open"))
+        assertTrue(orders.appliedChanges.isEmpty())
     }
 
     @Test
     fun anOrderIsNeverPaidTwice() = runTest {
-        val pay = RegisterPaymentUseCase(auth, orders)
-        pay("closed", PaymentMethod.CASH)
+        val charge = ChargeOrderUseCase(auth, orders)
+        val closed = orderNamed("closed")
+        charge(closed, PaymentMethod.CASH)
 
-        val second = pay("closed", PaymentMethod.CASH)
+        val second = charge(closed, PaymentMethod.CASH)
 
         assertEquals(OrderActionError.StateChanged(OrderState.PAID), second.exceptionOrNull())
         assertEquals(1, orders.appliedChanges.size)
     }
 
-    @Test
-    fun anOrderInProgressCannotBePaidWithoutClosingIt() = runTest {
-        val result = RegisterPaymentUseCase(auth, orders)("open", PaymentMethod.CASH)
+    // ---- Charging an order in progress (PRD, section 13, 2026-11-19)
 
-        assertEquals(OrderActionError.StateChanged(OrderState.IN_PROGRESS), result.exceptionOrNull())
+    @Test
+    fun anOrderInProgressIsClosedAndThenPaid() = runTest {
+        val result = ChargeOrderUseCase(auth, orders)(orderNamed("open"), PaymentMethod.CASH, tipAmount = 500)
+
+        assertTrue(result.isSuccess)
+        assertEquals(OrderState.PAID, stateOf("open"))
+        assertEquals(
+            listOf(
+                "open" to OrderStateChange.Close("uid-1"),
+                "open" to OrderStateChange.Pay("uid-1", PaymentMethod.CASH, tipAmount = 500),
+            ),
+            orders.appliedChanges,
+        )
+    }
+
+    @Test
+    fun anOrderThatCouldNotBeClosedIsNotPaid() = runTest {
+        val seenInProgress = orderNamed("closed").copy(state = OrderState.IN_PROGRESS)
+
+        val result = ChargeOrderUseCase(auth, orders)(seenInProgress, PaymentMethod.CASH)
+
+        assertEquals(OrderActionError.StateChanged(OrderState.CLOSED), result.exceptionOrNull())
+        assertEquals(OrderState.CLOSED, stateOf("closed"))
+        assertTrue(orders.appliedChanges.isEmpty())
     }
 
     @Test
@@ -136,7 +161,7 @@ class OrderStateUseCasesTest {
         assertEquals(OrderActionError.NoSession, ReopenOrderUseCase(noSession, orders)("closed").exceptionOrNull())
         assertEquals(
             OrderActionError.NoSession,
-            RegisterPaymentUseCase(noSession, orders)("closed", PaymentMethod.CASH).exceptionOrNull(),
+            ChargeOrderUseCase(noSession, orders)(orderNamed("closed"), PaymentMethod.CASH).exceptionOrNull(),
         )
         assertEquals(OrderActionError.NoSession, CancelOrderUseCase(noSession, users, orders)("open", "x").exceptionOrNull())
         assertTrue(orders.appliedChanges.isEmpty())

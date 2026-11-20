@@ -1,5 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.ui.designsystem.theme
 
+import com.peakdevcol.project.hotelmanagement.domain.model.DestinationKind
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.ic_add
@@ -125,4 +126,13 @@ fun OrderDestination?.icon(filled: Boolean = false): DrawableResource = when (th
     is OrderDestination.Pool -> if (filled) Res.drawable.ic_pool_filled else Res.drawable.ic_pool
     is OrderDestination.Bar -> if (filled) Res.drawable.ic_local_bar_filled else Res.drawable.ic_local_bar
     OrderDestination.Other, null -> if (filled) Res.drawable.ic_room_service_filled else Res.drawable.ic_room_service
+}
+
+/** The icon of a kind of destination, as the destination picker offers it. */
+fun DestinationKind.icon(filled: Boolean = false): DrawableResource = when (this) {
+    DestinationKind.TABLE -> OrderDestination.Table(0).icon(filled)
+    DestinationKind.ROOM -> OrderDestination.Room(0).icon(filled)
+    DestinationKind.POOL -> OrderDestination.Pool().icon(filled)
+    DestinationKind.BAR -> OrderDestination.Bar().icon(filled)
+    DestinationKind.OTHER -> OrderDestination.Other.icon(filled)
 }

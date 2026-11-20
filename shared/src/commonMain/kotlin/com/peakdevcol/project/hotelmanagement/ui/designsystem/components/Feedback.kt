@@ -15,6 +15,8 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,6 +80,14 @@ fun Banner(
         if (actionText != null && onAction != null) {
             MajesticButton(text = actionText, onClick = onAction, style = ButtonStyle.Text)
         }
+    }
+}
+
+/** Something is being read. It takes the space it is given and centers itself in it. */
+@Composable
+fun MajesticLoading(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(color = MajesticTheme.colors.primary, trackColor = MajesticTheme.colors.surfaceSunken)
     }
 }
 

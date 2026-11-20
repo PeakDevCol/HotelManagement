@@ -12,11 +12,13 @@ import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersEffe
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersIntent
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersViewModel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class CurrentOrdersViewModelTest : MainDispatcherTest() {
     private val orders = FakeOrderRepository().apply {
@@ -28,8 +30,11 @@ class CurrentOrdersViewModelTest : MainDispatcherTest() {
     }
     private val users = FakeUserRepository(employee("uid-1", "Ana Gómez"), employee("uid-2", "Luis Pérez"))
 
-    private fun viewModel() =
-        CurrentOrdersViewModel(ObserveOpenOrdersUseCase(FakeAuthRepository(userId = "uid-1"), orders, users))
+    // A fixed time: the real one ticks forever, and a test has to end.
+    private fun viewModel() = CurrentOrdersViewModel(
+        observeOpenOrders = ObserveOpenOrdersUseCase(FakeAuthRepository(userId = "uid-1"), orders, users),
+        minuteTicks = flowOf(Instant.parse("2026-11-15T06:00:00Z")),
+    )
 
     private fun CurrentOrdersViewModel.visibleIds() = state.value.visibleOrders.map { it.order.id }
 
@@ -69,13 +74,39 @@ class CurrentOrdersViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun filtersByStateAndGoesBackToEveryState() {
+    fun filtersByStateAndTouchingItAgainShowsEveryState() {
         val viewModel = viewModel()
 
-        viewModel.onIntent(CurrentOrdersIntent.SelectState(OrderState.CLOSED))
+        viewModel.onIntent(CurrentOrdersIntent.ToggleState(OrderState.CLOSED))
         assertEquals(listOf("mine-closed"), viewModel.visibleIds())
 
-        viewModel.onIntent(CurrentOrdersIntent.SelectState(null))
+        viewModel.onIntent(CurrentOrdersIntent.ToggleState(OrderState.CLOSED))
+        assertEquals(3, viewModel.visibleIds().size)
+    }
+
+    @Test
+    fun eachFilterSaysHowManyOrdersItWouldShow() {
+        val viewModel = viewModel()
+        viewModel.onIntent(CurrentOrdersIntent.SelectOwner(OrderOwnerFilter.MINE))
+
+        val state = viewModel.state.value
+        assertEquals(3, state.countWith(state.filter.copy(owner = OrderOwnerFilter.ALL)))
+        assertEquals(2, state.countWith(state.filter.copy(owner = OrderOwnerFilter.MINE)))
+        assertEquals(1, state.countWith(state.filter.copy(state = OrderState.IN_PROGRESS)))
+        assertEquals(1, state.countWith(state.filter.copy(state = OrderState.CLOSED)))
+    }
+
+    @Test
+    fun searchesByWhoTookTheOrderAndClosingTheSearchShowsThemAll() {
+        val viewModel = viewModel()
+        viewModel.onIntent(CurrentOrdersIntent.OpenSearch)
+        assertTrue(viewModel.state.value.isSearchOpen)
+
+        viewModel.onIntent(CurrentOrdersIntent.Search("luis"))
+        assertEquals(listOf("other-open"), viewModel.visibleIds())
+
+        viewModel.onIntent(CurrentOrdersIntent.CloseSearch)
+        assertFalse(viewModel.state.value.isSearchOpen)
         assertEquals(3, viewModel.visibleIds().size)
     }
 
@@ -83,9 +114,34 @@ class CurrentOrdersViewModelTest : MainDispatcherTest() {
     fun openingAnOrderNavigatesToItsDetail() = runTest {
         val viewModel = viewModel()
 
-        viewModel.onIntent(CurrentOrdersIntent.OpenOrder("other-open"))
+        viewModel.onIntent(CurrentOrdersIntent.OpenOrder("other-open", besideList = false))
 
         assertEquals(CurrentOrdersEffect.NavigateToOrder("other-open"), viewModel.effects.first())
+    }
+
+    @Test
+    fun onWideWindowsTheOrderOpensBesideTheList() {
+        val viewModel = viewModel()
+
+        viewModel.onIntent(CurrentOrdersIntent.OpenOrder("other-open", besideList = true))
+
+        assertEquals("other-open", viewModel.state.value.selectedOrderId)
+    }
+
+    @Test
+    fun newOrderOpensItsScreen() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onIntent(CurrentOrdersIntent.NewOrder)
+
+        assertEquals(CurrentOrdersEffect.NavigateToNewOrder, viewModel.effects.first())
+    }
+
+    @Test
+    fun countsTheOrdersWaitingToBeSent() {
+        orders.openOrders.value += order("offline", isPendingToSend = true, createdAt = "2026-11-15T05:00:00Z")
+
+        assertEquals(1, viewModel().state.value.pendingToSendCount)
     }
 
     @Test

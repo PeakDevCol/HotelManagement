@@ -107,4 +107,26 @@ class LoginViewModelTest : MainDispatcherTest() {
 
         assertEquals(LoginMessage.PasswordEmailFailed, viewModel.state.value.message)
     }
+
+    @Test
+    fun thePasswordCanBeShownAndHiddenAgain() {
+        assertFalse(viewModel.state.value.isPasswordVisible)
+
+        viewModel.onIntent(LoginIntent.TogglePasswordVisibility)
+        assertTrue(viewModel.state.value.isPasswordVisible)
+
+        viewModel.onIntent(LoginIntent.TogglePasswordVisibility)
+        assertFalse(viewModel.state.value.isPasswordVisible)
+    }
+
+    @Test
+    fun theMessageGoesAwayWhenAFieldChanges() {
+        type("juan@hotel.co")
+        viewModel.onIntent(LoginIntent.ForgotPasswordClick)
+        assertEquals(LoginMessage.PasswordEmailRequested, viewModel.state.value.message)
+
+        viewModel.onIntent(LoginIntent.EmailChange("juan@hotel.com"))
+
+        assertNull(viewModel.state.value.message)
+    }
 }

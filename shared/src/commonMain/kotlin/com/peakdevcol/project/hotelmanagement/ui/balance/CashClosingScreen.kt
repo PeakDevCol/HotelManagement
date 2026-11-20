@@ -3,34 +3,19 @@ package com.peakdevcol.project.hotelmanagement.ui.balance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.CashClosing
 import com.peakdevcol.project.hotelmanagement.domain.model.CashClosingDraft
@@ -44,6 +29,7 @@ import com.peakdevcol.project.hotelmanagement.resources.cash_closing_cash_sales
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_cash_tips
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_confirm_message
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_confirm_title
+import com.peakdevcol.project.hotelmanagement.resources.cash_closing_count_title
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_counted
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_difference_none
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_difference_over
@@ -54,6 +40,7 @@ import com.peakdevcol.project.hotelmanagement.resources.cash_closing_error_no_co
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_error_not_allowed
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_error_note
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_error_note_long
+import com.peakdevcol.project.hotelmanagement.resources.cash_closing_error_title
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_error_type
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_error_unknown
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_expected
@@ -64,7 +51,7 @@ import com.peakdevcol.project.hotelmanagement.resources.cash_closing_payment_cou
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_recent
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_recent_amounts
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_recent_empty
-import com.peakdevcol.project.hotelmanagement.resources.cash_closing_recent_line
+import com.peakdevcol.project.hotelmanagement.resources.cash_closing_recent_meta
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_save
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_saved
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_since_previous
@@ -76,13 +63,34 @@ import com.peakdevcol.project.hotelmanagement.resources.cash_closing_type_daily
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_type_hint
 import com.peakdevcol.project.hotelmanagement.resources.cash_closing_type_manual
 import com.peakdevcol.project.hotelmanagement.resources.order_error_no_session
-import com.peakdevcol.project.hotelmanagement.ui.components.LoadingOverlay
-import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
-import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
-import com.peakdevcol.project.hotelmanagement.ui.currentorders.CenteredMessage
+import com.peakdevcol.project.hotelmanagement.resources.retry
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.employeeNameOrUnknown
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.AmountRow
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Banner
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.BannerTone
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ButtonSize
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ConfirmDialog
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.EmptyState
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.FieldLabel
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListDivider
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListGroup
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticLoading
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTextField
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTopBar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MoneyField
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SectionCard
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SectionLabel
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SegmentedControl
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcons
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSizes
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
+import com.peakdevcol.project.hotelmanagement.ui.main.AppMessagesHost
+import com.peakdevcol.project.hotelmanagement.ui.main.LocalAppMessages
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.absoluteValue
@@ -92,36 +100,46 @@ import kotlin.time.Instant
 @Composable
 fun CashClosingScreen(onBack: () -> Unit, viewModel: CashClosingViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val messages = LocalAppMessages.current
 
     LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect -> snackbarHostState.showSnackbar(effect.message()) }
+        viewModel.effects.collect { effect -> messages.show(effect.message()) }
     }
 
+    CashClosingContent(state = state, onIntent = viewModel::onIntent, onBack = onBack)
+}
+
+@Composable
+fun CashClosingContent(state: CashClosingState, onIntent: (CashClosingIntent) -> Unit, onBack: () -> Unit) {
+    val overview = state.overview
+    val loadError = state.loadError
     Scaffold(
-        topBar = { ScreenTopBar(title = stringResource(Res.string.cash_closing_title), onBack = onBack) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = { MajesticTopBar(title = stringResource(Res.string.cash_closing_title), onBack = onBack) },
+        snackbarHost = { AppMessagesHost() },
+        containerColor = MajesticTheme.colors.surface,
     ) { padding ->
-        val overview = state.overview
-        val loadError = state.loadError
         when {
-            overview == null && loadError != null -> CenteredMessage(
+            overview == null && loadError != null -> EmptyState(
+                icon = MajesticIcons.error,
+                title = stringResource(Res.string.cash_closing_error_title),
                 message = stringResource(loadError.messageRes()),
+                actionText = stringResource(Res.string.retry),
+                onAction = { onIntent(CashClosingIntent.Reload) },
                 modifier = Modifier.padding(padding),
-                onRetry = { viewModel.onIntent(CashClosingIntent.Reload) },
             )
-            overview == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            else -> Column(
-                modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    loadError?.let { Text(stringResource(it.messageRes()), color = MaterialTheme.colorScheme.error) }
+            overview == null -> MajesticLoading(Modifier.padding(padding))
+            else -> Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = MajesticSizes.content)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(MajesticSpacing.space4),
+                    verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
+                ) {
+                    loadError?.let { Banner(tone = BannerTone.Danger, message = stringResource(it.messageRes())) }
                     ExpectedCash(overview.draft)
-                    ClosingInput(state = state, onIntent = viewModel::onIntent)
-                    HorizontalDivider()
+                    ClosingInput(state = state, onIntent = onIntent)
                     RecentClosings(closings = overview.recentClosings, employeeNames = state.employeeNames)
                 }
             }
@@ -131,172 +149,137 @@ fun CashClosingScreen(onBack: () -> Unit, viewModel: CashClosingViewModel = koin
     val draft = state.overview?.draft
     val counted = state.countedCash
     if (state.isConfirming && draft != null && counted != null) {
-        AlertDialog(
-            onDismissRequest = { viewModel.onIntent(CashClosingIntent.DismissConfirmation) },
-            title = { Text(stringResource(Res.string.cash_closing_confirm_title)) },
-            text = { Text(stringResource(Res.string.cash_closing_confirm_message, formatPesos(draft.expectedCash), formatPesos(counted))) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.onIntent(CashClosingIntent.ConfirmSave) }) {
-                    Text(stringResource(Res.string.cash_closing_save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.onIntent(CashClosingIntent.DismissConfirmation) }) {
-                    Text(stringResource(Res.string.cancel))
-                }
-            },
+        ConfirmDialog(
+            title = stringResource(Res.string.cash_closing_confirm_title),
+            message = stringResource(Res.string.cash_closing_confirm_message, formatPesos(draft.expectedCash), formatPesos(counted)),
+            confirmText = stringResource(Res.string.cash_closing_save),
+            dismissText = stringResource(Res.string.cancel),
+            onConfirm = { onIntent(CashClosingIntent.ConfirmSave) },
+            onDismiss = { onIntent(CashClosingIntent.DismissConfirmation) },
         )
     }
-
-    if (state.isSaving || (state.isLoading && state.overview != null)) LoadingOverlay()
 }
 
+/** What must be in the drawer since the last closing, and the transfers, which are not in it. */
 @Composable
 private fun ExpectedCash(draft: CashClosingDraft) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(Res.string.cash_closing_number, draft.number), style = MaterialTheme.typography.titleMedium)
-            val lastClosing = draft.lastClosing
-            Hint(
-                if (lastClosing == null) {
-                    stringResource(Res.string.cash_closing_since_start)
-                } else {
-                    stringResource(Res.string.cash_closing_since_previous, lastClosing.number, lastClosing.createdAt.formatted())
-                },
-            )
-            Hint(stringResource(Res.string.cash_closing_payment_count, draft.payments.size))
-            HorizontalDivider()
-            AmountLine(stringResource(Res.string.cash_closing_cash_sales), draft.cashSales)
-            AmountLine(stringResource(Res.string.cash_closing_cash_tips), draft.cashTips)
-            AmountLine(stringResource(Res.string.cash_closing_expected), draft.expectedCash, emphasized = true)
-            AmountLine(stringResource(Res.string.cash_closing_transfers), draft.transferTotal)
-        }
+    val lastClosing = draft.lastClosing
+    SectionCard(
+        title = stringResource(Res.string.cash_closing_number, draft.number),
+        help = listOf(
+            if (lastClosing == null) {
+                stringResource(Res.string.cash_closing_since_start)
+            } else {
+                stringResource(Res.string.cash_closing_since_previous, lastClosing.number, lastClosing.createdAt.formatted())
+            },
+            pluralStringResource(Res.plurals.cash_closing_payment_count, draft.payments.size, draft.payments.size),
+        ).joinToString("\n"),
+    ) {
+        AmountRow(label = stringResource(Res.string.cash_closing_cash_sales), amount = draft.cashSales)
+        AmountRow(label = stringResource(Res.string.cash_closing_cash_tips), amount = draft.cashTips)
+        ListDivider()
+        AmountRow(label = stringResource(Res.string.cash_closing_expected), amount = draft.expectedCash, emphasized = true)
+        AmountRow(label = stringResource(Res.string.cash_closing_transfers), amount = draft.transferTotal)
     }
 }
 
 @Composable
 private fun ClosingInput(state: CashClosingState, onIntent: (CashClosingIntent) -> Unit) {
     val error = state.inputError
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(Res.string.cash_closing_type), style = MaterialTheme.typography.titleSmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CashClosingType.entries.forEach { type ->
-                FilterChip(
-                    selected = state.type == type,
-                    onClick = { onIntent(CashClosingIntent.SelectType(type)) },
-                    label = { Text(stringResource(type.label())) },
-                )
-            }
+    SectionCard(title = stringResource(Res.string.cash_closing_count_title)) {
+        Column(verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space2)) {
+            FieldLabel(text = stringResource(Res.string.cash_closing_type))
+            // No type comes marked: the choice decides whether the day counts as closed.
+            SegmentedControl(
+                options = CashClosingType.entries,
+                selected = state.type,
+                onSelect = { onIntent(CashClosingIntent.SelectType(it)) },
+                label = { stringResource(it.label()) },
+            )
+            Text(
+                text = stringResource(if (error == CashClosingError.MissingType) Res.string.cash_closing_error_type else Res.string.cash_closing_type_hint),
+                style = MajesticTheme.typography.caption,
+                color = if (error == CashClosingError.MissingType) MajesticTheme.colors.danger else MajesticTheme.colors.inkMuted,
+            )
         }
-        Hint(stringResource(Res.string.cash_closing_type_hint))
-        if (error == CashClosingError.MissingType) ErrorText(stringResource(Res.string.cash_closing_error_type))
-
-        OutlinedTextField(
-            value = state.countedText,
-            onValueChange = { onIntent(CashClosingIntent.CountedChange(it)) },
-            label = { Text(stringResource(Res.string.cash_closing_counted)) },
-            prefix = { Text("$") },
-            isError = error == CashClosingError.InvalidCount,
-            supportingText = if (error == CashClosingError.InvalidCount) {
-                { Text(stringResource(Res.string.cash_closing_error_count)) }
-            } else {
-                null
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        MoneyField(
+            digits = state.countedText,
+            onDigitsChange = { onIntent(CashClosingIntent.CountedChange(it)) },
+            label = stringResource(Res.string.cash_closing_counted),
+            error = if (error == CashClosingError.InvalidCount) stringResource(Res.string.cash_closing_error_count) else null,
             modifier = Modifier.fillMaxWidth(),
         )
-        state.difference?.let { difference -> DifferenceText(difference) }
-
+        state.difference?.let { DifferenceBanner(it) }
         val noteRequired = state.difference?.let { it != 0L } == true
-        OutlinedTextField(
+        MajesticTextField(
             value = state.note,
             onValueChange = { onIntent(CashClosingIntent.NoteChange(it)) },
-            label = { Text(stringResource(if (noteRequired) Res.string.cash_closing_note_required else Res.string.cash_closing_note)) },
-            isError = error == CashClosingError.MissingNote || error == CashClosingError.NoteTooLong,
-            supportingText = when (error) {
-                CashClosingError.MissingNote -> {
-                    { Text(stringResource(Res.string.cash_closing_error_note)) }
-                }
-                CashClosingError.NoteTooLong -> {
-                    { Text(stringResource(Res.string.cash_closing_error_note_long)) }
-                }
+            label = stringResource(if (noteRequired) Res.string.cash_closing_note_required else Res.string.cash_closing_note),
+            error = when (error) {
+                CashClosingError.MissingNote -> stringResource(Res.string.cash_closing_error_note)
+                CashClosingError.NoteTooLong -> stringResource(Res.string.cash_closing_error_note_long)
                 else -> null
             },
+            singleLine = false,
             minLines = 2,
             modifier = Modifier.fillMaxWidth(),
         )
-        PrimaryButton(
+        MajesticButton(
             text = stringResource(Res.string.cash_closing_save),
             onClick = { onIntent(CashClosingIntent.RequestSave) },
-            enabled = !state.isSaving && !state.isLoading,
+            size = ButtonSize.Large,
+            enabled = !state.isLoading,
+            loading = state.isSaving,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
+/** RF-BAL-06: with a difference the note becomes required. Said in words, never only with a color. */
 @Composable
-private fun DifferenceText(difference: Long) {
-    val text = when {
-        difference == 0L -> stringResource(Res.string.cash_closing_difference_none)
-        difference > 0 -> stringResource(Res.string.cash_closing_difference_over, formatPesos(difference))
-        else -> stringResource(Res.string.cash_closing_difference_short, formatPesos(difference.absoluteValue))
+private fun DifferenceBanner(difference: Long) {
+    when {
+        difference == 0L -> Banner(tone = BannerTone.Info, icon = MajesticIcons.checkCircle, message = stringResource(Res.string.cash_closing_difference_none))
+        difference > 0 -> Banner(tone = BannerTone.Warning, icon = MajesticIcons.warning, message = stringResource(Res.string.cash_closing_difference_over, formatPesos(difference)))
+        else -> Banner(tone = BannerTone.Danger, icon = MajesticIcons.error, message = stringResource(Res.string.cash_closing_difference_short, formatPesos(difference.absoluteValue)))
     }
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = if (difference == 0L) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-    )
 }
 
 @Composable
 private fun RecentClosings(closings: List<CashClosing>, employeeNames: Map<String, String>) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(Res.string.cash_closing_recent), style = MaterialTheme.typography.titleMedium)
-        if (closings.isEmpty()) Hint(stringResource(Res.string.cash_closing_recent_empty))
-        closings.forEach { closing ->
-            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = stringResource(
-                        Res.string.cash_closing_recent_line,
-                        stringResource(Res.string.cash_closing_number, closing.number),
-                        stringResource(closing.type.label()),
-                        closing.createdAt.formatted(),
-                    ),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Hint(
-                    stringResource(
-                        Res.string.cash_closing_recent_amounts,
-                        formatPesos(closing.expectedCash),
-                        formatPesos(closing.countedCash),
-                        formatPesos(closing.difference),
-                    ),
-                )
-                Hint(employeeNameOrUnknown(employeeNames[closing.closedBy]))
-                if (closing.note.isNotEmpty()) Hint(closing.note)
+    Column(verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space2)) {
+        SectionLabel(text = stringResource(Res.string.cash_closing_recent))
+        if (closings.isEmpty()) {
+            Text(text = stringResource(Res.string.cash_closing_recent_empty), style = MajesticTheme.typography.body, color = MajesticTheme.colors.inkMuted)
+            return@Column
+        }
+        ListGroup {
+            closings.forEachIndexed { index, closing ->
+                if (index > 0) ListDivider()
+                ClosingRow(closing = closing, employeeName = employeeNameOrUnknown(employeeNames[closing.closedBy]))
             }
-            HorizontalDivider()
         }
     }
 }
 
 @Composable
-private fun AmountLine(title: String, amount: Long, emphasized: Boolean = false) {
-    val style = if (emphasized) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, style = style, modifier = Modifier.weight(1f))
-        Text(formatPesos(amount), style = style)
+private fun ClosingRow(closing: CashClosing, employeeName: String) {
+    val typography = MajesticTheme.typography
+    val colors = MajesticTheme.colors
+    Column(modifier = Modifier.fillMaxWidth().padding(MajesticSpacing.space4), verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space1)) {
+        Text(
+            text = listOf(stringResource(Res.string.cash_closing_number, closing.number), stringResource(closing.type.label())).joinToString(" · "),
+            style = typography.bodyLarge,
+            color = colors.ink,
+        )
+        Text(
+            text = stringResource(Res.string.cash_closing_recent_amounts, formatPesos(closing.expectedCash), formatPesos(closing.countedCash), formatPesos(closing.difference)),
+            style = typography.body,
+            color = colors.inkMuted,
+        )
+        Text(text = stringResource(Res.string.cash_closing_recent_meta, closing.createdAt.formatted(), employeeName), style = typography.caption, color = colors.inkMuted)
+        if (closing.note.isNotEmpty()) Text(text = closing.note, style = typography.caption, color = colors.inkMuted)
     }
-}
-
-@Composable
-private fun Hint(text: String) {
-    Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-
-@Composable
-private fun ErrorText(text: String) {
-    Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
 }
 
 private fun Instant?.formatted(): String = this?.let(::formatBogotaDateTime) ?: "—"

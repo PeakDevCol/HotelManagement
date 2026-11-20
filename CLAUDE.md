@@ -48,7 +48,9 @@ Capas dentro de `shared`, con las dependencias apuntando hacia el dominio: `pres
   - Las grillas usan `GridCells.Adaptive` y los grupos de chips o botones, `FlowRow`.
   - Una fila que se desplaza de lado nunca se encoge en alto.
 - Todo componente nuevo del sistema se agrega a `DesignSystemLayoutTest` (`shared/src/jvmTest`), que lo revisa a 320, 360 y 720 dp y con la letra al 130 %.
-- Para revisar los componentes a ojo: `MAJESTIC_SNAPSHOTS=/tmp/majestic ./gradlew :shared:jvmTest --tests '*DesignSystemLayoutTest*'` guarda una imagen de cada uno, en tema claro y oscuro.
+- Toda pantalla nueva se agrega a `ScreensLayoutTest`, con datos largos a propósito, a 320, 360, 720 y 1.024 dp. Para eso cada pantalla tiene su `…Content(state, onIntent)` sin ViewModel.
+- La navegación es por área (RF-AUTH-05): una sección nueva entra en `AppSection` y en la barra de su área (`navigationFor`), no en un menú.
+- Para revisarlos a ojo: `MAJESTIC_SNAPSHOTS=/tmp/majestic ./gradlew :shared:jvmTest --tests '*LayoutTest*'` guarda una imagen de cada componente y de cada pantalla, en tema claro y oscuro.
 
 ## Principios SOLID
 - **Responsabilidad única:** una clase, una razón para cambiar. Un caso de uso por acción, un ViewModel por pantalla y un repositorio por agregado (pedidos, pagos, habitaciones, etc.).

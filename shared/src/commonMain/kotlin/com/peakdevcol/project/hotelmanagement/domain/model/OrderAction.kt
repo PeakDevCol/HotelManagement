@@ -28,9 +28,15 @@ fun OrderState.after(action: OrderAction): OrderState? = when (this) {
 fun OrderAction.isAllowedFor(userType: UserType): Boolean =
     this != OrderAction.CANCEL || userType == UserType.ADMIN
 
-/** The actions an employee of this role can take on an order in this state, in the order they are offered. */
+/**
+ * The actions an employee of this role can take on an order in this state, in the order they are
+ * offered. Charging is also offered in progress: it closes the order and then charges it (RF-CUR-05).
+ */
 fun OrderState.actionsFor(userType: UserType): List<OrderAction> =
-    OrderAction.entries.filter { action -> after(action) != null && action.isAllowedFor(userType) }
+    OrderAction.entries.filter { action -> isOffered(action) && action.isAllowedFor(userType) }
+
+private fun OrderState.isOffered(action: OrderAction): Boolean =
+    after(action) != null || (this == OrderState.IN_PROGRESS && action == OrderAction.PAY)
 
 enum class PaymentMethod {
     CASH,

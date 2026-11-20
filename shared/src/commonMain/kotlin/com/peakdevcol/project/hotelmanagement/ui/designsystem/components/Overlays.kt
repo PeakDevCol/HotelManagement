@@ -15,6 +15,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +50,12 @@ fun MajesticBottomSheet(
         },
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(start = MajesticSpacing.space6, end = MajesticSpacing.space6, bottom = MajesticSpacing.space6),
+            // A long task, like the filters of the balance, scrolls inside the sheet.
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(start = MajesticSpacing.space6, end = MajesticSpacing.space6, bottom = MajesticSpacing.space6),
             verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
         ) {
             Column {
@@ -92,6 +99,22 @@ fun ConfirmDialog(
     )
 }
 
+/** A short task as a bottom sheet on the phone, or as a dialog when [asDialog], on wide windows. */
+@Composable
+fun TaskSheet(
+    title: String,
+    onDismiss: () -> Unit,
+    asDialog: Boolean,
+    subtitle: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    if (asDialog) {
+        TaskDialog(title = title, onDismiss = onDismiss, subtitle = subtitle, content = content)
+    } else {
+        MajesticBottomSheet(title = title, onDismiss = onDismiss, subtitle = subtitle, content = content)
+    }
+}
+
 /** A dialog version of a short task for wide windows, with the same title and content as the sheet. */
 @Composable
 fun TaskDialog(
@@ -111,7 +134,14 @@ fun TaskDialog(
                 if (subtitle != null) Text(text = subtitle, style = MajesticTheme.typography.body, color = colors.inkMuted)
             }
         },
-        text = { Column(verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4), horizontalAlignment = Alignment.Start, content = content) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
+                horizontalAlignment = Alignment.Start,
+                content = content,
+            )
+        },
         confirmButton = {},
     )
 }

@@ -18,22 +18,22 @@ import com.peakdevcol.project.hotelmanagement.fakes.FakePendingAdditionRepositor
 import com.peakdevcol.project.hotelmanagement.fakes.FakeUserRepository
 import com.peakdevcol.project.hotelmanagement.fakes.employee
 import com.peakdevcol.project.hotelmanagement.fakes.order
-import com.peakdevcol.project.hotelmanagement.ui.home.HomeIntent
-import com.peakdevcol.project.hotelmanagement.ui.home.HomeViewModel
-import com.peakdevcol.project.hotelmanagement.ui.home.LogOutDialog
+import com.peakdevcol.project.hotelmanagement.ui.main.LogOutDialog
+import com.peakdevcol.project.hotelmanagement.ui.main.MainIntent
+import com.peakdevcol.project.hotelmanagement.ui.main.MainViewModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class HomeViewModelTest : MainDispatcherTest() {
+class MainViewModelTest : MainDispatcherTest() {
     private var auth = FakeAuthRepository(userId = "uid-1")
     private val orders = FakeOrderRepository()
     private val users = FakeUserRepository(employee("uid-1", "Ana Gómez"), employee("admin", "Juan Felipe", type = UserType.ADMIN))
     private val pendingAdditions = FakePendingAdditionRepository()
 
     private fun viewModel() =
-        HomeViewModel(
+        MainViewModel(
             observePendingOrderCount = ObservePendingOrderCountUseCase(auth, orders),
             observeAccess = ObserveAccessUseCase(auth, users),
             observeRejectedAdditions = ObserveRejectedAdditionsUseCase(pendingAdditions),
@@ -56,7 +56,7 @@ class HomeViewModelTest : MainDispatcherTest() {
     fun loggingOutAsksForConfirmationFirst() {
         val viewModel = viewModel()
 
-        viewModel.onIntent(HomeIntent.LogOutClick)
+        viewModel.onIntent(MainIntent.LogOutClick)
 
         assertEquals(LogOutDialog.Confirmation, viewModel.state.value.logOutDialog)
         assertEquals("uid-1", auth.currentUserId())
@@ -65,9 +65,9 @@ class HomeViewModelTest : MainDispatcherTest() {
     @Test
     fun confirmingClosesTheSession() {
         val viewModel = viewModel()
-        viewModel.onIntent(HomeIntent.LogOutClick)
+        viewModel.onIntent(MainIntent.LogOutClick)
 
-        viewModel.onIntent(HomeIntent.LogOutConfirm)
+        viewModel.onIntent(MainIntent.LogOutConfirm)
 
         assertNull(auth.currentUserId())
         assertNull(viewModel.state.value.logOutDialog)
@@ -76,9 +76,9 @@ class HomeViewModelTest : MainDispatcherTest() {
     @Test
     fun dismissingKeepsTheSession() {
         val viewModel = viewModel()
-        viewModel.onIntent(HomeIntent.LogOutClick)
+        viewModel.onIntent(MainIntent.LogOutClick)
 
-        viewModel.onIntent(HomeIntent.LogOutDialogDismiss)
+        viewModel.onIntent(MainIntent.LogOutDialogDismiss)
 
         assertNull(viewModel.state.value.logOutDialog)
         assertEquals("uid-1", auth.currentUserId())
@@ -89,7 +89,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         orders.pendingOrders.value = mapOf("uid-1" to 1)
         val viewModel = viewModel()
 
-        viewModel.onIntent(HomeIntent.LogOutClick)
+        viewModel.onIntent(MainIntent.LogOutClick)
 
         assertEquals(LogOutDialog.PendingOrders, viewModel.state.value.logOutDialog)
     }
@@ -97,17 +97,17 @@ class HomeViewModelTest : MainDispatcherTest() {
     @Test
     fun anOrderThatBecomesPendingAfterTheConfirmationStillBlocks() {
         val viewModel = viewModel()
-        viewModel.onIntent(HomeIntent.LogOutClick)
+        viewModel.onIntent(MainIntent.LogOutClick)
         orders.pendingOrders.value = mapOf("uid-1" to 1)
 
-        viewModel.onIntent(HomeIntent.LogOutConfirm)
+        viewModel.onIntent(MainIntent.LogOutConfirm)
 
         assertEquals(LogOutDialog.PendingOrders, viewModel.state.value.logOutDialog)
         assertEquals("uid-1", auth.currentUserId())
     }
 
     @Test
-    fun theMenuWorksWhenThePendingOrdersCannotBeRead() {
+    fun theAppWorksWhenThePendingOrdersCannotBeRead() {
         orders.pendingOrdersFailure = IllegalStateException("permission denied")
 
         assertEquals(0, viewModel().state.value.pendingOrderCount)
@@ -142,7 +142,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         val viewModel = viewModel()
         assertEquals(1, viewModel.state.value.rejectedAdditions.size)
 
-        viewModel.onIntent(HomeIntent.RejectedAdditionsRead)
+        viewModel.onIntent(MainIntent.RejectedAdditionsRead)
 
         assertTrue(viewModel.state.value.rejectedAdditions.isEmpty())
         assertTrue(pendingAdditions.additions.value.isEmpty())
@@ -153,21 +153,24 @@ class HomeViewModelTest : MainDispatcherTest() {
         pendingAdditions.additions.value = listOf(addedOffline)
         orders.openOrders.value = listOf(order("order-1", products = listOf(soda), isPendingToSend = true))
         val viewModel = viewModel()
-        viewModel.onIntent(HomeIntent.LogOutClick)
+        viewModel.onIntent(MainIntent.LogOutClick)
 
-        viewModel.onIntent(HomeIntent.LogOutConfirm)
+        viewModel.onIntent(MainIntent.LogOutConfirm)
 
         assertEquals(LogOutDialog.PendingOrders, viewModel.state.value.logOutDialog)
         assertEquals("uid-1", auth.currentUserId())
     }
 
     @Test
-    fun theMenuShowsWhatTheRoleAllows() {
-        assertEquals(listOf(AppSection.ADD_ORDER, AppSection.CURRENT_ORDERS), viewModel().state.value.sections)
+    fun theNavigationShowsWhatTheRoleAllows() {
+        val employeeState = viewModel().state.value
+        assertEquals("Ana Gómez", employeeState.employee?.fullName)
+        assertEquals(listOf(AppSection.ORDERS), employeeState.navigation?.sections)
 
         auth = FakeAuthRepository(userId = "admin")
 
-        assertTrue(AppSection.EMPLOYEES in viewModel().state.value.sections)
-        assertTrue(AppSection.INVENTORY in viewModel().state.value.sections)
+        val sections = viewModel().state.value.navigation?.sections.orEmpty()
+        assertTrue(AppSection.EMPLOYEES in sections)
+        assertTrue(AppSection.INVENTORY in sections)
     }
 }

@@ -11,22 +11,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupError
 import com.peakdevcol.project.hotelmanagement.domain.model.SettingsError
@@ -35,6 +27,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.formatTimeOfDay
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.employee_error_network
 import com.peakdevcol.project.hotelmanagement.resources.employee_error_unknown
+import com.peakdevcol.project.hotelmanagement.resources.error_check_connection
 import com.peakdevcol.project.hotelmanagement.resources.menu_settings
 import com.peakdevcol.project.hotelmanagement.resources.order_error_no_session
 import com.peakdevcol.project.hotelmanagement.resources.save
@@ -57,102 +50,125 @@ import com.peakdevcol.project.hotelmanagement.resources.settings_minute
 import com.peakdevcol.project.hotelmanagement.resources.settings_not_allowed
 import com.peakdevcol.project.hotelmanagement.resources.settings_saved
 import com.peakdevcol.project.hotelmanagement.resources.settings_time_error
-import com.peakdevcol.project.hotelmanagement.ui.components.LoadingOverlay
-import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
-import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
-import com.peakdevcol.project.hotelmanagement.ui.currentorders.CenteredMessage
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.employeeNameOrUnknown
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Banner
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.BannerTone
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ButtonStyle
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.EmptyState
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticLoading
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTextField
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTopBar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SectionCard
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcons
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSizes
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
+import com.peakdevcol.project.hotelmanagement.ui.main.AppMessagesHost
+import com.peakdevcol.project.hotelmanagement.ui.main.LocalAppMessages
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+/** RF-EMP-06 and RF-EMP-07: the parameters of the hotel and the manual backup. */
 @Composable
-fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val messages = LocalAppMessages.current
 
     LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect -> snackbarHostState.showSnackbar(effect.message()) }
+        viewModel.effects.collect { effect -> messages.show(effect.message()) }
     }
 
+    SettingsContent(state = state, onIntent = viewModel::onIntent)
+}
+
+@Composable
+fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
     Scaffold(
-        topBar = { ScreenTopBar(title = stringResource(Res.string.menu_settings), onBack = onBack) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = { MajesticTopBar(title = stringResource(Res.string.menu_settings)) },
+        snackbarHost = { AppMessagesHost() },
+        containerColor = MajesticTheme.colors.surface,
     ) { padding ->
         when {
-            state.isLoading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            state.loadFailed -> CenteredMessage(stringResource(Res.string.settings_error), Modifier.padding(padding))
-            else -> Column(
-                modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(modifier = Modifier.widthIn(max = 480.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    OperationalDayStart(state = state, onIntent = viewModel::onIntent)
-                    HorizontalDivider()
-                    Backup(state = state, onIntent = viewModel::onIntent)
+            state.isLoading -> MajesticLoading(Modifier.padding(padding))
+            state.loadFailed -> EmptyState(
+                icon = MajesticIcons.error,
+                title = stringResource(Res.string.settings_error),
+                message = stringResource(Res.string.error_check_connection),
+                modifier = Modifier.padding(padding),
+            )
+            else -> Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = MajesticSizes.content)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(MajesticSpacing.space4),
+                    verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
+                ) {
+                    OperationalDayStart(state = state, onIntent = onIntent)
+                    Backup(state = state, onIntent = onIntent)
                 }
             }
         }
     }
-
-    if (state.isWorking) LoadingOverlay()
 }
 
-/** RF-EMP-06: the parameter of the v1.0. The following versions add theirs to this screen. */
+/** RF-EMP-06: when a day ends, so the sales after midnight count for the day before. */
 @Composable
 private fun OperationalDayStart(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
     val detail = state.detail ?: return
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(Res.string.settings_day_start_title), style = MaterialTheme.typography.titleMedium)
-        Hint(stringResource(Res.string.settings_day_start_hint))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    SectionCard(title = stringResource(Res.string.settings_day_start_title), help = stringResource(Res.string.settings_day_start_hint)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(MajesticSpacing.space3)) {
             TimeField(
                 value = state.hourText,
                 label = stringResource(Res.string.settings_hour),
-                isError = state.showTimeError,
                 onChange = { onIntent(SettingsIntent.HourChange(it)) },
+                hasError = state.showTimeError,
                 modifier = Modifier.weight(1f),
             )
             TimeField(
                 value = state.minuteText,
                 label = stringResource(Res.string.settings_minute),
-                isError = state.showTimeError,
                 onChange = { onIntent(SettingsIntent.MinuteChange(it)) },
+                hasError = state.showTimeError,
                 modifier = Modifier.weight(1f),
             )
         }
         if (state.showTimeError) {
-            Text(
-                text = stringResource(Res.string.settings_time_error),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
+            Text(text = stringResource(Res.string.settings_time_error), style = MajesticTheme.typography.caption, color = MajesticTheme.colors.danger)
         }
         Text(
             text = stringResource(Res.string.settings_day_start_preview, formatTimeOfDay(detail.settings.operationalDayStartMinutes)),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MajesticTheme.typography.body,
+            color = MajesticTheme.colors.ink,
         )
         detail.settings.updatedAt?.let { updatedAt ->
-            Hint(stringResource(Res.string.settings_last_change, employeeNameOrUnknown(detail.updatedByName), formatBogotaDateTime(updatedAt)))
+            Text(
+                text = stringResource(Res.string.settings_last_change, employeeNameOrUnknown(detail.updatedByName), formatBogotaDateTime(updatedAt)),
+                style = MajesticTheme.typography.caption,
+                color = MajesticTheme.colors.inkMuted,
+            )
         }
-        PrimaryButton(
+        MajesticButton(
             text = stringResource(Res.string.save),
             onClick = { onIntent(SettingsIntent.SaveOperationalDayStart) },
             enabled = !state.isWorking,
+            loading = state.isSaving,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
 @Composable
-private fun TimeField(value: String, label: String, isError: Boolean, onChange: (String) -> Unit, modifier: Modifier) {
-    OutlinedTextField(
+private fun TimeField(value: String, label: String, onChange: (String) -> Unit, hasError: Boolean, modifier: Modifier) {
+    MajesticTextField(
         value = value,
         onValueChange = onChange,
-        label = { Text(label) },
-        isError = isError,
-        singleLine = true,
+        label = label,
+        // The message goes once, under both fields; here only the red border.
+        error = if (hasError) "" else null,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = modifier,
     )
@@ -161,45 +177,35 @@ private fun TimeField(value: String, label: String, isError: Boolean, onChange: 
 /** RF-EMP-07: the backup is written by the desktop app. */
 @Composable
 private fun Backup(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(Res.string.settings_backup_title), style = MaterialTheme.typography.titleMedium)
-        if (!state.backupAvailable) {
-            Hint(stringResource(Res.string.settings_backup_only_desktop))
-            return@Column
-        }
-        Hint(stringResource(Res.string.settings_backup_hint))
-        OutlinedTextField(
+    SectionCard(
+        title = stringResource(Res.string.settings_backup_title),
+        help = stringResource(if (state.backupAvailable) Res.string.settings_backup_hint else Res.string.settings_backup_only_desktop),
+    ) {
+        if (!state.backupAvailable) return@SectionCard
+        MajesticTextField(
             value = state.backupSinceText,
             onValueChange = { onIntent(SettingsIntent.BackupSinceChange(it)) },
-            label = { Text(stringResource(Res.string.settings_backup_date)) },
-            placeholder = { Text("2026-11-01") },
-            isError = state.showBackupDateError,
-            supportingText = if (state.showBackupDateError) {
-                { Text(stringResource(Res.string.settings_backup_date_error)) }
-            } else {
-                null
-            },
-            singleLine = true,
+            label = stringResource(Res.string.settings_backup_date),
+            placeholder = BACKUP_DATE_EXAMPLE,
+            error = if (state.showBackupDateError) stringResource(Res.string.settings_backup_date_error) else null,
             modifier = Modifier.fillMaxWidth(),
         )
-        PrimaryButton(
+        MajesticButton(
             text = stringResource(Res.string.settings_backup_export),
             onClick = { onIntent(SettingsIntent.ExportBackup) },
+            style = ButtonStyle.Outline,
+            icon = MajesticIcons.backup,
             enabled = !state.isWorking,
+            loading = state.isExporting,
+            modifier = Modifier.fillMaxWidth(),
         )
         state.lastBackup?.let { backup ->
-            Text(
-                text = stringResource(Res.string.settings_backup_done, backup.documentCount, backup.filePath),
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Banner(tone = BannerTone.Info, icon = MajesticIcons.checkCircle, message = stringResource(Res.string.settings_backup_done, backup.documentCount, backup.filePath))
         }
     }
 }
 
-@Composable
-private fun Hint(text: String) {
-    Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
+private const val BACKUP_DATE_EXAMPLE = "2026-11-01"
 
 private suspend fun SettingsEffect.message(): String = when (this) {
     SettingsEffect.Saved -> getString(Res.string.settings_saved)

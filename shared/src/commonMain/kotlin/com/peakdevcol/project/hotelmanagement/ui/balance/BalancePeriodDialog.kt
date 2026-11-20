@@ -5,16 +5,17 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.peakdevcol.project.hotelmanagement.domain.model.BalancePeriod
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.balance_pick_period
 import com.peakdevcol.project.hotelmanagement.resources.cancel
 import com.peakdevcol.project.hotelmanagement.resources.dialog_accept
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ButtonStyle
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
 import org.jetbrains.compose.resources.stringResource
 
 // The picker works with the first millisecond of each day in UTC, so a day is a whole number of these.
@@ -34,20 +35,20 @@ fun BalancePeriodDialog(current: BalancePeriod, onConfirm: (firstEpochDay: Long,
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(
+            MajesticButton(
+                text = stringResource(Res.string.dialog_accept),
                 onClick = { if (start != null && end != null) onConfirm(start / MILLIS_PER_DAY, end / MILLIS_PER_DAY) },
+                style = ButtonStyle.Text,
                 enabled = start != null && end != null,
-            ) {
-                Text(stringResource(Res.string.dialog_accept))
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
+            MajesticButton(text = stringResource(Res.string.cancel), onClick = onDismiss, style = ButtonStyle.Text)
         },
     ) {
         DateRangePicker(
             state = pickerState,
-            title = { Text(stringResource(Res.string.balance_pick_period), modifier = Modifier.padding(start = 24.dp, top = 16.dp)) },
+            title = { Text(stringResource(Res.string.balance_pick_period), modifier = Modifier.padding(start = MajesticSpacing.space6, top = MajesticSpacing.space4)) },
             modifier = Modifier.weight(1f),
         )
     }

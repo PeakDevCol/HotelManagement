@@ -6,6 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +33,14 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.peakdevcol.project.hotelmanagement.resources.ds_more_options
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -68,8 +81,9 @@ fun MajesticTopBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(MajesticSizes.topBar)
             .background(colors.surface)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .height(MajesticSizes.topBar)
             .padding(horizontal = MajesticSpacing.space1),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -88,6 +102,32 @@ fun MajesticTopBar(
     }
 }
 
+/** The top bar while searching: the field takes the place of the title, and the arrow closes the search. */
+@Composable
+fun SearchTopBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    placeholder: String,
+    closeDescription: String,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MajesticTheme.colors
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(colors.surface)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .heightIn(min = MajesticSizes.topBar)
+            .padding(start = MajesticSpacing.space1, end = MajesticSpacing.space4, top = MajesticSpacing.space1, bottom = MajesticSpacing.space1),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(MajesticSpacing.space1),
+    ) {
+        MajesticIconButton(icon = MajesticIcons.arrowBack, contentDescription = closeDescription, onClick = onClose, tint = colors.ink)
+        SearchField(query = query, onQueryChange = onQueryChange, placeholder = placeholder, modifier = Modifier.weight(1f))
+    }
+}
+
 /**
  * The bottom bar of the phone: three or four destinations by area (RF-AUTH-05, RF-EMP-05). The
  * destinations share the width equally; a label that does not fit is cut with an ellipsis and
@@ -101,7 +141,12 @@ fun <T> MajesticNavigationBar(
     modifier: Modifier = Modifier,
 ) {
     val colors = MajesticTheme.colors
-    Column(modifier = modifier.fillMaxWidth().background(colors.surfaceRaised)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(colors.surfaceRaised)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)),
+    ) {
         HorizontalDivider(thickness = 1.dp, color = colors.line)
         Row(
             modifier = Modifier.fillMaxWidth().height(MajesticSizes.navigationBar).selectableGroup(),
@@ -167,6 +212,50 @@ private fun CountBadge(count: Int, modifier: Modifier = Modifier) {
     }
 }
 
+/** An action that is used little and goes in the menu of more options, like cancelling an order. */
+data class MenuAction(
+    val text: String,
+    val icon: DrawableResource,
+    val onClick: () -> Unit,
+    val destructive: Boolean = false,
+    val enabled: Boolean = true,
+)
+
+/** The "more options" button of a top bar, with the actions that do not need to be in sight. */
+@Composable
+fun MajesticOverflowMenu(actions: List<MenuAction>, modifier: Modifier = Modifier) {
+    val colors = MajesticTheme.colors
+    var expanded by remember { mutableStateOf(false) }
+    Box(modifier = modifier) {
+        MajesticIconButton(
+            icon = MajesticIcons.moreOptions,
+            contentDescription = stringResource(Res.string.ds_more_options),
+            onClick = { expanded = true },
+            tint = colors.ink,
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            shape = RoundedCornerShape(MajesticRadius.medium),
+            containerColor = colors.surfaceRaised,
+            border = BorderStroke(1.dp, colors.line),
+        ) {
+            actions.forEach { action ->
+                val content = if (action.destructive) colors.danger else colors.ink
+                DropdownMenuItem(
+                    text = { Text(text = action.text, style = MajesticTheme.typography.bodyLarge, color = content, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    leadingIcon = { MajesticIcon(icon = action.icon, contentDescription = null, tint = content) },
+                    enabled = action.enabled,
+                    onClick = {
+                        expanded = false
+                        action.onClick()
+                    },
+                )
+            }
+        }
+    }
+}
+
 /** A labelled group of destinations in the side navigation, like "Operación" or "Administración". */
 data class NavigationSection<T>(val title: String, val destinations: List<NavigationDestination<T>>)
 
@@ -191,8 +280,9 @@ fun <T> SideNavigation(
     Column(
         modifier = modifier
             .fillMaxHeight()
-            .width(if (compact) MajesticSizes.sideNavigationCompact else MajesticSizes.sideNavigation)
             .background(colors.brand)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start))
+            .width(if (compact) MajesticSizes.sideNavigationCompact else MajesticSizes.sideNavigation)
             .padding(start = MajesticSpacing.space3, top = MajesticSpacing.space6, end = MajesticSpacing.space3, bottom = MajesticSpacing.space4),
     ) {
         Row(

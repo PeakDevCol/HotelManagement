@@ -19,6 +19,7 @@ import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormViewModel
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesEffect
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesIntent
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesViewModel
+import com.peakdevcol.project.hotelmanagement.ui.employees.OpenEmployee
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -63,11 +64,22 @@ class EmployeeViewModelsTest : MainDispatcherTest() {
     fun opensTheFormToCreateOrEditAnEmployee() = runTest {
         val viewModel = list()
 
-        viewModel.onIntent(EmployeesIntent.NewEmployee)
+        viewModel.onIntent(EmployeesIntent.NewEmployee(besideList = false))
         assertEquals(EmployeesEffect.NavigateToEmployee(employeeId = null), viewModel.effects.first())
 
-        viewModel.onIntent(EmployeesIntent.OpenEmployee("waiter"))
+        viewModel.onIntent(EmployeesIntent.SelectEmployee("waiter", besideList = false))
         assertEquals(EmployeesEffect.NavigateToEmployee("waiter"), viewModel.effects.first())
+    }
+
+    @Test
+    fun onWideWindowsTheEmployeeOpensBesideTheListAndCloses() {
+        val viewModel = list()
+
+        viewModel.onIntent(EmployeesIntent.SelectEmployee("waiter", besideList = true))
+        assertEquals(OpenEmployee("waiter"), viewModel.state.value.openEmployee)
+
+        viewModel.onIntent(EmployeesIntent.CloseEmployee)
+        assertNull(viewModel.state.value.openEmployee)
     }
 
     @Test

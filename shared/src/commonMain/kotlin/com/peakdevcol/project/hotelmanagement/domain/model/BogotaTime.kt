@@ -19,6 +19,15 @@ fun formatBogotaDateTime(instant: Instant): String {
     return "${formatCalendarDate(date)}, ${formatTimeOfDay(minuteOfDay = secondOfDay / 60)}"
 }
 
+/** Only the time of a moment, in Colombian time: `7:23 p. m.`. */
+fun formatBogotaTime(instant: Instant): String {
+    val localSeconds = instant.epochSeconds + BOGOTA_OFFSET_SECONDS
+    return formatTimeOfDay(minuteOfDay = localSeconds.mod(SECONDS_PER_DAY).toInt() / 60)
+}
+
+/** Whole minutes from [from] to [to], never negative even if the clocks of two devices differ. */
+fun minutesBetween(from: Instant, to: Instant): Long = (to - from).inWholeMinutes.coerceAtLeast(0)
+
 /** Formats a day the way the hotel reads it: `14 nov 2026`. */
 fun formatCalendarDate(date: CalendarDate): String = "${date.day} ${MONTHS[date.month - 1]} ${date.year}"
 

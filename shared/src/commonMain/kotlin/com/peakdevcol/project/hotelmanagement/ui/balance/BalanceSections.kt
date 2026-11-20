@@ -2,24 +2,11 @@ package com.peakdevcol.project.hotelmanagement.ui.balance
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryScrollableTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceSummary
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceTotals
 import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
-import com.peakdevcol.project.hotelmanagement.domain.model.PendingCollection
-import com.peakdevcol.project.hotelmanagement.domain.model.ProductSales
 import com.peakdevcol.project.hotelmanagement.domain.model.formatCalendarDate
 import com.peakdevcol.project.hotelmanagement.domain.model.formatPesos
 import com.peakdevcol.project.hotelmanagement.resources.Res
@@ -27,83 +14,90 @@ import com.peakdevcol.project.hotelmanagement.resources.balance_by_day
 import com.peakdevcol.project.hotelmanagement.resources.balance_by_employee
 import com.peakdevcol.project.hotelmanagement.resources.balance_by_method
 import com.peakdevcol.project.hotelmanagement.resources.balance_by_product
-import com.peakdevcol.project.hotelmanagement.resources.balance_day_without_closing
+import com.peakdevcol.project.hotelmanagement.resources.balance_day_without_closing_line
 import com.peakdevcol.project.hotelmanagement.resources.balance_empty
-import com.peakdevcol.project.hotelmanagement.resources.balance_payment_count
-import com.peakdevcol.project.hotelmanagement.resources.balance_pending_detail
+import com.peakdevcol.project.hotelmanagement.resources.balance_open_orders
+import com.peakdevcol.project.hotelmanagement.resources.balance_payments
 import com.peakdevcol.project.hotelmanagement.resources.balance_pending_title
+import com.peakdevcol.project.hotelmanagement.resources.balance_product_detail
 import com.peakdevcol.project.hotelmanagement.resources.balance_product_line
 import com.peakdevcol.project.hotelmanagement.resources.balance_product_note
-import com.peakdevcol.project.hotelmanagement.resources.balance_product_quantity
 import com.peakdevcol.project.hotelmanagement.resources.balance_product_sold
-import com.peakdevcol.project.hotelmanagement.resources.balance_sales_without_tax
-import com.peakdevcol.project.hotelmanagement.resources.balance_taxes
 import com.peakdevcol.project.hotelmanagement.resources.balance_tips
+import com.peakdevcol.project.hotelmanagement.resources.balance_tips_detail
 import com.peakdevcol.project.hotelmanagement.resources.balance_total_received
+import com.peakdevcol.project.hotelmanagement.resources.balance_totals_detail
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.employeeNameOrUnknown
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.label
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.AmountText
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListDivider
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListRow
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTabs
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SectionCard
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.StatEmphasis
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.StatTileData
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.StatTileRow
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * RF-BAL-01 and RF-BAL-07. With a product chosen, [productSales] is what that product sold, and the
- * tips are left out because they belong to the whole payment.
+ * RF-BAL-01, RF-BAL-04 and RF-BAL-07: what came in, the tips apart and what is still to be
+ * charged. With a product chosen, the first figure is what that product sold, without tips.
  */
 @Composable
-fun TotalsCard(totals: BalanceTotals, productSales: ProductSales?) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (productSales == null) {
-                Text(stringResource(Res.string.balance_total_received), style = MaterialTheme.typography.titleSmall)
-                Text(formatPesos(totals.totalReceived), style = MaterialTheme.typography.headlineMedium)
-            } else {
-                Text(stringResource(Res.string.balance_product_sold, productSales.productName), style = MaterialTheme.typography.titleSmall)
-                Text(formatPesos(totals.salesAmount), style = MaterialTheme.typography.headlineMedium)
-            }
-            Text(
-                stringResource(Res.string.balance_payment_count, totals.paymentCount),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            HorizontalDivider()
-            if (productSales != null) AmountRow(stringResource(Res.string.balance_product_quantity), productSales.quantity.toString())
-            AmountRow(stringResource(Res.string.balance_sales_without_tax), formatPesos(totals.salesWithoutTax))
-            AmountRow(stringResource(Res.string.balance_taxes), formatPesos(totals.taxAmount))
-            if (productSales == null) {
-                AmountRow(stringResource(Res.string.balance_tips), formatPesos(totals.tipAmount))
-            } else {
-                Text(
-                    stringResource(Res.string.balance_product_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-/** RF-BAL-04 */
-@Composable
-fun PendingCard(pending: PendingCollection) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            AmountRow(stringResource(Res.string.balance_pending_title), formatPesos(pending.totalAmount), emphasized = true)
-            Text(
-                text = stringResource(
-                    Res.string.balance_pending_detail,
-                    pending.inProgressCount,
-                    formatPesos(pending.inProgressAmount),
-                    pending.closedCount,
-                    formatPesos(pending.closedAmount),
+fun BalanceTiles(state: BalanceState) {
+    val summary = state.summary ?: return
+    val totals = summary.totals
+    val productSales = summary.byProduct.singleOrNull()?.takeIf { state.filter.productId != null }
+    val tiles = buildList {
+        if (productSales == null) {
+            add(
+                StatTileData(
+                    label = stringResource(Res.string.balance_total_received),
+                    value = formatPesos(totals.totalReceived),
+                    detail = stringResource(
+                        Res.string.balance_totals_detail,
+                        pluralStringResource(Res.plurals.balance_payments, totals.paymentCount, totals.paymentCount),
+                        formatPesos(totals.salesWithoutTax),
+                        formatPesos(totals.taxAmount),
+                    ),
+                    emphasis = StatEmphasis.Brand,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            add(StatTileData(label = stringResource(Res.string.balance_tips), value = formatPesos(totals.tipAmount), detail = stringResource(Res.string.balance_tips_detail)))
+        } else {
+            add(
+                StatTileData(
+                    label = stringResource(Res.string.balance_product_sold, productSales.productName),
+                    value = formatPesos(totals.salesAmount),
+                    detail = stringResource(Res.string.balance_product_detail, productSales.quantity, formatPesos(totals.salesWithoutTax), formatPesos(totals.taxAmount)),
+                    emphasis = StatEmphasis.Brand,
+                ),
+            )
+        }
+        state.pending?.let { pending ->
+            val openOrders = pending.inProgressCount + pending.closedCount
+            add(
+                StatTileData(
+                    label = stringResource(Res.string.balance_pending_title),
+                    value = formatPesos(pending.totalAmount),
+                    detail = pluralStringResource(Res.plurals.balance_open_orders, openOrders, openOrders),
+                ),
+            )
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space2)) {
+        StatTileRow(tiles = tiles)
+        if (productSales != null) {
+            Text(text = stringResource(Res.string.balance_product_note), style = MajesticTheme.typography.caption, color = MajesticTheme.colors.inkMuted)
         }
     }
 }
 
-/** RF-BAL-03 */
+/** RF-BAL-03: the totals by day, method, employee or product, after the filters. */
 @Composable
 fun Breakdowns(
     summary: BalanceSummary,
@@ -111,77 +105,47 @@ fun Breakdowns(
     daysWithoutDailyClosing: Set<CalendarDate>,
     onSelect: (BalanceBreakdown) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        PrimaryScrollableTabRow(selectedTabIndex = selected.ordinal, edgePadding = 0.dp) {
-            BalanceBreakdown.entries.forEach { breakdown ->
-                Tab(
-                    selected = breakdown == selected,
-                    onClick = { onSelect(breakdown) },
-                    text = { Text(stringResource(breakdown.title())) },
-                )
-            }
-        }
+    SectionCard {
+        MajesticTabs(
+            tabs = BalanceBreakdown.entries.map { stringResource(it.title()) },
+            selectedIndex = selected.ordinal,
+            onSelect = { onSelect(BalanceBreakdown.entries[it]) },
+        )
         if (summary.totals.paymentCount == 0) {
-            Text(
-                stringResource(Res.string.balance_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 16.dp),
-            )
-            return@Column
+            Text(text = stringResource(Res.string.balance_empty), style = MajesticTheme.typography.body, color = MajesticTheme.colors.inkMuted)
+            return@SectionCard
         }
-        when (selected) {
-            BalanceBreakdown.BY_DAY -> summary.byDay.forEach { day ->
-                TotalsRow(formatCalendarDate(day.date), day.totals, warning = day.date in daysWithoutDailyClosing)
-            }
-            BalanceBreakdown.BY_METHOD -> summary.byMethod.forEach { method ->
-                TotalsRow(stringResource(method.method.label()), method.totals)
-            }
-            BalanceBreakdown.BY_EMPLOYEE -> summary.byEmployee.forEach { employee ->
-                TotalsRow(employeeNameOrUnknown(employee.employeeName), employee.totals)
-            }
-            BalanceBreakdown.BY_PRODUCT -> summary.byProduct.forEach { product ->
-                BreakdownRow(
-                    title = product.productName,
-                    detail = stringResource(Res.string.balance_product_line, product.quantity, formatPesos(product.taxAmount)),
-                    amount = formatPesos(product.amount),
-                )
+        Column(verticalArrangement = Arrangement.Top) {
+            breakdownRows(summary, selected, daysWithoutDailyClosing).forEachIndexed { index, row ->
+                if (index > 0) ListDivider()
+                ListRow(title = row.title, subtitle = row.detail, trailing = { AmountText(amount = row.amount, style = MajesticTheme.typography.label.copy(fontSize = MajesticTheme.typography.bodyLarge.fontSize, fontFeatureSettings = "tnum")) })
             }
         }
     }
 }
 
-@Composable
-private fun TotalsRow(title: String, totals: BalanceTotals, warning: Boolean = false) {
-    BreakdownRow(
-        title = title,
-        detail = stringResource(Res.string.balance_payment_count, totals.paymentCount),
-        amount = formatPesos(totals.totalReceived),
-        warning = if (warning) stringResource(Res.string.balance_day_without_closing) else null,
-    )
-}
+private data class BreakdownRow(val title: String, val detail: String, val amount: Long)
 
 @Composable
-private fun BreakdownRow(title: String, detail: String, amount: String, warning: String? = null) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            warning?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+private fun breakdownRows(summary: BalanceSummary, selected: BalanceBreakdown, daysWithoutDailyClosing: Set<CalendarDate>): List<BreakdownRow> =
+    when (selected) {
+        BalanceBreakdown.BY_DAY -> summary.byDay.map { day ->
+            val payments = payments(day.totals)
+            // A day without its closing says so in words, not only with a color.
+            val detail = if (day.date in daysWithoutDailyClosing) stringResource(Res.string.balance_day_without_closing_line, payments) else payments
+            BreakdownRow(formatCalendarDate(day.date), detail, day.totals.totalReceived)
         }
-        Text(amount, style = MaterialTheme.typography.titleMedium)
+        BalanceBreakdown.BY_METHOD -> summary.byMethod.map { BreakdownRow(stringResource(it.method.label()), payments(it.totals), it.totals.totalReceived) }
+        BalanceBreakdown.BY_EMPLOYEE -> summary.byEmployee.map {
+            BreakdownRow(employeeNameOrUnknown(it.employeeName), payments(it.totals), it.totals.totalReceived)
+        }
+        BalanceBreakdown.BY_PRODUCT -> summary.byProduct.map {
+            BreakdownRow(it.productName, stringResource(Res.string.balance_product_line, it.quantity, formatPesos(it.taxAmount)), it.amount)
+        }
     }
-    HorizontalDivider()
-}
 
 @Composable
-private fun AmountRow(title: String, amount: String, emphasized: Boolean = false) {
-    val style = if (emphasized) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, style = style, modifier = Modifier.weight(1f))
-        Text(amount, style = style)
-    }
-}
+private fun payments(totals: BalanceTotals): String = pluralStringResource(Res.plurals.balance_payments, totals.paymentCount, totals.paymentCount)
 
 private fun BalanceBreakdown.title(): StringResource = when (this) {
     BalanceBreakdown.BY_DAY -> Res.string.balance_by_day
