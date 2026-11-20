@@ -14,6 +14,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -152,5 +155,17 @@ fun HotelLogo(modifier: Modifier = Modifier, size: Dp = 40.dp) {
             contentDescription = stringResource(Res.string.ds_hotel_name),
             modifier = Modifier.size(size * 0.62f),
         )
+    }
+}
+
+/** The hotel as the login presents it: the logo on its plate, its name and the brass rule. */
+@Composable
+fun HotelBrandHeader(modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4)) {
+        HotelLogo(size = 72.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space2)) {
+            SectionLabel(text = stringResource(Res.string.ds_hotel_name))
+            Box(modifier = Modifier.size(width = 32.dp, height = 2.dp).background(MajesticTheme.colors.brass))
+        }
     }
 }

@@ -77,7 +77,9 @@ internal fun ComposeUiTest.assertNothingSpills(context: String) {
         val name = node.describe()
         // Inside a scrolling container, an item scrolled out of view has no visible size on purpose,
         // and a one-line field scrolls the text that is longer than the field.
-        val outOfView = insideScroll && (visible.width < TOLERANCE_PX || visible.height < TOLERANCE_PX)
+        // A node that has no size of its own did not scroll away: it collapsed, and is checked.
+        val outOfView = insideScroll && (visible.width < TOLERANCE_PX || visible.height < TOLERANCE_PX) &&
+            bounds.width >= TOLERANCE_PX && bounds.height >= TOLERANCE_PX
         val editable = node.config.contains(SemanticsProperties.EditableText)
         if (!outOfView && !editable) {
             if (container != null && bounds.width > 0f && bounds.height > 0f && !container.contains(bounds)) {
@@ -112,6 +114,11 @@ private fun TextLayoutResult.problems(name: String, bounds: Rect): List<String> 
     val problems = mutableListOf<String>()
     if (bounds.width < TOLERANCE_PX || bounds.height < TOLERANCE_PX) problems += "$name: el texto quedó colapsado"
     val shortensWithEllipsis = layoutInput.overflow == TextOverflow.Ellipsis
+    // Shortened is fine; shortened down to the "…" alone, less than one letter wide, is not.
+    val oneLetter = with(layoutInput.density) { layoutInput.style.fontSize.toPx() }
+    if (shortensWithEllipsis && layoutInput.text.length > 1 && size.width < oneLetter) {
+        problems += "$name: el texto se acorta hasta no dejar nada (${size.width} px)"
+    }
     val widestLine = (0 until lineCount).maxOfOrNull { getLineRight(it) - getLineLeft(it) } ?: 0f
     if (widestLine > size.width + TOLERANCE_PX) problems += "$name: el texto es más ancho que su espacio (${widestLine.toInt()} de ${size.width})"
     val text = layoutInput.text.text.trimEnd()

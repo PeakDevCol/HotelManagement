@@ -35,6 +35,9 @@ object MajesticSizes {
     val navigationBar = 80.dp
     val sideNavigation = 256.dp
     val sideNavigationCompact = 88.dp
+    /** The list beside its detail on wide windows, and the narrowest that detail gets. */
+    val listPane = 360.dp
+    val detailPane = 400.dp
     val content = 720.dp
 
     /** From this width on, side navigation instead of the bottom bar. */

@@ -2,6 +2,15 @@ package com.peakdevcol.project.hotelmanagement.ui.designsystem
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SectionCard
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SearchTopBar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MenuAction
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticSwitchRow
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticOverflowMenu
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticLoading
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.HotelBrandHeader
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.FieldLabel
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -245,6 +254,32 @@ class DesignSystemLayoutTest {
             )
             SideNavigation(sections = sections, selected = "orders", onSelect = {}, employeeName = "Laura Méndez Restrepo de la Cruz", employeeArea = "Administración", onLogOut = {}, modifier = Modifier.height(420.dp))
             SideNavigation(sections = sections, selected = "cash", onSelect = {}, employeeName = "Laura Méndez", employeeArea = "Administración", onLogOut = {}, modifier = Modifier.height(420.dp), compact = true)
+        }
+    }
+
+    @Test
+    fun blocks() = checkEveryFrame("bloques") {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            HotelBrandHeader()
+            SectionCard(
+                title = "Inicio del día operativo de la recepción y del restaurante",
+                help = "Las ventas de la madrugada cuentan para el día anterior hasta esta hora.",
+            ) {
+                FieldLabel(text = "Método de pago con el que el huésped canceló la cuenta")
+                MajesticSwitchRow(title = "Activo", help = "Un producto inactivo no aparece al crear pedidos, pero se conserva.", checked = true, onCheckedChange = {})
+                MajesticSwitchRow(title = "No puedes cambiar tu propio acceso de administrador", checked = false, onCheckedChange = {}, enabled = false)
+            }
+            SearchTopBar(
+                query = "Habitación 1204 de Ana María",
+                onQueryChange = {},
+                placeholder = "Número de destino o mesero",
+                closeDescription = "Cerrar la búsqueda",
+                onClose = {},
+            )
+            MajesticTopBar(title = "Habitación 1204 · pedido de la cama extra") {
+                MajesticOverflowMenu(actions = listOf(MenuAction(text = "Cancelar pedido", icon = MajesticIcons.block, onClick = {}, destructive = true)))
+            }
+            Box(modifier = Modifier.height(96.dp)) { MajesticLoading() }
         }
     }
 }

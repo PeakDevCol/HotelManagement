@@ -76,9 +76,7 @@ fun MajesticTextField(
     val borderWidth = if (error != null || focused) 2.dp else 1.dp
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (label != null) {
-            Text(text = label, style = typography.caption.copy(fontSize = typography.body.fontSize), color = colors.inkMuted)
-        }
+        if (label != null) FieldLabel(text = label)
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -115,11 +113,19 @@ fun MajesticTextField(
                 }
             },
         )
-        val supporting = error ?: help
+        // A blank error only marks the field, when one message explains several fields below them.
+        val supporting = error?.takeIf { it.isNotEmpty() } ?: help
         if (supporting != null) {
             Text(text = supporting, style = typography.caption, color = if (error != null) colors.danger else colors.inkMuted)
         }
     }
+}
+
+/** The name of a field or a group of choices, above it. */
+@Composable
+fun FieldLabel(text: String, modifier: Modifier = Modifier) {
+    val typography = MajesticTheme.typography
+    Text(text = text, style = typography.caption.copy(fontSize = typography.body.fontSize), color = MajesticTheme.colors.inkMuted, modifier = modifier)
 }
 
 /**

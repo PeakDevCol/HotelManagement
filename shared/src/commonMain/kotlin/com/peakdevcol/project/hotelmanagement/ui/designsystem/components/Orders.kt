@@ -9,6 +9,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -119,11 +124,10 @@ fun OrderCard(
                     MajesticIcon(icon = destinationIcon, contentDescription = null, tint = colors.inkMuted, size = 22.dp)
                     Text(text = destination, style = typography.title, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space1)) {
-                    StatusBadge(state)
-                    if (isPendingToSend) PendingToSendBadge()
-                }
+                StatusBadge(state)
             }
+            // On its own line, so on a narrow phone with large text it never squeezes the destination.
+            if (isPendingToSend) PendingToSendBadge()
             Text(text = meta, style = typography.body, color = colors.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = MajesticSpacing.space2),
@@ -214,7 +218,12 @@ fun OrderSummaryBar(
     actionLoading: Boolean = false,
 ) {
     val colors = MajesticTheme.colors
-    Column(modifier = modifier.fillMaxWidth().background(colors.surfaceRaised)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(colors.surfaceRaised)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)),
+    ) {
         ListDivider()
         // With little width and large text, the button moves under the total instead of squeezing it.
         FlowRow(

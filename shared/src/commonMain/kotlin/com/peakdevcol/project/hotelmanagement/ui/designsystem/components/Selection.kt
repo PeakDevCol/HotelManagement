@@ -18,6 +18,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,6 +91,51 @@ fun QuantityStepper(
             onClick = onIncrease,
             tint = colors.primary,
             enabled = quantity < maximum,
+        )
+    }
+}
+
+/** Turns something on or off, like an active product. The whole row responds to the touch. */
+@Composable
+fun MajesticSwitchRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    help: String? = null,
+    enabled: Boolean = true,
+) {
+    val colors = MajesticTheme.colors
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = MajesticSizes.control)
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(vertical = MajesticSpacing.space2),
+        horizontalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = MajesticTheme.typography.bodyLarge, color = if (enabled) colors.ink else colors.inkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (help != null) Text(text = help, style = MajesticTheme.typography.caption, color = colors.inkMuted)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            enabled = enabled,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = colors.onPrimary,
+                checkedTrackColor = colors.primary,
+                checkedBorderColor = colors.primary,
+                uncheckedThumbColor = colors.lineStrong,
+                uncheckedTrackColor = colors.surfaceSunken,
+                uncheckedBorderColor = colors.lineStrong,
+                disabledCheckedThumbColor = colors.surfaceRaised,
+                disabledCheckedTrackColor = colors.lineStrong,
+                disabledUncheckedThumbColor = colors.line,
+                disabledUncheckedTrackColor = colors.surfaceSunken,
+                disabledUncheckedBorderColor = colors.line,
+            ),
         )
     }
 }
@@ -157,7 +208,9 @@ fun MajesticChip(
     Surface(
         selected = selected,
         onClick = onClick,
-        modifier = modifier.minimumInteractiveComponentSize().heightIn(min = 40.dp),
+        // As wide as its whole label when there is room, also in a row that scrolls sideways; on a
+        // line too narrow for it, the label is the part that gets shortened.
+        modifier = modifier.minimumInteractiveComponentSize().heightIn(min = 40.dp).width(IntrinsicSize.Max),
         shape = RoundedCornerShape(MajesticRadius.small),
         color = if (selected) colors.primarySoft else colors.surfaceRaised,
         contentColor = if (selected) colors.onPrimarySoft else colors.ink,
@@ -170,7 +223,14 @@ fun MajesticChip(
         ) {
             val shownIcon = if (selected) selectedIcon ?: MajesticIcons.check else icon
             if (shownIcon != null) MajesticIcon(icon = shownIcon, contentDescription = null, size = 18.dp)
-            Text(text = text, style = MajesticTheme.typography.label, maxLines = 1)
+            // A label longer than the line is shortened, and the count after it stays in sight.
+            Text(
+                text = text,
+                style = MajesticTheme.typography.label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
             if (count != null) {
                 Text(
                     text = count.toString(),
