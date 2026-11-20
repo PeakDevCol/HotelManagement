@@ -1,13 +1,8 @@
 <resources>
-    <string name="app_name">Hotel Management</string>
-    <string name="running_on">Ejecutando en %1$s</string>
     <string name="firebase_not_configured">Firebase no está configurado en esta plataforma.</string>
     <string name="session_error">Error al consultar la sesión: %1$s</string>
 
     <!-- Hotel header and footer -->
-    <string name="hotel_name">HOTEL JUAN MAJESTIC</string>
-    <string name="footer_hotel">Hotel Juan Majestic</string>
-    <string name="footer_since">Desde 2014</string>
 
     <!-- Access (RF-AUTH-07) -->
     <string name="access_denied_title">Tu cuenta no está activa</string>
@@ -24,7 +19,6 @@
     <string name="error_password_length">La contraseña debe tener mínimo 6 caracteres</string>
 
     <!-- Request errors -->
-    <string name="dialog_title_oops">¡Ups!</string>
     <string name="dialog_accept">Aceptar</string>
     <string name="cancel">Cancelar</string>
     <string name="error_invalid_credentials">Verifica los datos y vuelve a intentarlo.</string>
@@ -34,38 +28,20 @@
     <string name="error_unknown">Ocurrió un error inesperado. Inténtalo de nuevo.</string>
 
     <!-- Home -->
-    <string name="home_title">Menú principal</string>
     <string name="logout">Cerrar sesión</string>
     <string name="logout_message">¿Estás seguro de cerrar sesión?</string>
     <string name="logout_pending_title">Todavía no puedes cerrar sesión</string>
     <string name="logout_pending_message">Hay pedidos pendientes de enviar. Conéctate a internet y espera a que se envíen.</string>
-    <plurals name="home_pending_orders">
-        <item quantity="one">Tienes %1$d pedido pendiente de enviar. Se enviará solo al volver la conexión.</item>
-        <item quantity="other">Tienes %1$d pedidos pendientes de enviar. Se enviarán solos al volver la conexión.</item>
-    </plurals>
-    <string name="menu_balance">Balance</string>
     <string name="menu_inventory">Inventario</string>
-    <string name="menu_add_order">Crear pedido</string>
-    <string name="menu_current_orders">Pedidos en curso</string>
 
     <!-- Add order -->
-    <string name="order_empty">Aún no hay productos. Toca + para agregar uno.</string>
-    <string name="order_add_product">Agregar producto</string>
-    <string name="order_remove_product">Quitar %1$s</string>
     <string name="order_product_line">%1$s x%2$d</string>
-    <string name="order_unit_price">%1$s c/u</string>
     <string name="order_destination_default">Destino del pedido</string>
-    <string name="order_edit_destination">Cambiar destino</string>
-    <string name="order_total">Total: %1$s</string>
     <string name="order_confirm">Confirmar</string>
     <string name="order_catalog_error">No se pudieron cargar los productos.</string>
     <string name="retry">Reintentar</string>
 
-    <string name="product">Producto</string>
-    <string name="quantity">Cantidad</string>
     <string name="product_not_found">No hay productos con ese nombre</string>
-    <string name="error_quantity">Ingresa una cantidad entre 1 y %1$d</string>
-    <string name="add">Agregar</string>
 
     <string name="destination_room">Habitación</string>
     <string name="destination_table">Mesa</string>
@@ -86,15 +62,8 @@
     <string name="order_state_cancelled">Cancelado</string>
     <string name="order_pending_to_send">Pendiente de enviar</string>
     <string name="order_employee_unknown">Empleado desconocido</string>
-    <string name="filter_all_orders">Todos los pedidos</string>
-    <string name="filter_my_orders">Mis pedidos</string>
-    <string name="filter_all_states">Todos los estados</string>
-    <string name="current_orders_empty">No hay pedidos en curso.</string>
-    <string name="current_orders_empty_filter">No hay pedidos con ese filtro.</string>
     <string name="current_orders_error">No se pudieron cargar los pedidos.</string>
     <string name="order_detail_title">Detalle del pedido</string>
-    <string name="order_detail_taken_by">Atendido por %1$s</string>
-    <string name="order_detail_products">Productos</string>
     <string name="order_detail_history">Historial</string>
     <string name="order_detail_not_found">Este pedido ya no existe.</string>
     <string name="order_detail_error">No se pudo cargar el pedido.</string>
@@ -110,17 +79,11 @@
     <string name="order_event_cancel_reason">Motivo: %1$s</string>
 
     <!-- Order actions -->
-    <string name="order_close_action">Cerrar la cuenta</string>
     <string name="order_close_message">El pedido queda pendiente de cobro. Para agregarle productos habrá que reabrirlo.</string>
-    <string name="order_reopen_action">Reabrir el pedido</string>
     <string name="order_reopen_message">El pedido vuelve a estar En curso y se le pueden agregar productos.</string>
-    <string name="order_pay_action">Registrar el pago</string>
-    <string name="order_cancel_action">Cancelar el pedido</string>
     <string name="order_cancel_message">El pedido queda anulado y ya no se puede cobrar. Queda en el historial.</string>
     <string name="order_cancel_reason">Motivo</string>
     <string name="order_cancel_keep">No cancelar</string>
-    <string name="order_payment_title">Registrar el pago</string>
-    <string name="order_payment_total">Total a cobrar: %1$s</string>
     <string name="order_payment_method_cash">Efectivo</string>
     <string name="order_payment_method_transfer">Transferencia</string>
     <string name="order_payment_tip">Propina (opcional)</string>
@@ -136,17 +99,10 @@
     <string name="order_error_invalid_tip">La propina no puede ser negativa.</string>
     <string name="order_error_last_product">Un pedido necesita al menos un producto. Si ya no va, un administrador lo puede cancelar.</string>
     <string name="order_remove_product_message">El producto sale del pedido y el total se recalcula.</string>
-    <string name="order_product_added">Producto agregado.</string>
-    <string name="order_product_added_offline">Producto guardado en el dispositivo. Se enviará solo cuando vuelva la conexión.</string>
     <string name="order_product_removed">Producto quitado.</string>
     <string name="rejected_additions_title">Productos que no se agregaron</string>
     <string name="rejected_additions_message">Los agregaste sin conexión, pero cuando se enviaron el pedido ya no estaba En curso. Si todavía van, reabre el pedido o crea uno nuevo.</string>
 
-    <string name="order_saved_title">Pedido confirmado</string>
-    <string name="order_saved_message">El pedido se guardó correctamente.</string>
-    <string name="order_saved_offline_title">Pedido guardado en el dispositivo</string>
-    <string name="order_saved_offline_message">Está pendiente de enviar. Se enviará solo cuando vuelva la conexión.</string>
-    <string name="order_error_title">No se pudo guardar el pedido</string>
     <string name="order_error_no_session">Tu sesión se cerró. Vuelve a iniciar sesión.</string>
     <string name="order_error_unknown">Revisa tu conexión e inténtalo de nuevo.</string>
 
@@ -160,7 +116,6 @@
     <string name="inventory_error">No se pudo cargar el inventario.</string>
     <string name="inventory_no_categories">Empieza por crear una categoría en "Categorías". Después podrás agregar productos.</string>
     <string name="inventory_category_empty">Sin productos</string>
-    <string name="inventory_product_inactive">Inactivo: no aparece al crear pedidos</string>
     <string name="inventory_product_name">Nombre</string>
     <string name="inventory_product_price">Precio</string>
     <string name="inventory_product_category">Categoría</string>
@@ -207,13 +162,10 @@
 
     <!-- Employees -->
     <string name="menu_employees">Empleados</string>
-    <string name="employees_empty">Aún no hay empleados.</string>
     <string name="employees_error">No se pudieron cargar los empleados.</string>
     <string name="employees_new">Nuevo empleado</string>
     <string name="employees_edit">Editar empleado</string>
     <string name="employees_inactive">Inactivo</string>
-    <string name="employees_you">Tú</string>
-    <string name="employees_row_detail">%1$s · %2$s</string>
     <string name="employee_name">Nombre completo</string>
     <string name="employee_role">Rol</string>
     <string name="employee_area">Área</string>
@@ -250,7 +202,7 @@
     <string name="settings_hour">Hora (0 a 23)</string>
     <string name="settings_minute">Minutos (0 a 59)</string>
     <string name="settings_time_error">Escribe una hora entre 0 y 23 y minutos entre 0 y 59.</string>
-    <string name="settings_day_start_preview">Hoy el día operativo empieza a las %1$s.</string>
+    <string name="settings_day_start_preview">Hoy el día operativo empieza a las %1$s</string>
     <string name="settings_last_change">Último cambio: %1$s, %2$s</string>
     <string name="settings_saved">Configuración guardada.</string>
     <string name="settings_not_allowed">Solo un administrador puede cambiar la configuración.</string>
@@ -271,17 +223,11 @@
     <string name="balance_pick_period">Elige el primer y el último día</string>
     <string name="balance_period_too_long">Elige un periodo de máximo 31 días.</string>
     <string name="balance_period_invalid">El último día no puede ser anterior al primero.</string>
-    <string name="balance_reload">Actualizar</string>
     <string name="balance_total_received">Total recibido</string>
-    <string name="balance_payment_count">%1$d pagos</string>
-    <string name="balance_sales_without_tax">Ventas sin impuestos</string>
-    <string name="balance_taxes">Impuestos</string>
     <string name="balance_tips">Propinas</string>
     <string name="balance_product_sold">Vendido de %1$s</string>
-    <string name="balance_product_quantity">Cantidad vendida</string>
     <string name="balance_product_note">Con un producto elegido, las propinas no se cuentan: son del pago completo.</string>
     <string name="balance_pending_title">Por cobrar ahora</string>
-    <string name="balance_pending_detail">%1$d en curso (%2$s) y %3$d cerrados (%4$s)</string>
     <string name="balance_filter_method">Método</string>
     <string name="balance_filter_employee">Quién cobró</string>
     <string name="balance_filter_destination">Destino</string>
@@ -303,7 +249,10 @@
     <string name="cash_closing_since_previous">Desde el cierre #%1$d del %2$s</string>
     <string name="cash_closing_since_start">Es el primer cierre: cubre todos los pagos registrados hasta ahora.</string>
     <string name="cash_closing_number">Cierre #%1$d</string>
-    <string name="cash_closing_payment_count">%1$d pagos desde el cierre anterior</string>
+    <plurals name="cash_closing_payment_count">
+        <item quantity="one">%1$d pago desde el cierre anterior</item>
+        <item quantity="other">%1$d pagos desde el cierre anterior</item>
+    </plurals>
     <string name="cash_closing_cash_sales">Ventas en efectivo</string>
     <string name="cash_closing_cash_tips">Propinas en efectivo</string>
     <string name="cash_closing_expected">Efectivo esperado</string>
@@ -324,7 +273,6 @@
     <string name="cash_closing_saved">Cierre guardado.</string>
     <string name="cash_closing_recent">Cierres anteriores</string>
     <string name="cash_closing_recent_empty">Todavía no hay cierres.</string>
-    <string name="cash_closing_recent_line">%1$s · %2$s · %3$s</string>
     <string name="cash_closing_recent_amounts">Esperado %1$s · contado %2$s · diferencia %3$s</string>
     <string name="cash_closing_error_type">Elige si es el cierre del día o un cierre de turno.</string>
     <string name="cash_closing_error_count">Escribe el efectivo contado.</string>
@@ -334,8 +282,6 @@
     <string name="cash_closing_error_no_connection">El cierre de caja necesita conexión. Revisa la conexión e inténtalo de nuevo.</string>
     <string name="cash_closing_error_not_allowed">Solo un administrador puede hacer el cierre de caja.</string>
     <string name="cash_closing_error_unknown">No se pudo completar el cierre de caja.</string>
-    <string name="balance_days_without_closing">%1$d días con pagos terminaron sin cierre del día.</string>
-    <string name="balance_day_without_closing">Sin cierre del día</string>
 
     <!-- Design system Majestic (RNF-18) -->
     <string name="ds_hotel_name">Hotel Juan Majestic</string>
@@ -344,4 +290,133 @@
     <string name="ds_quantity_increase">Sumar uno</string>
     <string name="ds_quantity_remove">Quitar</string>
     <string name="ds_clear_search">Borrar la búsqueda</string>
+    <string name="ds_more_options">Más opciones</string>
+    <string name="nav_orders">Pedidos</string>
+    <string name="nav_cash">Caja</string>
+    <string name="nav_cash_and_balance">Caja y balance</string>
+    <string name="nav_more">Más</string>
+    <string name="nav_group_operation">Operación</string>
+    <string name="nav_group_administration">Administración</string>
+    <string name="logout_confirm_title">¿Cerrar sesión?</string>
+    <string name="understood">Entendido</string>
+    <string name="login_title">Inicia sesión</string>
+    <string name="login_subtitle">Entra con el correo que te dio el administrador.</string>
+    <string name="login_no_account">¿No tienes cuenta? Pídela al administrador del hotel.</string>
+    <string name="password_show">Mostrar la contraseña</string>
+    <string name="password_hide">Ocultar la contraseña</string>
+    <string name="orders_search">Buscar pedido</string>
+    <string name="orders_search_placeholder">Número de destino o mesero</string>
+    <string name="orders_search_close">Cerrar la búsqueda</string>
+    <string name="orders_new">Nuevo pedido</string>
+    <string name="filter_all">Todos</string>
+    <string name="filter_mine">Míos</string>
+    <string name="filter_in_progress">En curso</string>
+    <string name="filter_closed">Cerrados</string>
+    <plurals name="orders_pending_title">
+        <item quantity="one">%1$d pedido pendiente de enviar</item>
+        <item quantity="other">%1$d pedidos pendientes de enviar</item>
+    </plurals>
+    <string name="orders_pending_message">Se envían solos cuando vuelve la conexión.</string>
+    <string name="orders_empty_title">No hay pedidos en curso</string>
+    <string name="orders_empty_message">Los pedidos que tomes aparecen aquí y en los demás dispositivos al instante.</string>
+    <string name="orders_empty_filter_title">No hay pedidos con ese filtro</string>
+    <string name="orders_empty_filter_message">Cambia el filtro o la búsqueda para ver los demás.</string>
+    <string name="orders_select_title">Elige un pedido</string>
+    <string name="orders_select_message">Su detalle aparece aquí.</string>
+    <string name="error_check_connection">Revisa la conexión e inténtalo de nuevo.</string>
+    <plurals name="order_product_count">
+        <item quantity="one">%1$d producto</item>
+        <item quantity="other">%1$d productos</item>
+    </plurals>
+    <string name="time_just_now">Hace un momento</string>
+    <string name="time_minutes_ago">Hace %1$d min</string>
+    <string name="time_hours_ago">Hace %1$d h %2$d min</string>
+    <string name="time_hours_ago_exact">Hace %1$d h</string>
+    <string name="order_charge">Cobrar</string>
+    <string name="order_add_products">Agregar productos</string>
+    <string name="order_close">Cerrar cuenta</string>
+    <string name="order_reopen">Reabrir</string>
+    <string name="order_cancel">Cancelar pedido</string>
+    <string name="order_close_confirm_title">¿Cerrar la cuenta?</string>
+    <string name="order_reopen_confirm_title">¿Reabrir el pedido?</string>
+    <string name="order_cancel_confirm_title">¿Cancelar el pedido?</string>
+    <string name="order_remove_product_title">¿Quitar %1$s?</string>
+    <string name="order_remove_confirm">Quitar</string>
+    <string name="order_quantity_price">%1$d × %2$s</string>
+    <string name="order_total_label">Total</string>
+    <string name="order_remove_line">Quitar %1$s del pedido</string>
+    <string name="order_charge_title">Cobrar %1$s</string>
+    <string name="order_charge_subtitle">%1$s · total del pedido %2$s</string>
+    <string name="order_charge_method">Método</string>
+    <string name="order_tip_none">Sin propina</string>
+    <string name="order_tip_suggested">10 % · %1$s</string>
+    <string name="order_tip_other">Otro valor</string>
+    <string name="order_tip_amount">Valor de la propina</string>
+    <string name="order_charge_total">Total a recibir</string>
+    <string name="order_charge_submit">Registrar pago</string>
+    <string name="order_charge_closes">Al registrar el pago, la cuenta se cierra.</string>
+    <string name="order_not_found_message">Vuelve a la lista para ver los pedidos en curso.</string>
+    <string name="destination_label">Destino</string>
+    <string name="destination_choose">Elige el destino</string>
+    <string name="destination_change">Cambiar</string>
+    <string name="destination_sheet_title">¿A dónde va el pedido?</string>
+    <string name="done">Listo</string>
+    <string name="products_search_placeholder">Buscar producto</string>
+    <string name="products_search_hint">Prueba con otra parte del nombre.</string>
+    <string name="catalog_empty_title">Todavía no hay productos</string>
+    <string name="order_choose_destination">Elegir destino</string>
+    <string name="order_without_destination">Sin destino</string>
+    <string name="order_sent">Pedido enviado.</string>
+    <string name="order_saved_on_device">Pedido guardado en el dispositivo. Se enviará solo cuando vuelva la conexión.</string>
+    <string name="add_products_title">Agregar a %1$s</string>
+    <string name="add_products_action">Agregar</string>
+    <plurals name="add_products_count">
+        <item quantity="one">%1$d producto nuevo</item>
+        <item quantity="other">%1$d productos nuevos</item>
+    </plurals>
+    <string name="products_added">Productos agregados.</string>
+    <string name="products_added_offline">Productos guardados en el dispositivo. Se enviarán solos cuando vuelva la conexión.</string>
+    <string name="order_not_in_progress">Este pedido ya no está En curso, así que no se le pueden agregar productos.</string>
+    <plurals name="balance_days_without_closing_title">
+        <item quantity="one">%1$d día con pagos terminó sin cierre del día</item>
+        <item quantity="other">%1$d días con pagos terminaron sin cierre del día</item>
+    </plurals>
+    <string name="balance_filters">Filtros</string>
+    <plurals name="balance_filters_active">
+        <item quantity="one">%1$d filtro en uso</item>
+        <item quantity="other">%1$d filtros en uso</item>
+    </plurals>
+    <string name="balance_clear_filters">Quitar filtros</string>
+    <string name="balance_tips_detail">Aparte de las ventas</string>
+    <plurals name="balance_open_orders">
+        <item quantity="one">%1$d pedido abierto</item>
+        <item quantity="other">%1$d pedidos abiertos</item>
+    </plurals>
+    <string name="balance_totals_detail">%1$s · ventas sin impuestos %2$s · impuestos %3$s</string>
+    <plurals name="balance_payments">
+        <item quantity="one">%1$d pago</item>
+        <item quantity="other">%1$d pagos</item>
+    </plurals>
+    <string name="balance_product_detail">%1$d unidades · sin impuestos %2$s · impuestos %3$s</string>
+    <string name="balance_day_without_closing_line">%1$s · sin cierre del día</string>
+    <string name="balance_updating">Actualizando…</string>
+    <string name="balance_error_title">No se pudo cargar el balance</string>
+    <string name="cash_closing_count_title">Cuenta el efectivo</string>
+    <string name="cash_closing_error_title">No se pudo cargar el cierre de caja</string>
+    <string name="cash_closing_recent_meta">%1$s · %2$s</string>
+    <string name="inventory_categories_hint">Agrupan los productos al tomar pedidos.</string>
+    <string name="inventory_taxes_hint">Los que ya incluyen los precios, como el IVA.</string>
+    <string name="inventory_no_categories_title">Primero crea una categoría</string>
+    <string name="inventory_create_category">Crear categoría</string>
+    <string name="inventory_select_title">Elige un producto</string>
+    <string name="inventory_select_message">Aquí lo editas. También puedes crear uno nuevo.</string>
+    <string name="inventory_product_saved">Producto guardado.</string>
+    <string name="categories_empty_title">Aún no hay categorías</string>
+    <string name="taxes_empty_title">Aún no hay impuestos</string>
+    <string name="inventory_back_to_list">Vuelve al inventario para ver los demás productos.</string>
+    <string name="employees_empty_title">Aún no hay empleados</string>
+    <string name="employees_empty_message">Crea el primero con su correo: le llegará un enlace para elegir su contraseña.</string>
+    <string name="employees_select_title">Elige un empleado</string>
+    <string name="employees_select_message">Aquí cambias su rol, su área o su acceso.</string>
+    <string name="employees_back_to_list">Vuelve a la lista para ver los demás empleados.</string>
 </resources>

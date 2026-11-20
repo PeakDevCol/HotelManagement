@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** What the login tells the employee in a dialog. */
+/** What the login tells the employee, above the button, until they change a field. */
 sealed interface LoginMessage {
     data class LoginFailed(val error: AuthError) : LoginMessage
 
@@ -26,6 +26,7 @@ data class LoginState(
     val password: String = "",
     val showEmailError: Boolean = false,
     val showPasswordError: Boolean = false,
+    val isPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
     val message: LoginMessage? = null,
 ) {
@@ -35,6 +36,7 @@ data class LoginState(
 sealed interface LoginIntent {
     data class EmailChange(val email: String) : LoginIntent
     data class PasswordChange(val password: String) : LoginIntent
+    data object TogglePasswordVisibility : LoginIntent
     data object LoginClick : LoginIntent
     data object ForgotPasswordClick : LoginIntent
     data object MessageDismiss : LoginIntent
@@ -50,15 +52,16 @@ class LoginViewModel(
 
     fun onIntent(intent: LoginIntent) {
         when (intent) {
-            // While typing, an empty field is not an error yet.
+            // While typing, an empty field is not an error yet, and the last message no longer applies.
             is LoginIntent.EmailChange -> _state.update {
                 val invalid = intent.email.isNotEmpty() && !UserInputValidator.isValidEmail(intent.email)
-                it.copy(email = intent.email, showEmailError = invalid)
+                it.copy(email = intent.email, showEmailError = invalid, message = null)
             }
             is LoginIntent.PasswordChange -> _state.update {
                 val invalid = intent.password.isNotEmpty() && !UserInputValidator.isValidPassword(intent.password)
-                it.copy(password = intent.password, showPasswordError = invalid)
+                it.copy(password = intent.password, showPasswordError = invalid, message = null)
             }
+            LoginIntent.TogglePasswordVisibility -> _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
             LoginIntent.LoginClick -> logIn()
             LoginIntent.ForgotPasswordClick -> requestPasswordEmail()
             LoginIntent.MessageDismiss -> _state.update { it.copy(message = null) }

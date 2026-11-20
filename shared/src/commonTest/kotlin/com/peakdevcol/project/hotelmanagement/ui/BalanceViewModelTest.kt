@@ -1,5 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.ui
 
+import com.peakdevcol.project.hotelmanagement.domain.model.BalanceFilter
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceError
 import com.peakdevcol.project.hotelmanagement.domain.model.BalancePeriod
 import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
@@ -162,5 +163,23 @@ class BalanceViewModelTest : MainDispatcherTest() {
 
         assertEquals(BalanceBreakdown.BY_PRODUCT, viewModel.state.value.breakdown)
         assertTrue(viewModel.state.value.summary!!.byProduct.isNotEmpty())
+    }
+
+    @Test
+    fun theFiltersOpenInTheirOwnSheetAndAreClearedTogether() {
+        val viewModel = viewModel()
+        viewModel.onIntent(BalanceIntent.OpenFilters)
+        assertTrue(viewModel.state.value.isChoosingFilters)
+
+        viewModel.onIntent(BalanceIntent.FilterByMethod(PaymentMethod.CASH))
+        viewModel.onIntent(BalanceIntent.FilterByEmployee("uid-1"))
+        viewModel.onIntent(BalanceIntent.DismissFilters)
+        assertFalse(viewModel.state.value.isChoosingFilters)
+        assertEquals(2, viewModel.state.value.activeFilterCount)
+
+        viewModel.onIntent(BalanceIntent.ClearFilters)
+
+        assertEquals(0, viewModel.state.value.activeFilterCount)
+        assertEquals(BalanceFilter(), viewModel.state.value.filter)
     }
 }

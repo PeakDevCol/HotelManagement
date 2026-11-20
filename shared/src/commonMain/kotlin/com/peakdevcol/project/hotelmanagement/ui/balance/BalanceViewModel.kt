@@ -49,14 +49,22 @@ data class BalanceState(
     val daysWithoutDailyClosing: Set<CalendarDate> = emptySet(),
     val breakdown: BalanceBreakdown = BalanceBreakdown.BY_DAY,
     val isPickingPeriod: Boolean = false,
+    val isChoosingFilters: Boolean = false,
 ) {
     val period: BalancePeriod? get() = report?.period
+
+    /** How many of the four filters are in use. */
+    val activeFilterCount: Int
+        get() = listOfNotNull(filter.method, filter.employeeId, filter.destination, filter.productId).size
 }
 
 sealed interface BalanceIntent {
     data object Reload : BalanceIntent
     data object OpenPeriodPicker : BalanceIntent
     data object DismissPeriodPicker : BalanceIntent
+    data object OpenFilters : BalanceIntent
+    data object DismissFilters : BalanceIntent
+    data object ClearFilters : BalanceIntent
 
     /** The days come from the date picker, as days since 1970-01-01. */
     data class ChangePeriod(val firstEpochDay: Long, val lastEpochDay: Long) : BalanceIntent
@@ -108,6 +116,9 @@ class BalanceViewModel(
             BalanceIntent.Reload -> load(_state.value.period)
             BalanceIntent.OpenPeriodPicker -> _state.update { it.copy(isPickingPeriod = true) }
             BalanceIntent.DismissPeriodPicker -> _state.update { it.copy(isPickingPeriod = false) }
+            BalanceIntent.OpenFilters -> _state.update { it.copy(isChoosingFilters = true) }
+            BalanceIntent.DismissFilters -> _state.update { it.copy(isChoosingFilters = false) }
+            BalanceIntent.ClearFilters -> filter { BalanceFilter() }
             is BalanceIntent.ChangePeriod -> changePeriod(intent)
             is BalanceIntent.FilterByMethod -> filter { it.copy(method = intent.method) }
             is BalanceIntent.FilterByEmployee -> filter { it.copy(employeeId = intent.employeeId) }

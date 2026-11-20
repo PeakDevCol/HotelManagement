@@ -3,106 +3,136 @@ package com.peakdevcol.project.hotelmanagement.ui.balance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceError
-import com.peakdevcol.project.hotelmanagement.domain.model.BalanceOption
-import com.peakdevcol.project.hotelmanagement.domain.model.DestinationKind
-import com.peakdevcol.project.hotelmanagement.domain.model.PaymentMethod
+import com.peakdevcol.project.hotelmanagement.domain.model.BalanceReport
 import com.peakdevcol.project.hotelmanagement.domain.model.PaymentReadError
 import com.peakdevcol.project.hotelmanagement.domain.model.formatCalendarDate
 import com.peakdevcol.project.hotelmanagement.domain.model.formatTimeOfDay
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.balance_change_period
-import com.peakdevcol.project.hotelmanagement.resources.balance_days_without_closing
-import com.peakdevcol.project.hotelmanagement.resources.cash_closing_open
+import com.peakdevcol.project.hotelmanagement.resources.balance_clear_filters
+import com.peakdevcol.project.hotelmanagement.resources.balance_days_without_closing_title
 import com.peakdevcol.project.hotelmanagement.resources.balance_error_no_connection
 import com.peakdevcol.project.hotelmanagement.resources.balance_error_not_allowed
+import com.peakdevcol.project.hotelmanagement.resources.balance_error_title
 import com.peakdevcol.project.hotelmanagement.resources.balance_error_unknown
-import com.peakdevcol.project.hotelmanagement.resources.balance_filter_all
-import com.peakdevcol.project.hotelmanagement.resources.balance_filter_destination
-import com.peakdevcol.project.hotelmanagement.resources.balance_filter_employee
-import com.peakdevcol.project.hotelmanagement.resources.balance_filter_method
-import com.peakdevcol.project.hotelmanagement.resources.balance_filter_product
+import com.peakdevcol.project.hotelmanagement.resources.balance_filters
+import com.peakdevcol.project.hotelmanagement.resources.balance_filters_active
 import com.peakdevcol.project.hotelmanagement.resources.balance_period
 import com.peakdevcol.project.hotelmanagement.resources.balance_period_hint
 import com.peakdevcol.project.hotelmanagement.resources.balance_period_invalid
 import com.peakdevcol.project.hotelmanagement.resources.balance_period_too_long
-import com.peakdevcol.project.hotelmanagement.resources.balance_reload
-import com.peakdevcol.project.hotelmanagement.resources.destination_bar
-import com.peakdevcol.project.hotelmanagement.resources.destination_other
-import com.peakdevcol.project.hotelmanagement.resources.destination_pool
-import com.peakdevcol.project.hotelmanagement.resources.destination_room
-import com.peakdevcol.project.hotelmanagement.resources.destination_table
-import com.peakdevcol.project.hotelmanagement.resources.menu_balance
-import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
-import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
-import com.peakdevcol.project.hotelmanagement.ui.currentorders.CenteredMessage
-import com.peakdevcol.project.hotelmanagement.ui.currentorders.employeeNameOrUnknown
-import com.peakdevcol.project.hotelmanagement.ui.currentorders.label
+import com.peakdevcol.project.hotelmanagement.resources.balance_updating
+import com.peakdevcol.project.hotelmanagement.resources.cash_closing_open
+import com.peakdevcol.project.hotelmanagement.resources.nav_cash_and_balance
+import com.peakdevcol.project.hotelmanagement.resources.retry
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Banner
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.BannerTone
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.EmptyState
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticIconButton
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticLoading
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTopBar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcons
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
+import com.peakdevcol.project.hotelmanagement.ui.main.AppMessagesHost
+import com.peakdevcol.project.hotelmanagement.ui.main.LocalAppMessages
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 /** RF-BAL-01 to RF-BAL-04 and RF-BAL-07: only administrators open it (PRD, section 3). */
 @Composable
-fun BalanceScreen(onBack: () -> Unit, onCashClosingClick: () -> Unit, viewModel: BalanceViewModel = koinViewModel()) {
+fun BalanceScreen(onCashClosingClick: () -> Unit, viewModel: BalanceViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val messages = LocalAppMessages.current
 
     LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect -> snackbarHostState.showSnackbar(effect.message()) }
+        viewModel.effects.collect { effect -> messages.show(effect.message()) }
     }
 
+    BalanceContent(state = state, onIntent = viewModel::onIntent, onCashClosingClick = onCashClosingClick)
+}
+
+@Composable
+fun BalanceContent(state: BalanceState, onIntent: (BalanceIntent) -> Unit, onCashClosingClick: () -> Unit) {
+    val report = state.report
+    val loadError = state.loadError
     Scaffold(
-        topBar = { ScreenTopBar(title = stringResource(Res.string.menu_balance), onBack = onBack) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { padding ->
-        val loadError = state.loadError
-        when {
-            state.report == null && loadError != null -> CenteredMessage(
-                message = stringResource(loadError.messageRes()),
-                modifier = Modifier.padding(padding),
-                onRetry = { viewModel.onIntent(BalanceIntent.Reload) },
-            )
-            state.report == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        topBar = {
+            MajesticTopBar(title = stringResource(Res.string.nav_cash_and_balance)) {
+                MajesticIconButton(
+                    icon = MajesticIcons.calendar,
+                    contentDescription = stringResource(Res.string.balance_change_period),
+                    onClick = { onIntent(BalanceIntent.OpenPeriodPicker) },
+                    tint = MajesticTheme.colors.ink,
+                    enabled = report != null && !state.isLoading,
+                )
+                MajesticIconButton(
+                    icon = MajesticIcons.filter,
+                    contentDescription = stringResource(Res.string.balance_filters),
+                    onClick = { onIntent(BalanceIntent.OpenFilters) },
+                    tint = MajesticTheme.colors.ink,
+                    enabled = report != null,
+                )
             }
-            else -> BalanceContent(
-                state = state,
-                onIntent = viewModel::onIntent,
-                onCashClosingClick = onCashClosingClick,
+        },
+        snackbarHost = { AppMessagesHost() },
+        containerColor = MajesticTheme.colors.surface,
+    ) { padding ->
+        when {
+            report == null && loadError != null -> EmptyState(
+                icon = MajesticIcons.error,
+                title = stringResource(Res.string.balance_error_title),
+                message = stringResource(loadError.messageRes()),
+                actionText = stringResource(Res.string.retry),
+                onAction = { onIntent(BalanceIntent.Reload) },
                 modifier = Modifier.padding(padding),
             )
+            report == null -> MajesticLoading(Modifier.padding(padding))
+            else -> Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(MajesticSpacing.space4),
+                    verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
+                ) {
+                    PeriodHeader(report = report, isUpdating = state.isLoading)
+                    BalanceNotices(state = state, onIntent = onIntent)
+                    BalanceTiles(state = state)
+                    MajesticButton(
+                        text = stringResource(Res.string.cash_closing_open),
+                        onClick = onCashClosingClick,
+                        icon = MajesticIcons.pointOfSale,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    state.summary?.let { summary ->
+                        Breakdowns(
+                            summary = summary,
+                            selected = state.breakdown,
+                            daysWithoutDailyClosing = state.daysWithoutDailyClosing,
+                            onSelect = { onIntent(BalanceIntent.ShowBreakdown(it)) },
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -110,149 +140,56 @@ fun BalanceScreen(onBack: () -> Unit, onCashClosingClick: () -> Unit, viewModel:
     if (state.isPickingPeriod && period != null) {
         BalancePeriodDialog(
             current = period,
-            onConfirm = { first, last -> viewModel.onIntent(BalanceIntent.ChangePeriod(first, last)) },
-            onDismiss = { viewModel.onIntent(BalanceIntent.DismissPeriodPicker) },
+            onConfirm = { first, last -> onIntent(BalanceIntent.ChangePeriod(first, last)) },
+            onDismiss = { onIntent(BalanceIntent.DismissPeriodPicker) },
         )
     }
+    if (state.isChoosingFilters) BalanceFiltersSheet(state = state, onIntent = onIntent)
 }
 
 @Composable
-private fun BalanceContent(state: BalanceState, onIntent: (BalanceIntent) -> Unit, onCashClosingClick: () -> Unit, modifier: Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Column(modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (state.isLoading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            state.loadError?.let { error ->
-                Text(stringResource(error.messageRes()), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-            }
-            PrimaryButton(text = stringResource(Res.string.cash_closing_open), onClick = onCashClosingClick)
-            PeriodHeader(state = state, onIntent = onIntent)
-            if (state.daysWithoutDailyClosing.isNotEmpty()) {
-                Text(
-                    text = stringResource(Res.string.balance_days_without_closing, state.daysWithoutDailyClosing.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-            Filters(state = state, onIntent = onIntent)
-            state.summary?.let { summary ->
-                TotalsCard(totals = summary.totals, productSales = summary.byProduct.singleOrNull()?.takeIf { state.filter.productId != null })
-            }
-            state.pending?.let { PendingCard(it) }
-            state.summary?.let { summary ->
-                Breakdowns(
-                    summary = summary,
-                    selected = state.breakdown,
-                    daysWithoutDailyClosing = state.daysWithoutDailyClosing,
-                    onSelect = { onIntent(BalanceIntent.ShowBreakdown(it)) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PeriodHeader(state: BalanceState, onIntent: (BalanceIntent) -> Unit) {
-    val report = state.report ?: return
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun PeriodHeader(report: BalanceReport, isUpdating: Boolean) {
+    Column {
         Text(
             text = stringResource(Res.string.balance_period, formatCalendarDate(report.period.firstDay), formatCalendarDate(report.period.lastDay)),
-            style = MaterialTheme.typography.titleMedium,
+            style = MajesticTheme.typography.title,
+            color = MajesticTheme.colors.ink,
         )
         Text(
-            text = stringResource(Res.string.balance_period_hint, formatTimeOfDay(report.dayStartMinutes)),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text = if (isUpdating) stringResource(Res.string.balance_updating) else stringResource(Res.string.balance_period_hint, formatTimeOfDay(report.dayStartMinutes)),
+            style = MajesticTheme.typography.caption,
+            color = MajesticTheme.colors.inkMuted,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = { onIntent(BalanceIntent.OpenPeriodPicker) }, enabled = !state.isLoading) {
-                Text(stringResource(Res.string.balance_change_period))
-            }
-            TextButton(onClick = { onIntent(BalanceIntent.Reload) }, enabled = !state.isLoading) {
-                Text(stringResource(Res.string.balance_reload))
-            }
-        }
     }
 }
 
-/** RF-BAL-02: the filters work on the payments already read. */
-@OptIn(ExperimentalLayoutApi::class)
+/** A reading that failed after a good one, the days without closing (RF-BAL-06) and the filters in use. */
 @Composable
-private fun Filters(state: BalanceState, onIntent: (BalanceIntent) -> Unit) {
-    val filter = state.filter
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterMenu(
-            title = stringResource(Res.string.balance_filter_method),
-            selected = filter.method,
-            options = PaymentMethod.entries.map { it to stringResource(it.label()) },
-            onSelect = { onIntent(BalanceIntent.FilterByMethod(it)) },
+private fun BalanceNotices(state: BalanceState, onIntent: (BalanceIntent) -> Unit) {
+    state.loadError?.let { error ->
+        Banner(tone = BannerTone.Danger, message = stringResource(error.messageRes()), actionText = stringResource(Res.string.retry), onAction = { onIntent(BalanceIntent.Reload) })
+    }
+    val daysWithoutClosing = state.daysWithoutDailyClosing
+    if (daysWithoutClosing.isNotEmpty()) {
+        Banner(
+            tone = BannerTone.Warning,
+            icon = MajesticIcons.warning,
+            title = pluralStringResource(Res.plurals.balance_days_without_closing_title, daysWithoutClosing.size, daysWithoutClosing.size),
+            message = daysWithoutClosing.sortedBy { it.epochDay }.joinToString(", ") { formatCalendarDate(it) },
         )
-        FilterMenu(
-            title = stringResource(Res.string.balance_filter_employee),
-            selected = filter.employeeId,
-            options = state.employeeOptions.map { it.id to employeeNameOrUnknown(it.name) },
-            onSelect = { onIntent(BalanceIntent.FilterByEmployee(it)) },
-        )
-        FilterMenu(
-            title = stringResource(Res.string.balance_filter_destination),
-            selected = filter.destination,
-            options = DestinationKind.entries.map { it to stringResource(it.label()) },
-            onSelect = { onIntent(BalanceIntent.FilterByDestination(it)) },
-        )
-        FilterMenu(
-            title = stringResource(Res.string.balance_filter_product),
-            selected = filter.productId,
-            options = state.productOptions.map(BalanceOption::productEntry),
-            onSelect = { onIntent(BalanceIntent.FilterByProduct(it)) },
+    }
+    if (state.activeFilterCount > 0) {
+        Banner(
+            tone = BannerTone.Info,
+            icon = MajesticIcons.filter,
+            message = pluralStringResource(Res.plurals.balance_filters_active, state.activeFilterCount, state.activeFilterCount),
+            actionText = stringResource(Res.string.balance_clear_filters),
+            onAction = { onIntent(BalanceIntent.ClearFilters) },
         )
     }
 }
 
-private fun BalanceOption.productEntry(): Pair<String, String> = id to (name ?: id)
-
-/** A chip that opens the values of one filter. The first entry, "Todos", removes it. */
-@Composable
-private fun <T> FilterMenu(title: String, selected: T?, options: List<Pair<T, String>>, onSelect: (T?) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedName = options.firstOrNull { it.first == selected }?.second
-    Box {
-        FilterChip(
-            selected = selected != null,
-            onClick = { expanded = true },
-            label = { Text(if (selectedName != null) "$title: $selectedName" else title) },
-        )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(Res.string.balance_filter_all)) },
-                onClick = {
-                    expanded = false
-                    onSelect(null)
-                },
-            )
-            options.forEach { (value, name) ->
-                DropdownMenuItem(
-                    text = { Text(name) },
-                    onClick = {
-                        expanded = false
-                        onSelect(value)
-                    },
-                )
-            }
-        }
-    }
-}
-
-fun DestinationKind.label(): StringResource = when (this) {
-    DestinationKind.ROOM -> Res.string.destination_room
-    DestinationKind.TABLE -> Res.string.destination_table
-    DestinationKind.POOL -> Res.string.destination_pool
-    DestinationKind.BAR -> Res.string.destination_bar
-    DestinationKind.OTHER -> Res.string.destination_other
-}
-
-private fun PaymentReadError.messageRes(): StringResource = when (this) {
+fun PaymentReadError.messageRes(): StringResource = when (this) {
     PaymentReadError.NoConnection -> Res.string.balance_error_no_connection
     PaymentReadError.NotAllowed -> Res.string.balance_error_not_allowed
     PaymentReadError.Unknown -> Res.string.balance_error_unknown

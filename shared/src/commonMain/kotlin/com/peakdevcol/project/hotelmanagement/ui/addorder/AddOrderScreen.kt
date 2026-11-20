@@ -1,262 +1,121 @@
 package com.peakdevcol.project.hotelmanagement.ui.addorder
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.peakdevcol.project.hotelmanagement.domain.model.Product
-import com.peakdevcol.project.hotelmanagement.domain.model.formatPesos
+import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
+import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.resources.Res
-import com.peakdevcol.project.hotelmanagement.resources.dialog_accept
-import com.peakdevcol.project.hotelmanagement.resources.ic_add
-import com.peakdevcol.project.hotelmanagement.resources.ic_delete
-import com.peakdevcol.project.hotelmanagement.resources.ic_edit
-import com.peakdevcol.project.hotelmanagement.resources.menu_add_order
-import com.peakdevcol.project.hotelmanagement.resources.order_add_product
-import com.peakdevcol.project.hotelmanagement.resources.order_catalog_empty
-import com.peakdevcol.project.hotelmanagement.resources.order_catalog_error
+import com.peakdevcol.project.hotelmanagement.resources.destination_change
+import com.peakdevcol.project.hotelmanagement.resources.destination_choose
+import com.peakdevcol.project.hotelmanagement.resources.destination_label
+import com.peakdevcol.project.hotelmanagement.resources.order_choose_destination
 import com.peakdevcol.project.hotelmanagement.resources.order_confirm
-import com.peakdevcol.project.hotelmanagement.resources.order_edit_destination
-import com.peakdevcol.project.hotelmanagement.resources.order_empty
 import com.peakdevcol.project.hotelmanagement.resources.order_error_no_session
-import com.peakdevcol.project.hotelmanagement.resources.order_error_title
 import com.peakdevcol.project.hotelmanagement.resources.order_error_unknown
-import com.peakdevcol.project.hotelmanagement.resources.order_product_line
-import com.peakdevcol.project.hotelmanagement.resources.order_remove_product
-import com.peakdevcol.project.hotelmanagement.resources.order_saved_message
-import com.peakdevcol.project.hotelmanagement.resources.order_saved_offline_message
-import com.peakdevcol.project.hotelmanagement.resources.order_saved_offline_title
-import com.peakdevcol.project.hotelmanagement.resources.order_saved_title
-import com.peakdevcol.project.hotelmanagement.resources.order_total
-import com.peakdevcol.project.hotelmanagement.resources.order_unit_price
-import com.peakdevcol.project.hotelmanagement.resources.retry
-import com.peakdevcol.project.hotelmanagement.ui.components.LoadingOverlay
-import com.peakdevcol.project.hotelmanagement.ui.components.PrimaryButton
-import com.peakdevcol.project.hotelmanagement.ui.components.ScreenTopBar
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.StringResource
+import com.peakdevcol.project.hotelmanagement.resources.order_saved_on_device
+import com.peakdevcol.project.hotelmanagement.resources.order_sent
+import com.peakdevcol.project.hotelmanagement.resources.order_without_destination
+import com.peakdevcol.project.hotelmanagement.resources.orders_new
+import com.peakdevcol.project.hotelmanagement.ui.currentorders.label
+import com.peakdevcol.project.hotelmanagement.ui.currentorders.productCountLabel
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Avatar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListGroup
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListRow
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.MajesticTopBar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.OrderSummaryBar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.icon
+import com.peakdevcol.project.hotelmanagement.ui.main.AppMessagesHost
+import com.peakdevcol.project.hotelmanagement.ui.main.LocalAppMessages
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+/** RF-ORD-01 to RF-ORD-04: a new order. When it is confirmed the list of orders shows it at once. */
 @Composable
-fun AddOrderScreen(onBack: () -> Unit, viewModel: AddOrderViewModel = koinViewModel()) {
+fun AddOrderScreen(onClose: () -> Unit, viewModel: AddOrderViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var showAddProduct by rememberSaveable { mutableStateOf(false) }
-    var showDestination by rememberSaveable { mutableStateOf(false) }
+    val messages = LocalAppMessages.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = { ScreenTopBar(title = stringResource(Res.string.menu_add_order), onBack = onBack) },
-            floatingActionButton = {
-                if (state.catalog.isNotEmpty()) {
-                    FloatingActionButton(onClick = { showAddProduct = true }) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_add),
-                            contentDescription = stringResource(Res.string.order_add_product),
-                        )
-                    }
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is AddOrderEffect.Saved -> {
+                    messages.show(getString(if (effect.delivery == OrderDelivery.SENT) Res.string.order_sent else Res.string.order_saved_on_device))
+                    onClose()
                 }
-            },
-            bottomBar = {
-                OrderSummary(
-                    destination = state.destination.label(),
-                    total = formatPesos(state.totalAmount),
-                    canConfirm = state.canConfirm,
-                    onEditDestination = { showDestination = true },
-                    onConfirm = { viewModel.onIntent(AddOrderIntent.Confirm) },
-                )
-            },
-        ) { padding ->
-            when {
-                state.catalogFailed -> CatalogError(Modifier.padding(padding), onRetry = { viewModel.onIntent(AddOrderIntent.RetryCatalog) })
-                state.isCatalogEmpty -> EmptyOrder(Modifier.padding(padding), Res.string.order_catalog_empty)
-                state.products.isEmpty() -> EmptyOrder(Modifier.padding(padding), Res.string.order_empty)
-                else -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        top = padding.calculateTopPadding(),
-                        bottom = padding.calculateBottomPadding() + 80.dp,
+                is AddOrderEffect.SaveFailed -> messages.show(
+                    getString(
+                        when (effect.reason) {
+                            SaveFailure.NoSession -> Res.string.order_error_no_session
+                            SaveFailure.Unknown -> Res.string.order_error_unknown
+                        },
                     ),
-                ) {
-                    items(state.products, key = { it.id }) { product ->
-                        ProductRow(product = product, onRemove = { viewModel.onIntent(AddOrderIntent.RemoveProduct(product.id)) })
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    }
-                }
-            }
-        }
-
-        if (state.isSaving) LoadingOverlay()
-    }
-
-    if (showAddProduct) {
-        AddProductDialog(
-            catalog = state.catalog,
-            onAdd = { product, quantity ->
-                viewModel.onIntent(AddOrderIntent.AddProduct(product, quantity))
-                showAddProduct = false
-            },
-            onDismiss = { showAddProduct = false },
-        )
-    }
-
-    if (showDestination) {
-        DestinationDialog(
-            current = state.destination,
-            onSelect = {
-                viewModel.onIntent(AddOrderIntent.SelectDestination(it))
-                showDestination = false
-            },
-            onDismiss = { showDestination = false },
-        )
-    }
-
-    state.saveResult?.let { result -> SaveResultDialog(result, onDismiss = { viewModel.onIntent(AddOrderIntent.DismissResult) }) }
-}
-
-@Composable
-private fun ProductRow(product: Product, onRemove: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(Res.string.order_product_line, product.name, product.quantity),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = stringResource(Res.string.order_unit_price, formatPesos(product.unitPrice)),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Text(
-            text = formatPesos(product.totalAmount),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        IconButton(onClick = onRemove) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_delete),
-                contentDescription = stringResource(Res.string.order_remove_product, product.name),
-            )
-        }
-    }
-}
-
-@Composable
-private fun OrderSummary(
-    destination: String,
-    total: String,
-    canConfirm: Boolean,
-    onEditDestination: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    Surface(tonalElevation = 3.dp) {
-        Column(modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = destination,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = onEditDestination) {
-                    Icon(
-                        painter = painterResource(Res.drawable.ic_edit),
-                        contentDescription = stringResource(Res.string.order_edit_destination),
-                    )
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Text(
-                    text = stringResource(Res.string.order_total, total),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
-                PrimaryButton(
-                    text = stringResource(Res.string.order_confirm),
-                    onClick = onConfirm,
-                    enabled = canConfirm,
-                    modifier = Modifier.weight(1f),
                 )
             }
         }
     }
+
+    AddOrderContent(state = state, onIntent = viewModel::onIntent, onClose = onClose)
 }
 
 @Composable
-private fun EmptyOrder(modifier: Modifier, message: StringResource) {
-    Box(modifier = modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-        Text(
-            text = stringResource(message),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun CatalogError(modifier: Modifier, onRetry: () -> Unit) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(stringResource(Res.string.order_catalog_error), textAlign = TextAlign.Center)
-        TextButton(onClick = onRetry) { Text(stringResource(Res.string.retry)) }
-    }
-}
-
-@Composable
-private fun SaveResultDialog(result: SaveResult, onDismiss: () -> Unit) {
-    val (title, message) = when (result) {
-        SaveResult.Sent -> Res.string.order_saved_title to Res.string.order_saved_message
-        SaveResult.SavedOnDevice -> Res.string.order_saved_offline_title to Res.string.order_saved_offline_message
-        is SaveResult.Failed -> Res.string.order_error_title to when (result.reason) {
-            SaveFailure.NoSession -> Res.string.order_error_no_session
-            SaveFailure.Unknown -> Res.string.order_error_unknown
-        }
-    }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(title)) },
-        text = { Text(stringResource(message)) },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.dialog_accept)) }
+fun AddOrderContent(state: AddOrderState, onIntent: (AddOrderIntent) -> Unit, onClose: () -> Unit) {
+    val destination = state.destination
+    val selection = state.picker.selection
+    Scaffold(
+        topBar = { MajesticTopBar(title = stringResource(Res.string.orders_new), onBack = onClose) },
+        bottomBar = {
+            OrderSummaryBar(
+                detail = listOf(
+                    if (destination == null) stringResource(Res.string.order_without_destination) else destination.label(),
+                    productCountLabel(selection.unitCount),
+                ).joinToString(" · "),
+                totalAmount = selection.totalAmount,
+                actionText = stringResource(if (destination == null) Res.string.order_choose_destination else Res.string.order_confirm),
+                onAction = { onIntent(AddOrderIntent.Confirm) },
+                actionEnabled = destination == null || state.canConfirm,
+                actionLoading = state.isSaving,
+            )
         },
-    )
+        snackbarHost = { AppMessagesHost() },
+        containerColor = MajesticTheme.colors.surface,
+    ) { padding ->
+        ProductPickerContent(
+            picker = state.picker,
+            onIntent = { onIntent(AddOrderIntent.Picker(it)) },
+            onRetryCatalog = { onIntent(AddOrderIntent.RetryCatalog) },
+            modifier = Modifier.padding(padding),
+            header = { DestinationCard(destination = destination, onClick = { onIntent(AddOrderIntent.OpenDestination) }) },
+        )
+    }
+    state.destinationDraft?.let { draft -> DestinationSheet(draft = draft, onIntent = onIntent) }
+}
+
+/** RF-ORD-03: the destination goes first, and changes with one touch. */
+@Composable
+private fun DestinationCard(destination: OrderDestination?, onClick: () -> Unit) {
+    val colors = MajesticTheme.colors
+    ListGroup {
+        ListRow(
+            title = if (destination == null) stringResource(Res.string.destination_choose) else destination.label(),
+            subtitle = stringResource(Res.string.destination_label),
+            leading = { Avatar(icon = destination.icon(filled = destination != null)) },
+            trailing = {
+                Text(
+                    text = stringResource(Res.string.destination_change),
+                    style = MajesticTheme.typography.label,
+                    color = colors.primary,
+                    maxLines = 1,
+                )
+            },
+            onClick = onClick,
+        )
+    }
 }

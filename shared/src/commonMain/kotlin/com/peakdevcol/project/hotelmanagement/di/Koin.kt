@@ -28,6 +28,7 @@ import com.peakdevcol.project.hotelmanagement.domain.repository.TaxRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.UserRepository
 import com.peakdevcol.project.hotelmanagement.domain.usecase.AddProductsToOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CancelOrderUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ChargeOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CloseOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CreateEmployeeUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DeleteCategoryUseCase
@@ -45,11 +46,11 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveHotelSetting
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveInventoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOpenOrdersUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOrderDetailUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingCollectionUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReconcilePendingAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
-import com.peakdevcol.project.hotelmanagement.domain.usecase.RegisterPaymentUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.RemoveProductFromOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReopenOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveCashClosingUseCase
@@ -62,13 +63,14 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.SendPasswordEmailUs
 import com.peakdevcol.project.hotelmanagement.domain.usecase.UpdateEmployeeUseCase
 import com.peakdevcol.project.hotelmanagement.ui.AppViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
+import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductsViewModel
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceViewModel
 import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingViewModel
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersViewModel
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.OrderDetailViewModel
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormViewModel
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesViewModel
-import com.peakdevcol.project.hotelmanagement.ui.home.HomeViewModel
+import com.peakdevcol.project.hotelmanagement.ui.main.MainViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormViewModel
@@ -130,7 +132,8 @@ private val domainModule = module {
     factoryOf(::ObserveOrderDetailUseCase)
     factoryOf(::CloseOrderUseCase)
     factoryOf(::ReopenOrderUseCase)
-    factoryOf(::RegisterPaymentUseCase)
+    factoryOf(::ChargeOrderUseCase)
+    factoryOf(::ObserveOrderUseCase)
     factoryOf(::CancelOrderUseCase)
     factoryOf(::AddProductsToOrderUseCase)
     factoryOf(::RemoveProductFromOrderUseCase)
@@ -155,9 +158,9 @@ private val domainModule = module {
 private val uiModule = module {
     viewModelOf(::AppViewModel)
     viewModelOf(::LoginViewModel)
-    viewModelOf(::HomeViewModel)
+    viewModelOf(::MainViewModel)
     viewModelOf(::AddOrderViewModel)
-    viewModelOf(::CurrentOrdersViewModel)
+    viewModel { CurrentOrdersViewModel(observeOpenOrders = get()) }
     viewModelOf(::InventoryViewModel)
     viewModelOf(::EmployeesViewModel)
     viewModelOf(::SettingsViewModel)
@@ -184,12 +187,13 @@ private val uiModule = module {
             observeOrderDetail = get(),
             closeOrder = get(),
             reopenOrder = get(),
-            registerPayment = get(),
+            chargeOrder = get(),
             cancelOrder = get(),
-            getProducts = get(),
-            addProductsToOrder = get(),
             removeProductFromOrder = get(),
         )
+    }
+    viewModel { parameters ->
+        AddProductsViewModel(orderId = parameters.get(), observeOrder = get(), getProducts = get(), addProductsToOrder = get())
     }
 }
 

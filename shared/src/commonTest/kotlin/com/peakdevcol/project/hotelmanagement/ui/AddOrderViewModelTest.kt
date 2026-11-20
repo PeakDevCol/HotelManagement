@@ -1,20 +1,25 @@
 package com.peakdevcol.project.hotelmanagement.ui
 
+import com.peakdevcol.project.hotelmanagement.domain.model.DestinationKind
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
-import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeCatalog
+import com.peakdevcol.project.hotelmanagement.fakes.FakeOrderRepository
+import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderEffect
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderIntent
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
+import com.peakdevcol.project.hotelmanagement.ui.addorder.ProductPickerIntent
 import com.peakdevcol.project.hotelmanagement.ui.addorder.SaveFailure
-import com.peakdevcol.project.hotelmanagement.ui.addorder.SaveResult
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -27,72 +32,110 @@ class AddOrderViewModelTest : MainDispatcherTest() {
     private val orders = FakeOrderRepository()
     private val auth = FakeAuthRepository(userId = "uid-1")
 
-    private fun viewModel() = AddOrderViewModel(catalog.getProducts, SaveOrderUseCase(auth, orders))
+    private fun viewModel(saveOrder: SaveOrderUseCase = SaveOrderUseCase(auth, orders)) = AddOrderViewModel(catalog.getProducts, saveOrder)
+
+    private fun AddOrderViewModel.pick(intent: ProductPickerIntent) = onIntent(AddOrderIntent.Picker(intent))
+
+    private fun AddOrderViewModel.chooseDestination(kind: DestinationKind, number: String = "") {
+        onIntent(AddOrderIntent.OpenDestination)
+        onIntent(AddOrderIntent.SelectDestinationKind(kind))
+        onIntent(AddOrderIntent.DestinationNumberChange(number))
+        onIntent(AddOrderIntent.ConfirmDestination)
+    }
 
     @Test
     fun loadsTheCatalog() {
-        val state = viewModel().state.value
+        val picker = viewModel().state.value.picker
 
-        assertEquals(catalog.groupOf(beer, soda), state.catalog)
-        assertFalse(state.catalogFailed)
-        assertFalse(state.isCatalogEmpty)
+        assertEquals(catalog.groupOf(beer, soda), picker.catalog)
+        assertFalse(picker.catalogFailed)
+        assertFalse(picker.isCatalogEmpty)
+        assertEquals(listOf(beer, soda), picker.visibleProducts)
     }
 
     @Test
     fun showsCatalogErrorAndRetries() {
         catalog.productRepository.readFailure = IllegalStateException("offline")
         val viewModel = viewModel()
-        assertTrue(viewModel.state.value.catalogFailed)
+        assertTrue(viewModel.state.value.picker.catalogFailed)
 
         catalog.productRepository.readFailure = null
         catalog.offer(listOf(beer))
         viewModel.onIntent(AddOrderIntent.RetryCatalog)
 
-        assertFalse(viewModel.state.value.catalogFailed)
-        assertEquals(catalog.groupOf(beer), viewModel.state.value.catalog)
+        assertFalse(viewModel.state.value.picker.catalogFailed)
+        assertEquals(catalog.groupOf(beer), viewModel.state.value.picker.catalog)
     }
 
     @Test
     fun tellsWhenTheInventoryHasNothingToOrderYet() {
         catalog.offer(emptyList())
 
-        val state = viewModel().state.value
-
-        assertTrue(state.isCatalogEmpty)
-        assertFalse(state.catalogFailed)
+        assertTrue(viewModel().state.value.picker.isCatalogEmpty)
     }
 
     @Test
-    fun addingTheSameProductTwiceAddsItsQuantities() {
+    fun eachTouchOnAProductAddsOneUnit() {
         val viewModel = viewModel()
 
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 2))
-        viewModel.onIntent(AddOrderIntent.AddProduct(soda, 1))
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 3))
+        viewModel.pick(ProductPickerIntent.Add(beer))
+        viewModel.pick(ProductPickerIntent.Add(soda))
+        viewModel.pick(ProductPickerIntent.Add(beer))
 
-        val products = viewModel.state.value.products
-        assertEquals(listOf(5, 1), products.map { it.quantity })
-        assertEquals(5 * 3_500L + 3_000L, viewModel.state.value.totalAmount)
+        val selection = viewModel.state.value.picker.selection
+        assertEquals(listOf(2, 1), selection.products.map { it.quantity })
+        assertEquals(2 * 3_500L + 3_000L, selection.totalAmount)
     }
 
     @Test
-    fun ignoresQuantitiesBelowOne() {
+    fun theStepperChangesAndRemovesAProduct() {
         val viewModel = viewModel()
+        viewModel.pick(ProductPickerIntent.Add(beer))
+        viewModel.pick(ProductPickerIntent.Increase(beer.id))
+        viewModel.pick(ProductPickerIntent.Add(soda))
 
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 0))
+        viewModel.pick(ProductPickerIntent.Decrease(beer.id))
+        viewModel.pick(ProductPickerIntent.Remove(soda.id))
 
-        assertTrue(viewModel.state.value.products.isEmpty())
+        assertEquals(listOf(beer.id to 1), viewModel.state.value.picker.selection.products.map { it.id to it.quantity })
     }
 
     @Test
-    fun removesAProduct() {
+    fun searchingShowsTheMatchesOfEveryCategory() {
         val viewModel = viewModel()
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 2))
-        viewModel.onIntent(AddOrderIntent.AddProduct(soda, 1))
 
-        viewModel.onIntent(AddOrderIntent.RemoveProduct(beer.id))
+        viewModel.pick(ProductPickerIntent.Search("coca"))
 
-        assertEquals(listOf(soda.id), viewModel.state.value.products.map { it.id })
+        assertEquals(listOf(soda), viewModel.state.value.picker.visibleProducts)
+    }
+
+    @Test
+    fun confirmingWithoutADestinationOpensItFirst() {
+        val viewModel = viewModel()
+        viewModel.pick(ProductPickerIntent.Add(beer))
+
+        viewModel.onIntent(AddOrderIntent.Confirm)
+
+        assertNotNull(viewModel.state.value.destinationDraft)
+        assertTrue(orders.attempts.isEmpty())
+    }
+
+    @Test
+    fun aRoomNeedsItsNumberAndThePoolDoesNot() {
+        val viewModel = viewModel()
+        viewModel.onIntent(AddOrderIntent.OpenDestination)
+
+        viewModel.onIntent(AddOrderIntent.SelectDestinationKind(DestinationKind.ROOM))
+        assertNull(viewModel.state.value.destinationDraft?.destination)
+        viewModel.onIntent(AddOrderIntent.DestinationNumberChange("2a04"))
+        assertEquals(OrderDestination.Room(204), viewModel.state.value.destinationDraft?.destination)
+
+        viewModel.onIntent(AddOrderIntent.SelectDestinationKind(DestinationKind.POOL))
+        viewModel.onIntent(AddOrderIntent.DestinationNumberChange(""))
+        viewModel.onIntent(AddOrderIntent.ConfirmDestination)
+
+        assertEquals(OrderDestination.Pool(), viewModel.state.value.destination)
+        assertNull(viewModel.state.value.destinationDraft)
     }
 
     @Test
@@ -100,47 +143,41 @@ class AddOrderViewModelTest : MainDispatcherTest() {
         val viewModel = viewModel()
         assertFalse(viewModel.state.value.canConfirm)
 
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
+        viewModel.pick(ProductPickerIntent.Add(beer))
         assertFalse(viewModel.state.value.canConfirm)
 
-        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Room(204)))
+        viewModel.chooseDestination(DestinationKind.ROOM, "204")
         assertTrue(viewModel.state.value.canConfirm)
     }
 
     @Test
-    fun savingResetsTheOrderButKeepsTheCatalog() {
+    fun savingSendsTheOrderAndTellsTheScreen() = runTest {
         val viewModel = viewModel()
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 2))
-        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Table(3)))
+        viewModel.pick(ProductPickerIntent.Add(beer))
+        viewModel.pick(ProductPickerIntent.Increase(beer.id))
+        viewModel.chooseDestination(DestinationKind.TABLE, "3")
 
         viewModel.onIntent(AddOrderIntent.Confirm)
 
         val saved = orders.saved.single()
         assertEquals(OrderDestination.Table(3), saved.destination)
         assertEquals(7_000, saved.totalAmount)
-        val state = viewModel.state.value
-        assertEquals(SaveResult.Sent, state.saveResult)
-        assertTrue(state.products.isEmpty())
-        assertNull(state.destination)
-        assertEquals(catalog.groupOf(beer, soda), state.catalog)
-
-        viewModel.onIntent(AddOrderIntent.DismissResult)
-        assertNull(viewModel.state.value.saveResult)
+        assertEquals(AddOrderEffect.Saved(OrderDelivery.SENT), viewModel.effects.first())
+        assertTrue(viewModel.state.value.picker.selection.isEmpty)
     }
 
     @Test
-    fun failedSaveKeepsTheOrderAndRetriesWithTheSameId() {
+    fun failedSaveKeepsTheOrderAndRetriesWithTheSameId() = runTest {
         orders.result = Result.failure(IllegalStateException("permission denied"))
         val viewModel = viewModel()
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
-        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Other))
+        viewModel.pick(ProductPickerIntent.Add(beer))
+        viewModel.chooseDestination(DestinationKind.OTHER)
 
         viewModel.onIntent(AddOrderIntent.Confirm)
 
-        val state = viewModel.state.value
-        assertEquals(SaveResult.Failed(SaveFailure.Unknown), state.saveResult)
-        assertFalse(state.isSaving)
-        assertEquals(1, state.products.size)
+        assertEquals(AddOrderEffect.SaveFailed(SaveFailure.Unknown), viewModel.effects.first())
+        assertFalse(viewModel.state.value.isSaving)
+        assertEquals(1, viewModel.state.value.picker.selection.products.size)
 
         orders.result = Result.success(OrderDelivery.SENT)
         viewModel.onIntent(AddOrderIntent.Confirm)
@@ -150,27 +187,24 @@ class AddOrderViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun anOrderWithoutAnswerFromTheServerIsSavedOnTheDeviceAndTheScreenIsReadyForTheNext() {
+    fun anOrderWithoutAnswerFromTheServerIsSavedOnTheDevice() = runTest {
         orders.result = Result.success(OrderDelivery.PENDING)
         val viewModel = viewModel()
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
-        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Pool(12)))
+        viewModel.pick(ProductPickerIntent.Add(beer))
+        viewModel.chooseDestination(DestinationKind.POOL, "12")
 
         viewModel.onIntent(AddOrderIntent.Confirm)
 
-        val state = viewModel.state.value
-        assertEquals(SaveResult.SavedOnDevice, state.saveResult)
-        assertTrue(state.products.isEmpty())
-        assertFalse(state.isSaving)
+        assertEquals(AddOrderEffect.Saved(OrderDelivery.PENDING), viewModel.effects.first())
         assertEquals(OrderDestination.Pool(12), orders.saved.single().destination)
     }
 
     @Test
-    fun nextOrderGetsANewId() {
+    fun theNextOrderGetsANewId() {
         val viewModel = viewModel()
         repeat(2) {
-            viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
-            viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Other))
+            viewModel.pick(ProductPickerIntent.Add(beer))
+            viewModel.chooseDestination(DestinationKind.OTHER)
             viewModel.onIntent(AddOrderIntent.Confirm)
         }
 
@@ -178,16 +212,13 @@ class AddOrderViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun reportsMissingSession() {
-        val viewModel = AddOrderViewModel(
-            catalog.getProducts,
-            SaveOrderUseCase(FakeAuthRepository(userId = null), orders),
-        )
-        viewModel.onIntent(AddOrderIntent.AddProduct(beer, 1))
-        viewModel.onIntent(AddOrderIntent.SelectDestination(OrderDestination.Other))
+    fun reportsMissingSession() = runTest {
+        val viewModel = viewModel(SaveOrderUseCase(FakeAuthRepository(userId = null), orders))
+        viewModel.pick(ProductPickerIntent.Add(beer))
+        viewModel.chooseDestination(DestinationKind.OTHER)
 
         viewModel.onIntent(AddOrderIntent.Confirm)
 
-        assertEquals(SaveResult.Failed(SaveFailure.NoSession), viewModel.state.value.saveResult)
+        assertEquals(AddOrderEffect.SaveFailed(SaveFailure.NoSession), viewModel.effects.first())
     }
 }

@@ -1,11 +1,12 @@
-package com.peakdevcol.project.hotelmanagement.ui.home
+package com.peakdevcol.project.hotelmanagement.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.peakdevcol.project.hotelmanagement.domain.model.Access
-import com.peakdevcol.project.hotelmanagement.domain.model.AppSection
+import com.peakdevcol.project.hotelmanagement.domain.model.AppNavigation
 import com.peakdevcol.project.hotelmanagement.domain.model.PendingAddition
-import com.peakdevcol.project.hotelmanagement.domain.model.menuFor
+import com.peakdevcol.project.hotelmanagement.domain.model.User
+import com.peakdevcol.project.hotelmanagement.domain.model.navigationFor
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DismissRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutOutcome
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
@@ -27,23 +28,26 @@ enum class LogOutDialog {
     PendingOrders,
 }
 
-data class HomeState(
+/** What every screen of a logged-in employee shares: the navigation, the session and the warnings. */
+data class MainState(
+    /** Null until the profile of the logged-in employee is read. */
+    val employee: User? = null,
+    /** RF-AUTH-05 and RF-EMP-05: the sections the role allows, and the ones of the area first. */
+    val navigation: AppNavigation? = null,
     val pendingOrderCount: Int = 0,
     val logOutDialog: LogOutDialog? = null,
     /** RF-CUR-13: products added without connection that the server did not accept. */
     val rejectedAdditions: List<PendingAddition> = emptyList(),
-    /** RF-AUTH-05: what the role of the employee lets them see, in the order of their area. */
-    val sections: List<AppSection> = emptyList(),
 )
 
-sealed interface HomeIntent {
-    data object LogOutClick : HomeIntent
-    data object LogOutConfirm : HomeIntent
-    data object LogOutDialogDismiss : HomeIntent
-    data object RejectedAdditionsRead : HomeIntent
+sealed interface MainIntent {
+    data object LogOutClick : MainIntent
+    data object LogOutConfirm : MainIntent
+    data object LogOutDialogDismiss : MainIntent
+    data object RejectedAdditionsRead : MainIntent
 }
 
-class HomeViewModel(
+class MainViewModel(
     observePendingOrderCount: ObservePendingOrderCountUseCase,
     observeAccess: ObserveAccessUseCase,
     observeRejectedAdditions: ObserveRejectedAdditionsUseCase,
@@ -52,12 +56,12 @@ class HomeViewModel(
     private val logOut: LogOutUseCase,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(HomeState())
-    val state: StateFlow<HomeState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(MainState())
+    val state: StateFlow<MainState> = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
-            // Without the count the menu still works; logging out checks the pending orders again.
+            // Without the count the app still works; logging out checks the pending orders again.
             observePendingOrderCount()
                 .catch { emit(0) }
                 .collect { count -> _state.update { it.copy(pendingOrderCount = count) } }
@@ -65,15 +69,15 @@ class HomeViewModel(
     }
 
     init {
-        // The menu is what opens after starting the app, so this is where it finds out what the
-        // server did with the products that were added without connection.
+        // This is what opens after starting the app, so this is where it finds out what the server
+        // did with the products that were added without connection.
         viewModelScope.launch { runCatching { reconcilePendingAdditions() } }
         viewModelScope.launch {
             observeAccess()
                 .catch { emit(Access.Denied) }
                 .collect { access ->
-                    val sections = (access as? Access.Granted)?.user?.let(::menuFor).orEmpty()
-                    _state.update { it.copy(sections = sections) }
+                    val employee = (access as? Access.Granted)?.user
+                    _state.update { it.copy(employee = employee, navigation = employee?.let(::navigationFor)) }
                 }
         }
         viewModelScope.launch {
@@ -83,12 +87,12 @@ class HomeViewModel(
         }
     }
 
-    fun onIntent(intent: HomeIntent) {
+    fun onIntent(intent: MainIntent) {
         when (intent) {
-            HomeIntent.LogOutClick -> askBeforeLoggingOut()
-            HomeIntent.LogOutConfirm -> confirmLogOut()
-            HomeIntent.LogOutDialogDismiss -> _state.update { it.copy(logOutDialog = null) }
-            HomeIntent.RejectedAdditionsRead -> viewModelScope.launch {
+            MainIntent.LogOutClick -> askBeforeLoggingOut()
+            MainIntent.LogOutConfirm -> confirmLogOut()
+            MainIntent.LogOutDialogDismiss -> _state.update { it.copy(logOutDialog = null) }
+            MainIntent.RejectedAdditionsRead -> viewModelScope.launch {
                 dismissRejectedAdditions(_state.value.rejectedAdditions)
             }
         }
@@ -99,7 +103,7 @@ class HomeViewModel(
         state.copy(logOutDialog = dialog)
     }
 
-    /** On success the session change takes the app back to the introduction screen. */
+    /** On success the session change takes the app back to the login. */
     private fun confirmLogOut() {
         viewModelScope.launch {
             val dialog = when (logOut()) {
