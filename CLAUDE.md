@@ -39,6 +39,17 @@ Capas dentro de `shared`, con las dependencias apuntando hacia el dominio: `pres
 - **Plataforma:** lo que depende de cada plataforma (ubicación, archivos locales) va con `expect`/`actual`, detrás de una interfaz del dominio.
 - Si una pantalla existente no sigue este patrón, se adapta cuando se modifique, no en un cambio aparte.
 
+## Diseño (sistema Majestic, RNF-18)
+- La referencia es el sistema de diseño Majestic (enlace en el PRD, sección 13), y la implementación vive en `shared/.../ui/designsystem`.
+- Las pantallas usan solo sus componentes y valores: `MajesticTheme.colors`, `MajesticTheme.typography`, `MajesticSpacing`, `MajesticRadius` y `MajesticSizes`. Nada de colores, tamaños de letra ni radios sueltos. Si falta algo, primero se agrega al sistema.
+- Nada se sale de su contenedor ni queda encima de otro elemento:
+  - Los textos llevan `maxLines` y `TextOverflow.Ellipsis`, y el texto que se acorta lleva `weight`.
+  - El dinero va con `AmountText`, que se reduce sin cortarse.
+  - Las grillas usan `GridCells.Adaptive` y los grupos de chips o botones, `FlowRow`.
+  - Una fila que se desplaza de lado nunca se encoge en alto.
+- Todo componente nuevo del sistema se agrega a `DesignSystemLayoutTest` (`shared/src/jvmTest`), que lo revisa a 320, 360 y 720 dp y con la letra al 130 %.
+- Para revisar los componentes a ojo: `MAJESTIC_SNAPSHOTS=/tmp/majestic ./gradlew :shared:jvmTest --tests '*DesignSystemLayoutTest*'` guarda una imagen de cada uno, en tema claro y oscuro.
+
 ## Principios SOLID
 - **Responsabilidad única:** una clase, una razón para cambiar. Un caso de uso por acción, un ViewModel por pantalla y un repositorio por agregado (pedidos, pagos, habitaciones, etc.).
 - **Abierto/cerrado:** el comportamiento nuevo se agrega con implementaciones nuevas, no con más `if` por tipo. Por ejemplo, la marcación desde el celular y desde el computador autorizado son dos implementaciones de una misma interfaz.

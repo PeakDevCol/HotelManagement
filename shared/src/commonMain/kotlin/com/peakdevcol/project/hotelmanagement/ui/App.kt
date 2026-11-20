@@ -49,7 +49,7 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesScreen
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginScreen
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsScreen
-import com.peakdevcol.project.hotelmanagement.ui.theme.HotelManagementTheme
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -104,7 +104,7 @@ data object CashClosingRoute
 
 @Composable
 fun App() {
-    HotelManagementTheme {
+    MajesticTheme {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             val appViewModel: AppViewModel = koinViewModel()
             val appState by appViewModel.state.collectAsStateWithLifecycle()
