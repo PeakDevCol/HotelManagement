@@ -77,7 +77,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** RF-EMP-06 and RF-EMP-07: the parameters of the hotel and the manual backup. */
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsScreen(onBack: (() -> Unit)? = null, viewModel: SettingsViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val messages = LocalAppMessages.current
 
@@ -85,13 +85,14 @@ fun SettingsScreen(viewModel: SettingsViewModel = koinViewModel()) {
         viewModel.effects.collect { effect -> messages.show(effect.message()) }
     }
 
-    SettingsContent(state = state, onIntent = viewModel::onIntent)
+    SettingsContent(state = state, onIntent = viewModel::onIntent, onBack = onBack)
 }
 
+/** [onBack] is the arrow back to "Más", when the section was opened from there on the phone. */
 @Composable
-fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
+fun SettingsContent(state: SettingsState, onIntent: (SettingsIntent) -> Unit, onBack: (() -> Unit)? = null) {
     Scaffold(
-        topBar = { MajesticTopBar(title = stringResource(Res.string.menu_settings)) },
+        topBar = { MajesticTopBar(title = stringResource(Res.string.menu_settings), onBack = onBack) },
         snackbarHost = { AppMessagesHost() },
         containerColor = MajesticTheme.colors.surface,
     ) { padding ->

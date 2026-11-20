@@ -59,7 +59,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** RF-BAL-01 to RF-BAL-04 and RF-BAL-07: only administrators open it (PRD, section 3). */
 @Composable
-fun BalanceScreen(onCashClosingClick: () -> Unit, viewModel: BalanceViewModel = koinViewModel()) {
+fun BalanceScreen(onCashClosingClick: () -> Unit, onBack: (() -> Unit)? = null, viewModel: BalanceViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val messages = LocalAppMessages.current
 
@@ -67,16 +67,17 @@ fun BalanceScreen(onCashClosingClick: () -> Unit, viewModel: BalanceViewModel = 
         viewModel.effects.collect { effect -> messages.show(effect.message()) }
     }
 
-    BalanceContent(state = state, onIntent = viewModel::onIntent, onCashClosingClick = onCashClosingClick)
+    BalanceContent(state = state, onIntent = viewModel::onIntent, onCashClosingClick = onCashClosingClick, onBack = onBack)
 }
 
+/** [onBack] is the arrow back to "Más", when the section was opened from there on the phone. */
 @Composable
-fun BalanceContent(state: BalanceState, onIntent: (BalanceIntent) -> Unit, onCashClosingClick: () -> Unit) {
+fun BalanceContent(state: BalanceState, onIntent: (BalanceIntent) -> Unit, onCashClosingClick: () -> Unit, onBack: (() -> Unit)? = null) {
     val report = state.report
     val loadError = state.loadError
     Scaffold(
         topBar = {
-            MajesticTopBar(title = stringResource(Res.string.nav_cash_and_balance)) {
+            MajesticTopBar(title = stringResource(Res.string.nav_cash_and_balance), onBack = onBack) {
                 MajesticIconButton(
                     icon = MajesticIcons.calendar,
                     contentDescription = stringResource(Res.string.balance_change_period),

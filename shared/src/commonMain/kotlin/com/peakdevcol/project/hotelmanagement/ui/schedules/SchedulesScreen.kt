@@ -98,7 +98,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** RF-ASI-01: only administrators open it (PRD, section 3). */
 @Composable
-fun SchedulesScreen(viewModel: SchedulesViewModel = koinViewModel()) {
+fun SchedulesScreen(onBack: (() -> Unit)? = null, viewModel: SchedulesViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val messages = LocalAppMessages.current
 
@@ -106,16 +106,17 @@ fun SchedulesScreen(viewModel: SchedulesViewModel = koinViewModel()) {
         viewModel.effects.collect { effect -> messages.show(effect.message()) }
     }
 
-    SchedulesContent(state = state, onIntent = viewModel::onIntent)
+    SchedulesContent(state = state, onIntent = viewModel::onIntent, onBack = onBack)
 }
 
+/** [onBack] is the arrow back to "Más", when the section was opened from there on the phone. */
 @Composable
-fun SchedulesContent(state: SchedulesState, onIntent: (SchedulesIntent) -> Unit) {
+fun SchedulesContent(state: SchedulesState, onIntent: (SchedulesIntent) -> Unit, onBack: (() -> Unit)? = null) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val wide = maxWidth >= MajesticSizes.mediumWidth
         Scaffold(
             topBar = {
-                MajesticTopBar(title = stringResource(Res.string.nav_schedules)) {
+                MajesticTopBar(title = stringResource(Res.string.nav_schedules), onBack = onBack) {
                     if (wide) {
                         MajesticButton(
                             text = stringResource(Res.string.schedule_new_shift),

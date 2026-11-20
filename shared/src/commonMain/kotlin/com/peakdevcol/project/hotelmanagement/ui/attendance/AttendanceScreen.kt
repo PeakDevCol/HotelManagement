@@ -44,15 +44,16 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** RF-ASI-02: the shifts of the employee. The second PR of M8 puts marking the entry and the exit on top. */
 @Composable
-fun AttendanceScreen(viewModel: AttendanceViewModel = koinViewModel()) {
+fun AttendanceScreen(onBack: (() -> Unit)? = null, viewModel: AttendanceViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    AttendanceContent(state = state, onIntent = viewModel::onIntent)
+    AttendanceContent(state = state, onIntent = viewModel::onIntent, onBack = onBack)
 }
 
+/** [onBack] is the arrow back to "Más", when the section was opened from there on the phone. */
 @Composable
-fun AttendanceContent(state: AttendanceState, onIntent: (AttendanceIntent) -> Unit) {
+fun AttendanceContent(state: AttendanceState, onIntent: (AttendanceIntent) -> Unit, onBack: (() -> Unit)? = null) {
     Scaffold(
-        topBar = { MajesticTopBar(title = stringResource(Res.string.nav_attendance)) },
+        topBar = { MajesticTopBar(title = stringResource(Res.string.nav_attendance), onBack = onBack) },
         snackbarHost = { AppMessagesHost() },
         containerColor = MajesticTheme.colors.surface,
     ) { padding ->

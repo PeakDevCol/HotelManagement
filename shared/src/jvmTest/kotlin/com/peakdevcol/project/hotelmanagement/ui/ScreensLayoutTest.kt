@@ -316,6 +316,8 @@ class ScreensLayoutTest {
             state = InventoryState(isLoading = false, inventory = inventory, openProduct = OpenProduct("beer")),
             onIntent = {},
             productForm = { _, _ -> ProductFormContent(state = productFormState(), onIntent = {}, onBack = {}) },
+            // Opened from "Más" on the phone, with the arrow back.
+            onBack = {},
         )
     }
 
@@ -387,6 +389,7 @@ class ScreensLayoutTest {
                 lastBackup = BackupSummary(filePath = "/Users/laura/Documentos/Respaldos del hotel/hotel-2026-11-20.json", documentCount = 1_284),
             ),
             onIntent = {},
+            onBack = {},
         )
     }
 
@@ -415,6 +418,7 @@ class ScreensLayoutTest {
                 employees = listOf(admin),
             ),
             onIntent = {},
+            onBack = {},
         )
     }
 
