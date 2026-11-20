@@ -141,6 +141,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Recuperar contraseña | ✅ Hecho en M6 | "¿Olvidaste la contraseña?" en el inicio de sesión |
 | Roles y permisos | ✅ Hecho en M6 | El menú muestra las secciones según el rol y las ordena según el área. El administrador crea y gestiona empleados desde la app. |
 | Configuración y respaldo | ✅ Hecho en M6 | Inicio del día operativo, y respaldo manual en JSON desde escritorio |
+| Sistema de diseño Majestic | 🔄 M17 | Colores, letra Manrope, componentes y pruebas de diseño listos (primer PR). Las pantallas pasan al diseño nuevo y a la navegación por área en el segundo PR. |
 | Turnos y asistencia | ⬜ Pendiente | Fase 2 (M8) |
 | Habitaciones, reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M10 a M12) |
 | Limpieza y mantenimiento | ⬜ Pendiente | Fase 4 (M14 y M15) |
@@ -200,7 +201,7 @@ Estados: ✅ hecho, 🔄 hecho pero cambia por una decisión nueva, ⬜ pendient
 | RF-AUTH-02 | Quitar el registro abierto ([P1](#12-preguntas-abiertas)) | La pantalla de registro desaparece. Las cuentas se crean desde RF-EMP-04. | ✅ |
 | RF-AUTH-03 | Cerrar sesión | Pide confirmación y vuelve a la introducción. Si hay pedidos pendientes de enviar, avisa y no deja cerrar la sesión (RF-ORD-09). | ✅ |
 | RF-AUTH-04 | Recuperar contraseña | "¿Olvidaste la contraseña?" envía el correo de restablecimiento de Firebase Usa el correo escrito en el inicio de sesión y responde siempre lo mismo, exista o no la cuenta. En escritorio el correo se pide por la API REST de Firebase Auth (V1). | ✅ |
-| RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | ✅ |
+| RF-AUTH-05 | Roles y áreas | La app muestra u oculta las secciones según `type` (`basic`, `reception` o `admin`) y ordena el menú según el área. Las reglas de Firestore aplican los mismos permisos. | 🔄 M17: barra inferior en celular y navegación lateral en escritorio, por rol, sin menú intermedio |
 | RF-AUTH-06 | ~~Cuentas nuevas pendientes de aprobación~~ | Descartado por P1: ya no hay registro abierto | — |
 | RF-AUTH-07 | Sin documento, sin acceso | Una cuenta de Firebase Auth sin documento activo en `Users` no lee ni escribe nada, aunque se haya creado por fuera de la app. La app muestra "Tu cuenta no está activa" y solo deja cerrar sesión. | ✅ |
 
@@ -250,7 +251,7 @@ in_progress o closed ──cancelar (solo administradores, con motivo)──▶ 
 | RF-CUR-02 | Filtros | Mis pedidos o todos, y filtro por estado. Al abrir la lista se muestran todos. | ✅ |
 | RF-CUR-03 | Detalle | Productos, cantidades, total, destino, empleado, hora e historial de cambios (RF-CUR-11) | ✅ |
 | RF-CUR-04 | Cerrar la cuenta | `in_progress` → `closed`, guardando `closedAt` y `closedBy` | ✅ |
-| RF-CUR-05 | Registrar el pago | `closed` → `paid`, con el método de pago (efectivo o transferencia, [P4](#12-preguntas-abiertas)) y la propina opcional ([P15](#12-preguntas-abiertas)), guardando `paidAt` y `paidBy`. Crea el registro en `Payments` en la misma transacción. El pedido sale de la lista. | ✅ |
+| RF-CUR-05 | Registrar el pago | `closed` → `paid`, con el método de pago (efectivo o transferencia, [P4](#12-preguntas-abiertas)) y la propina opcional ([P15](#12-preguntas-abiertas)), guardando `paidAt` y `paidBy`. Crea el registro en `Payments` en la misma transacción. El pedido sale de la lista. | 🔄 M17: también se cobra un pedido En curso, que se cierra y se cobra en un paso, y hay una propina sugerida del 10 % |
 | RF-CUR-06 | Editar un pedido | Agregar o quitar productos en `in_progress` ([P3](#12-preguntas-abiertas)). El total se recalcula. Cada producto agregado es una línea nueva, con su propio id. No se puede quitar el último producto: si el pedido ya no va, lo cancela un administrador. | ✅ |
 | RF-CUR-07 | Cancelar un pedido ([P20](#12-preguntas-abiertas)) | Solo administradores, con un motivo. Guarda `cancelReason`, `cancelledAt` y `cancelledBy`. | ✅ |
 | RF-CUR-08 | Cambios simultáneos | Si dos dispositivos cambian el estado del mismo pedido a la vez, el cambio se hace en una transacción de Firestore. El segundo ve el estado actualizado y un aviso, y nunca se registra un pago dos veces. | ✅ |
@@ -293,7 +294,7 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-EMP-02 | Activar o desactivar | Un empleado inactivo no puede usar la app, y las reglas de Firestore lo impiden también | ✅ |
 | RF-EMP-03 | Cambiar el rol | Entre `basic`, `reception` y `admin`. Siempre tiene que quedar al menos un administrador. Se garantiza porque nadie puede cambiar su propio rol ni desactivarse, ni en la app ni en las reglas. | ✅ |
 | RF-EMP-04 | Crear empleados ([P1](#12-preguntas-abiertas)) | El administrador ingresa nombre, correo, rol y área. La cuenta se crea sin cerrar la sesión del administrador (V1), y el empleado recibe el correo de Firebase para crear su contraseña, así nadie más la conoce. Si el perfil no se puede guardar, la cuenta recién creada se elimina. Desde el empleado se puede reenviar el correo. | ✅ |
-| RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve y qué aparece primero en su menú. | ✅ El orden del menú. Las tareas de habitación llegan en la fase 4. |
+| RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve y qué aparece primero en su menú. | 🔄 M17: el área decide la primera sección de la navegación, donde abre la app. Las tareas de habitación llegan en la fase 4. |
 | RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo, desde Menú → Configuración. | ✅ El parámetro de la fase 1. Los demás llegan con su fase. |
 | RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. El archivo queda en `Documentos/HotelManagement/Respaldos`, con cada documento tal como está en Firestore y el historial de cada pedido. "Desde una fecha" aplica a pedidos, pagos y cierres de caja; lo demás se exporta completo. | ✅ |
 
@@ -509,6 +510,7 @@ El check-out, el repaso del día y el fin de un mantenimiento dejan la habitaci�
 | RNF-15 | Respaldo | Respaldo manual en JSON desde la app de escritorio (RF-EMP-07). Los respaldos automáticos de Firestore exigen el plan Blaze y quedan para después. |
 | RNF-16 | Reportes oficiales | La app no maneja la TRA ni el SIRE ([P28](#12-preguntas-abiertas)). El hotel sigue con su proceso actual, que se revisará para una versión futura. |
 | RNF-17 | Fotos | Se comprimen antes de guardarlas, se guardan en Firestore y solo las ven los roles que ven la tarea o el objeto (RF-TAR-07). |
+| RNF-18 | Sistema de diseño | Las pantallas usan solo los componentes y los valores del sistema de diseño Majestic (paquete `ui/designsystem`, sección 13). Nada se sale de su contenedor ni queda encima de otro elemento, desde 320 dp de ancho y con la letra del sistema al 130 %: los textos se acortan con puntos suspensivos, las cifras de dinero se reducen sin cortarse, las grillas se arman por ancho mínimo y todo lo que se toca mide al menos 48 dp. Unas pruebas de diseño en escritorio lo comprueban. |
 
 ### Firebase en el plan gratuito ([P34](#12-preguntas-abiertas))
 La cuota gratuita de Firestore es de 50.000 lecturas, 20.000 escrituras y 20.000 borrados por día, 1 GiB guardado y 10 GiB de salida al mes.
@@ -654,8 +656,9 @@ Las fases ordenan la construcción. El hotel no recibe la app hasta M16, que la 
 | M14 | 4 | `feature/maintenance` | RF-TAR-01 a RF-TAR-09 y RF-MAN-01 a RF-MAN-06. Validación V7. | M11 |
 | M15 | 4 | `feature/housekeeping` | RF-LIM-01 a RF-LIM-07 | M12 y M14 |
 | M16 | Todas | `release/1.0.0` | Salida a producción de la versión 1.0.0, con las cuatro fases. Pruebas en dispositivos reales (Android, Windows e iOS con sesión iniciada), S4, APK firmado con la llave de producción, instalador `.msi` generado en Windows con los módulos de Java que necesitan Firebase y la app, versión visible en el menú, guía del piloto en `docs/`, piloto de 1 a 2 semanas, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V4 y V5 (precisión del GPS en el hotel). | M5, M8 y M15 |
+| M17 | 1 | `feature/design-system-1` y `-2` | Sistema de diseño Majestic (RNF-18). Primer PR: colores claro y oscuro, letra Manrope, íconos, componentes y pruebas de diseño. Segundo PR: navegación por rol y área, y las pantallas de la fase 1 con el diseño nuevo, con cobro desde En curso y propina sugerida (RF-CUR-05, RF-AUTH-05 y RF-EMP-05). | M6 |
 
-**Estado al 2026-11-17:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`: son 45 de los 99 requisitos vigentes de la sección 6. Sigue la fase 2 con M8 (asistencia). El orden de trabajo es M8, M10, M11, M12, M14, M15 y M16.
+**Estado al 2026-11-17:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`: son 45 de los 99 requisitos vigentes de la sección 6. Antes de la fase 2 va M17, el diseño nuevo, para que las fases 2 a 4 se construyan ya con él. El orden de trabajo es M17, M8, M10, M11, M12, M14, M15 y M16.
 
 Pendientes que no son código y hay que cerrar antes del piloto (M16):
 - Probar en iOS con sesión iniciada: hasta ahora solo se comprobó que compila y arranca.
@@ -676,6 +679,7 @@ Un hito está terminado cuando:
 - [ ] Hay tests para la lógica nueva en `commonTest`, y `./gradlew :shared:allTests :shared:testAndroidHostTest :desktopApp:test` pasa.
 - [ ] Android, escritorio e iOS compilan.
 - [ ] Las pantallas nuevas se revisaron en modo claro y oscuro.
+- [ ] Las pantallas nuevas usan los componentes del sistema de diseño, y los componentes nuevos tienen su prueba de diseño (RNF-18).
 - [ ] No se subieron secretos (`google-services.json`, `GoogleService-Info.plist`, keystores).
 - [ ] Si el hito cambia reglas o índices, `firestore.rules` y `firestore.indexes.json` se actualizaron y las reglas se revisaron con el simulador de reglas de la consola (S7).
 - [ ] Si el hito guarda datos personales o usa la ubicación, solo los roles autorizados pueden leerlos, y se comprobó con el simulador de reglas (S7).
@@ -853,6 +857,14 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-17 | Los computadores del hotel usan Windows. El instalador `.msi` se genera a mano en un computador con Windows, sin GitHub Actions. | El CI no usa secretos, y el repo es público: un instalador hecho en GitHub quedaría a la vista de cualquiera |
 | 2026-11-17 | El menú muestra la versión de la app, y hay una guía del piloto en `docs/`: instalación, qué revisar cada día (V4), qué probar por rol, cómo reportar fallas y qué limpiar antes de empezar. Se hacen en M16. | Saber qué versión tiene cada dispositivo durante el piloto, y que el piloto no dependa de lo que alguien recuerde |
 | 2026-11-17 | Las optimizaciones de lecturas de Firestore se deciden con lo que se mida en el piloto (V4). Mientras tanto solo se mantiene el límite de 31 días del balance. | Optimizar sin datos de uso real sería adivinar, y el límite evita que una sola consulta agote la cuota del día |
+| 2026-11-19 | El diseño de la app es el sistema de diseño Majestic. La referencia publicada está en https://claude.ai/artifact/UmbzWLRQJ49gvdKXwaV6yt, y la implementación, en `shared/.../ui/designsystem`. El azul del logo (`#000434`) va en las superficies de marca y un azul más vivo (`#1D2B8F`) en las acciones, sobre grises fríos. El latón es solo un adorno. | Decisión del negocio: un diseño sofisticado, intuitivo, con pocos pasos y igual en todas las pantallas y plataformas |
+| 2026-11-19 | Una sola fuente, Manrope (licencia OFL), empaquetada con los pesos 500 a 800, e íconos Material Symbols Rounded copiados como vectores (Apache 2.0). Sus licencias están en `licenses/`. | Se ve igual en Android, escritorio e iOS, sin dependencias nuevas en la app |
+| 2026-11-19 | Navegación por rol y área: barra inferior de 3 a 4 destinos en celular y navegación lateral en escritorio. La app abre en la primera sección del área, sin menú intermedio. Reemplaza el menú de botones. | Menos pasos para lo que más se hace |
+| 2026-11-19 | Un pedido En curso también se puede cobrar: "Cobrar" cierra la cuenta y registra el pago en un paso, con dos transacciones seguidas. Si el cobro falla, el pedido queda Cerrado y se cobra después. Las reglas no cambian. "Cerrar cuenta" sigue para cuando el huésped pide la cuenta y paga después. | Ahorra un paso en cada pedido que se paga al momento |
+| 2026-11-19 | Al cobrar se sugiere una propina del 10 % del pedido, junto a "Sin propina" y "Otro valor" | Decisión del negocio |
+| 2026-11-19 | Nada se sale de su contenedor ni queda encima de otro elemento (RNF-18). Se comprueba con pruebas de diseño en escritorio que usan `compose.uiTest`, una dependencia solo de pruebas aprobada este día. Las pruebas fallan si algo se sale o se recorta, si un texto se corta sin puntos suspensivos o si algo que se toca mide menos de 48 dp, a 320, 360 y 720 dp y con la letra al 100 % y al 130 %. | Pedido del negocio, después de ver componentes encimados en la propuesta de diseño |
+| 2026-11-19 | Los mosaicos de producto reservan siempre el espacio del selector de cantidad. El control segmentado mide 56 dp, con opciones de 48 dp, y sus textos ocupan hasta dos líneas. | Agregar un producto no mueve la grilla, y con letra grande "Cierre del día" y "Cierre de turno" no quedan iguales |
+| 2026-11-19 | M17, diseño y navegación, va antes de M8 y se entrega en dos PR: primero los colores, la letra y los componentes, y después la navegación y las pantallas de la fase 1 | Las fases 2 a 4 se construyen ya con el diseño nuevo, en vez de rehacerlas al final |
 
 ## 14. Riesgos
 
@@ -912,6 +924,7 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | Fase | Cada una de las cuatro partes en que se construye el alcance (sección 5). En las decisiones anteriores al 2026-11-17 se llamaban v1.0 a v1.3. |
 | Versión 1.0.0 | La primera versión que se instala en el hotel, con las cuatro fases (M16) |
 | Piloto | Uso real de la app en un área del hotel durante 1 a 2 semanas, antes de la salida a producción (M16) |
+| Sistema de diseño | Los colores, la letra, los espacios y los componentes con que se arman todas las pantallas (Majestic, RNF-18) |
 
 ## 16. Diagramas
 
