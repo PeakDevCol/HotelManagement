@@ -341,10 +341,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // RF-ASI-03 to RF-ASI-05 and RF-ASI-11 (M8): an entry and, later, its exit. Each mark keeps the
-    // time of the server and the one of the device; from a phone, the distance to the hotel and the
-    // accuracy, never the coordinates (RF-ASI-10); at reception, the authorized computer. The rules
-    // cannot check where a phone is (R12): the app does, and the administrator reviews.
+    // RF-ASI-03 to RF-ASI-11 (M8): an entry and, later, its exit. Each mark keeps the time of the
+    // server and the one of the device; from a phone, the distance to the hotel and the accuracy,
+    // never the coordinates (RF-ASI-10); at reception, the authorized computer. The rules cannot
+    // check where a phone is (R12): the app does, and the administrator reviews and corrects.
     match /Attendance/{attendanceId} {
       function isAuthorizedComputer(deviceId) {
         return get(/databases/$(database)/documents/Devices/$(deviceId)).data.active == true;
@@ -394,10 +394,121 @@ service cloud.firestore {
             exit.get('clockOutDistanceMeters', null), exit.get('clockOutAccuracyMeters', null));
       }
 
-      // Each employee asks only for their own marks, by employeeId.
-      allow read: if isAdmin() || (isActiveEmployee() && resource.data.employeeId == request.auth.uid);
-      allow create: if isActiveEmployee() && isOwnEntry(request.resource.data);
-      allow update: if isActiveEmployee() && isOwnExit();
+      // RF-ASI-09: reception sees who has an entry without exit, and nothing else of the marks.
+      function isReceptionist() {
+        return isActiveEmployee() && get(profilePath()).data.type == 'reception';
+      }
+
+      function hasReason(correction) {
+        return correction.get('reason', null) is string && correction.reason.size() > 0 && correction.reason.size() <= 200;
+      }
+
+      // RF-ASI-07: a correction says who made it, with the time of the server. The time of the
+      // device or the one of the server is chosen as it is; any other time comes with a reason.
+      // [record] is the record before the correction; `mark` is clockIn or clockOut.
+      function isValidCorrection(correction, record) {
+        return correction.keys().hasAll(['kind', 'mark', 'time', 'by', 'at'])
+          && correction.keys().hasOnly(['kind', 'mark', 'time', 'reason', 'by', 'at'])
+          && correction.by == request.auth.uid
+          && correction.at == request.time
+          && correction.mark in ['clockIn', 'clockOut']
+          && correction.time is timestamp
+          && correction.time <= request.time
+          && ((correction.kind == 'device' && correction.time == record.get(correction.mark + 'DeviceTime', null) && correction.get('reason', null) == null)
+            || (correction.kind == 'server' && correction.time == record.get(correction.mark + 'At', null) && correction.get('reason', null) == null)
+            || (correction.kind == 'other' && hasReason(correction)));
+      }
+
+      // One correction at a time, under a new id named in lastCorrectionId; the ones before never change.
+      function addsOneCorrection() {
+        let before = resource.data.get('corrections', {});
+        let after = request.resource.data.get('corrections', null);
+        let id = request.resource.data.get('lastCorrectionId', null);
+        return after is map
+          && id is string
+          && !(id in before)
+          && after.diff(before).affectedKeys().hasOnly([id])
+          && isValidCorrection(after[id], resource.data);
+      }
+
+      // The time that counts for a mark that exists. The mark itself keeps its original values.
+      function isTimeCorrection() {
+        let correction = request.resource.data.corrections[request.resource.data.lastCorrectionId];
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['corrections', 'lastCorrectionId'])
+          && resource.data.get(correction.mark + 'DeviceTime', null) != null;
+      }
+
+      // RF-ASI-06: the exit of a forgotten entry, written by the administrator with the time they give.
+      function isMissingExit() {
+        let exit = request.resource.data;
+        let correction = exit.corrections[exit.lastCorrectionId];
+        return hasNoExit(resource.data)
+          && exit.diff(resource.data).affectedKeys().hasOnly(['corrections', 'lastCorrectionId', 'clockOutAt', 'clockOutDeviceTime', 'clockOutSource'])
+          && correction.kind == 'other'
+          && correction.mark == 'clockOut'
+          && exit.clockOutSource == 'admin'
+          && exit.clockOutAt == correction.time
+          && exit.clockOutDeviceTime == correction.time;
+      }
+
+      function isCorrection() {
+        return isAdmin() && addsOneCorrection() && (isTimeCorrection() || isMissingExit());
+      }
+
+      function hasNoPlace(record, mark) {
+        return record.get(mark + 'DeviceId', null) == null
+          && record.get(mark + 'DistanceMeters', null) == null
+          && record.get(mark + 'AccuracyMeters', null) == null;
+      }
+
+      function isValidRegistration(correction) {
+        return correction.keys().hasAll(['kind', 'reason', 'by', 'at'])
+          && correction.keys().hasOnly(['kind', 'mark', 'time', 'reason', 'by', 'at'])
+          && correction.kind == 'registration'
+          && correction.get('mark', null) == null
+          && correction.get('time', null) == null
+          && hasReason(correction)
+          && correction.by == request.auth.uid
+          && correction.at == request.time;
+      }
+
+      // RF-ASI-07 with decision 4A: a shift that ended without marks gets them from the
+      // administrator, with a reason. Both marks say so, with the times they gave, in the past and
+      // less than a day apart, as a shift.
+      function isRegistration(record) {
+        let id = record.get('lastCorrectionId', null);
+        return isAdmin()
+          && record.keys().hasAll(['employeeId', 'clockInAt', 'clockInDeviceTime', 'clockInSource', 'clockOutAt', 'clockOutDeviceTime',
+            'clockOutSource', 'corrections', 'lastCorrectionId'])
+          && record.keys().hasOnly(['employeeId', 'clockInAt', 'clockInDeviceTime', 'clockInSource', 'clockInDeviceId',
+            'clockInDistanceMeters', 'clockInAccuracyMeters', 'clockOutAt', 'clockOutDeviceTime', 'clockOutSource',
+            'clockOutDeviceId', 'clockOutDistanceMeters', 'clockOutAccuracyMeters', 'corrections', 'lastCorrectionId'])
+          && exists(/databases/$(database)/documents/Users/$(record.employeeId))
+          && record.clockInSource == 'admin'
+          && record.clockOutSource == 'admin'
+          && record.clockInAt is timestamp
+          && record.clockInDeviceTime == record.clockInAt
+          && record.clockOutAt is timestamp
+          && record.clockOutDeviceTime == record.clockOutAt
+          && record.clockInAt < record.clockOutAt
+          && record.clockOutAt <= request.time
+          && record.clockOutAt <= record.clockInAt + duration.value(24, 'h')
+          && hasNoPlace(record, 'clockIn')
+          && hasNoPlace(record, 'clockOut')
+          && id is string
+          && record.corrections is map
+          && record.corrections.keys().hasOnly([id])
+          && id in record.corrections
+          && isValidRegistration(record.corrections[id]);
+      }
+
+      // Each employee asks only for their own marks, by employeeId; reception asks for the open
+      // ones of everybody (RF-ASI-09), and the administrator for the period of the report (RF-ASI-08).
+      allow read: if isAdmin()
+        || (isActiveEmployee() && resource.data.employeeId == request.auth.uid)
+        || (isReceptionist() && resource.data.clockOutAt == null);
+      allow create: if isActiveEmployee() && (isOwnEntry(request.resource.data) || isRegistration(request.resource.data));
+      allow update: if isActiveEmployee() && (isOwnExit() || isCorrection());
       // A mark is never deleted: the administrator corrects it with a reason (RF-ASI-07).
       allow delete: if false;
     }
