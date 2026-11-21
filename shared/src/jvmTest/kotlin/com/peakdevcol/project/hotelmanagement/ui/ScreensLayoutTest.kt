@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -19,7 +21,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.peakdevcol.project.hotelmanagement.domain.model.AttendanceData
 import com.peakdevcol.project.hotelmanagement.domain.model.AttendanceError
+import com.peakdevcol.project.hotelmanagement.domain.model.AttendancePeriod
 import com.peakdevcol.project.hotelmanagement.domain.model.AttendanceRecord
 import com.peakdevcol.project.hotelmanagement.domain.model.AuthorizedDevice
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupSummary
@@ -35,6 +39,9 @@ import com.peakdevcol.project.hotelmanagement.domain.model.CashClosingOverview
 import com.peakdevcol.project.hotelmanagement.domain.model.CashClosingType
 import com.peakdevcol.project.hotelmanagement.domain.model.CatalogGroup
 import com.peakdevcol.project.hotelmanagement.domain.model.Category
+import com.peakdevcol.project.hotelmanagement.domain.model.Correction
+import com.peakdevcol.project.hotelmanagement.domain.model.CorrectionError
+import com.peakdevcol.project.hotelmanagement.domain.model.CorrectionKind
 import com.peakdevcol.project.hotelmanagement.domain.model.DaySales
 import com.peakdevcol.project.hotelmanagement.domain.model.EmployeeSales
 import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettings
@@ -62,16 +69,22 @@ import com.peakdevcol.project.hotelmanagement.domain.model.PendingCollection
 import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.model.ProductSales
 import com.peakdevcol.project.hotelmanagement.domain.model.ProductSelection
+import com.peakdevcol.project.hotelmanagement.domain.model.ReportError
 import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import com.peakdevcol.project.hotelmanagement.domain.model.User
 import com.peakdevcol.project.hotelmanagement.domain.model.UserArea
 import com.peakdevcol.project.hotelmanagement.domain.model.UserType
 import com.peakdevcol.project.hotelmanagement.domain.model.byStartDay
 import com.peakdevcol.project.hotelmanagement.domain.model.navigationFor
+import com.peakdevcol.project.hotelmanagement.domain.model.report
 import com.peakdevcol.project.hotelmanagement.domain.model.weekDays
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ScheduleDay
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ScheduledShift
+import com.peakdevcol.project.hotelmanagement.domain.usecase.WorkingEntry
+import com.peakdevcol.project.hotelmanagement.fakes.bogotaInstant
+import com.peakdevcol.project.hotelmanagement.fakes.bogotaRecord
 import com.peakdevcol.project.hotelmanagement.fakes.order
+import com.peakdevcol.project.hotelmanagement.fakes.phoneMark
 import com.peakdevcol.project.hotelmanagement.fakes.shift
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderContent
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderState
@@ -84,6 +97,14 @@ import com.peakdevcol.project.hotelmanagement.ui.attendance.MarkResult
 import com.peakdevcol.project.hotelmanagement.ui.attendance.PhoneMarking
 import com.peakdevcol.project.hotelmanagement.ui.attendance.ReceptionMarkingState
 import com.peakdevcol.project.hotelmanagement.ui.attendance.ReceptionResult
+import com.peakdevcol.project.hotelmanagement.ui.attendance.WhoIsWorkingState
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.AttendanceReviewContent
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.AttendanceReviewState
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.EditorForm
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.EmployeeAttendanceContent
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.RecordEditor
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.RecordEditorFields
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.ReviewTab
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceContent
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceState
 import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingContent
@@ -428,6 +449,19 @@ class ScreensLayoutTest {
         clockIn = Mark(at = null, deviceTime = Instant.parse("2026-11-19T11:02:00Z"), source = MarkSource.PHONE, distanceMeters = 40, accuracyMeters = 18),
     )
 
+    // RF-ASI-09: two employees working, one of them with a mark to confirm.
+    private val working = WhoIsWorkingState(
+        isVisible = true,
+        now = Instant.parse("2026-11-19T22:47:00Z"),
+        entries = listOf(
+            WorkingEntry(OpenEntry(openEntry.copy(employeeId = "ana"), forgottenAt = Instant.parse("2026-11-20T03:02:00Z")), employeeName),
+            WorkingEntry(
+                OpenEntry(openEntry.copy(id = "a-2", clockIn = openEntry.clockIn.copy(at = Instant.parse("2026-11-19T13:30:00Z"))), forgottenAt = Instant.parse("2026-11-20T03:02:00Z")),
+                admin.fullName,
+            ),
+        ),
+    )
+
     @Test
     fun attendance() = checkEveryFrame("asistencia") {
         AttendanceContent(
@@ -442,7 +476,13 @@ class ScreensLayoutTest {
             onIntent = {},
             reception = noReception,
             onReceptionIntent = {},
+            working = working,
         )
+    }
+
+    @Test
+    fun attendanceNobodyWorking() = checkEveryFrame("asistencia sin nadie en turno") {
+        AttendanceContent(state = scheduleState, onIntent = {}, reception = noReception, onReceptionIntent = {}, working = WhoIsWorkingState(isVisible = true, loadFailed = true))
     }
 
     @Test
@@ -549,6 +589,132 @@ class ScreensLayoutTest {
             onIntent = {},
             onBack = {},
         )
+    }
+
+    // ---- Marcaciones (RF-ASI-05 to RF-ASI-08), long on purpose
+
+    private fun bogota(text: String) = Instant.parse(bogotaInstant(text))
+
+    private val reviewNow = bogota("2026-11-21 10:00")
+    private val luis = User("luis", "Luis Fernando Pérez Gómez de los Santos", "luis.perez@hoteljuanmajestic.com", UserType.BASIC, UserArea.SERVICE, active = true)
+    private val ana = User("ana", employeeName, "ana.rojas@hoteljuanmajestic.com", UserType.BASIC, UserArea.HOUSEKEEPING, active = true)
+    private val fortnight = AttendancePeriod(CalendarDate(2026, 11, 16), CalendarDate(2026, 11, 30))
+
+    // The entry was moved by hand; the exit, marked at reception, waits to be confirmed.
+    private val corrected = AttendanceRecord(
+        id = "r-1",
+        employeeId = "ana",
+        clockIn = phoneMark(at = bogotaInstant("2026-11-20 09:15"), deviceTime = bogotaInstant("2026-11-20 07:02"), distanceMeters = 1_850),
+        clockOut = Mark(at = bogota("2026-11-20 16:30"), deviceTime = bogota("2026-11-20 14:05"), source = MarkSource.KIOSK, deviceId = "pc-1"),
+        corrections = listOf(
+            Correction(
+                id = "c-1",
+                kind = CorrectionKind.OTHER_TIME,
+                mark = MarkKind.ENTRY,
+                time = bogota("2026-11-20 06:58"),
+                reason = "Llegó con el turno de la mañana y marcó cuando subió del parqueadero, sin señal en el sótano",
+                by = "admin",
+                at = bogota("2026-11-21 08:30"),
+            ),
+        ),
+    )
+    private val forgottenExit = bogotaRecord("r-2", "luis", "2026-11-19 06:00")
+    private val reviewData = AttendanceData(
+        period = fortnight,
+        shifts = listOf(
+            shift("ana-fri", "ana", "2026-11-20", "06:00", "14:00"),
+            shift("ana-wed", "ana", "2026-11-18", "06:00", "14:00"),
+            shift("ana-tue", "ana", "2026-11-17", "06:00", "14:00"),
+            shift("ana-night", "ana", "2026-11-21", "22:00", "06:00"),
+            shift("luis-thu", "luis", "2026-11-19", "06:00", "14:00"),
+        ),
+        records = listOf(
+            corrected,
+            forgottenExit,
+            bogotaRecord("r-3", "ana", "2026-11-17 06:47", "2026-11-17 14:00"),
+            bogotaRecord("r-4", "ana", "2026-11-19 15:00", "2026-11-19 23:30"),
+        ),
+        lateToleranceMinutes = 10,
+        maxOpenEntryHours = 16,
+    )
+    private val reviewState = AttendanceReviewState(
+        today = CalendarDate(2026, 11, 21),
+        now = reviewNow,
+        period = fortnight,
+        isLoading = false,
+        data = reviewData,
+        loadedAt = reviewNow,
+        report = reviewData.report(reviewNow),
+        openEntries = listOf(forgottenExit),
+        pendingExits = listOf(forgottenExit),
+        employees = listOf(ana, luis, admin),
+    )
+
+    @Test
+    fun attendanceReview() = checkEveryFrame("marcaciones por revisar") {
+        AttendanceReviewContent(state = reviewState, onIntent = {}, onBack = {})
+    }
+
+    @Test
+    fun attendanceReviewHours() = checkEveryFrame("marcaciones horas") {
+        AttendanceReviewContent(state = reviewState.copy(tab = ReviewTab.HOURS, loadError = ReportError.Network), onIntent = {})
+    }
+
+    @Test
+    fun employeeAttendance() = checkEveryFrame("horas de un empleado") {
+        EmployeeAttendanceContent(state = reviewState, employeeId = "ana", onIntent = {}, onBack = {})
+    }
+
+    @Test
+    fun recordEditor() = checkEveryFrame("marcación por corregir") {
+        EditorFrame {
+            RecordEditorFields(editor = RecordEditor("ana", corrected, reviewData.shifts.first()), state = reviewState, onIntent = {})
+        }
+    }
+
+    @Test
+    fun recordEditorForm() = checkEveryFrame("otra hora con motivo") {
+        EditorFrame {
+            RecordEditorFields(
+                editor = RecordEditor(
+                    employeeId = "luis",
+                    record = forgottenExit,
+                    shift = reviewData.shifts.last(),
+                    form = EditorForm.MarkTime(MarkKind.EXIT, "1400", reasonText = "Se le olvidó marcar la salida porque salió por la puerta del parqueadero de proveedores"),
+                    error = CorrectionError.Changed,
+                ),
+                state = reviewState,
+                onIntent = {},
+            )
+        }
+    }
+
+    @Test
+    fun registrationForm() = checkEveryFrame("registrar entrada y salida") {
+        EditorFrame {
+            RecordEditorFields(
+                editor = RecordEditor(
+                    employeeId = "ana",
+                    record = null,
+                    shift = reviewData.shifts[1],
+                    form = EditorForm.Registration("06:00", "05:30"),
+                    error = CorrectionError.TooLong,
+                ),
+                state = reviewState,
+                onIntent = {},
+            )
+        }
+    }
+
+    /** The inside of a sheet, as it is drawn on the phone: it scrolls when it is long. */
+    @Composable
+    private fun EditorFrame(content: @Composable () -> Unit) {
+        Column(
+            modifier = Modifier.fillMaxWidth().background(MajesticTheme.colors.surfaceRaised).verticalScroll(rememberScrollState()).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            content()
+        }
     }
 
     @Test

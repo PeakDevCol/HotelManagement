@@ -46,33 +46,41 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * RF-ASI-02 to RF-ASI-05 and RF-ASI-11: marking the entry and the exit, from the phone or, on the
- * authorized computer of reception, for each employee; and the shifts of the employee below.
+ * RF-ASI-02 to RF-ASI-05, RF-ASI-09 and RF-ASI-11: marking the entry and the exit, from the phone
+ * or, on the authorized computer of reception, for each employee; who is working, for reception
+ * and administrators; and the shifts of the employee below.
  */
 @Composable
 fun AttendanceScreen(
     onBack: (() -> Unit)? = null,
     viewModel: AttendanceViewModel = koinViewModel(),
     receptionViewModel: ReceptionMarkingViewModel = koinViewModel(),
+    workingViewModel: WhoIsWorkingViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val reception by receptionViewModel.state.collectAsStateWithLifecycle()
+    val working by workingViewModel.state.collectAsStateWithLifecycle()
     AttendanceContent(
         state = state,
         onIntent = viewModel::onIntent,
         reception = reception,
         onReceptionIntent = receptionViewModel::onIntent,
+        working = working,
         onBack = onBack,
     )
 }
 
-/** [onBack] is the arrow back to "Más", when the section was opened from there on the phone. */
+/**
+ * [working] is who has the entry marked, for reception and administrators (RF-ASI-09). [onBack] is
+ * the arrow back to "Más", when the section was opened from there on the phone.
+ */
 @Composable
 fun AttendanceContent(
     state: AttendanceState,
     onIntent: (AttendanceIntent) -> Unit,
     reception: ReceptionMarkingState,
     onReceptionIntent: (ReceptionMarkingIntent) -> Unit,
+    working: WhoIsWorkingState = WhoIsWorkingState(),
     onBack: (() -> Unit)? = null,
 ) {
     Scaffold(
@@ -90,6 +98,7 @@ fun AttendanceContent(
                 verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
             ) {
                 Marking(state = state, onIntent = onIntent, reception = reception, onReceptionIntent = onReceptionIntent)
+                WhoIsWorking(working)
                 Column {
                     Text(text = stringResource(Res.string.my_schedule_title), style = MajesticTheme.typography.title, color = MajesticTheme.colors.ink)
                     Text(text = stringResource(Res.string.my_schedule_hint), style = MajesticTheme.typography.caption, color = MajesticTheme.colors.inkMuted)

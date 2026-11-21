@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,6 +49,8 @@ import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductsScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.label
 import com.peakdevcol.project.hotelmanagement.ui.attendance.AttendanceScreen
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.AttendanceReviewScreen
+import com.peakdevcol.project.hotelmanagement.ui.attendancereview.EmployeeAttendanceScreen
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceScreen
 import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersScreen
@@ -205,6 +208,21 @@ private fun MainNavHost(
         composable<AddProductsRoute> { entry -> AddProductsScreen(orderId = entry.toRoute<AddProductsRoute>().orderId, onClose = back) }
         composable<AttendanceRoute> { AttendanceScreen(onBack = backToMore(AppSection.ATTENDANCE)) }
         composable<SchedulesRoute> { SchedulesScreen(onBack = backToMore(AppSection.SCHEDULES)) }
+        composable<AttendanceReviewRoute> {
+            AttendanceReviewScreen(
+                onOpenEmployee = { employeeId -> navController.navigate(EmployeeAttendanceRoute(employeeId)) },
+                onBack = backToMore(AppSection.ATTENDANCE_REVIEW),
+            )
+        }
+        composable<EmployeeAttendanceRoute> { entry ->
+            // The detail uses the view model of the list, so it reads nothing again and a correction shows on both.
+            val listEntry = remember(entry) { navController.getBackStackEntry<AttendanceReviewRoute>() }
+            EmployeeAttendanceScreen(
+                employeeId = entry.toRoute<EmployeeAttendanceRoute>().employeeId,
+                viewModel = koinViewModel(viewModelStoreOwner = listEntry),
+                onBack = back,
+            )
+        }
         composable<BalanceRoute> {
             BalanceScreen(onCashClosingClick = { navController.navigate(CashClosingRoute) }, onBack = backToMore(AppSection.BALANCE))
         }

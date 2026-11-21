@@ -1,4 +1,4 @@
-package com.peakdevcol.project.hotelmanagement.ui.balance
+package com.peakdevcol.project.hotelmanagement.ui.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DatePickerDialog
@@ -8,7 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.peakdevcol.project.hotelmanagement.domain.model.BalancePeriod
+import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.balance_pick_period
 import com.peakdevcol.project.hotelmanagement.resources.cancel
@@ -21,13 +21,13 @@ import org.jetbrains.compose.resources.stringResource
 // The picker works with the first millisecond of each day in UTC, so a day is a whole number of these.
 private const val MILLIS_PER_DAY = 86_400_000L
 
-/** RF-BAL-02: chooses the first and the last operational day of the balance. */
+/** Chooses a first and a last day, like the period of the balance (RF-BAL-02) or of the report of hours (RF-ASI-08). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BalancePeriodDialog(current: BalancePeriod, onConfirm: (firstEpochDay: Long, lastEpochDay: Long) -> Unit, onDismiss: () -> Unit) {
+fun DaysRangeDialog(firstDay: CalendarDate, lastDay: CalendarDate, onConfirm: (firstEpochDay: Long, lastEpochDay: Long) -> Unit, onDismiss: () -> Unit) {
     val pickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = current.firstDay.epochDay * MILLIS_PER_DAY,
-        initialSelectedEndDateMillis = current.lastDay.epochDay * MILLIS_PER_DAY,
+        initialSelectedStartDateMillis = firstDay.epochDay * MILLIS_PER_DAY,
+        initialSelectedEndDateMillis = lastDay.epochDay * MILLIS_PER_DAY,
     )
     val start = pickerState.selectedStartDateMillis
     val end = pickerState.selectedEndDateMillis

@@ -50,6 +50,7 @@ import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcon
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
 import com.peakdevcol.project.hotelmanagement.ui.main.AppMessagesHost
+import com.peakdevcol.project.hotelmanagement.ui.main.DaysRangeDialog
 import com.peakdevcol.project.hotelmanagement.ui.main.LocalAppMessages
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
@@ -139,8 +140,9 @@ fun BalanceContent(state: BalanceState, onIntent: (BalanceIntent) -> Unit, onCas
 
     val period = state.period
     if (state.isPickingPeriod && period != null) {
-        BalancePeriodDialog(
-            current = period,
+        DaysRangeDialog(
+            firstDay = period.firstDay,
+            lastDay = period.lastDay,
             onConfirm = { first, last -> onIntent(BalanceIntent.ChangePeriod(first, last)) },
             onDismiss = { onIntent(BalanceIntent.DismissPeriodPicker) },
         )
