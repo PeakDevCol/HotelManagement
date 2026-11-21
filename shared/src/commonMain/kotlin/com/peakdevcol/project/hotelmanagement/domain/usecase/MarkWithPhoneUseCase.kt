@@ -9,7 +9,6 @@ import com.peakdevcol.project.hotelmanagement.domain.model.MarkOutcome
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkSource
 import com.peakdevcol.project.hotelmanagement.domain.model.ZoneCheck
 import com.peakdevcol.project.hotelmanagement.domain.model.check
-import com.peakdevcol.project.hotelmanagement.domain.model.effectiveTime
 import com.peakdevcol.project.hotelmanagement.domain.model.newId
 import com.peakdevcol.project.hotelmanagement.domain.model.toClose
 import com.peakdevcol.project.hotelmanagement.domain.repository.AttendanceRepository
@@ -55,7 +54,7 @@ class MarkWithPhoneUseCase(
             MarkKind.EXIT -> {
                 if (open == null) return Result.failure(AttendanceError.NoOpenEntry)
                 attendanceRepository.saveExit(open.id, mark)
-                    .map { MarkOutcome(MarkKind.EXIT, it, now, workedTime = now - open.clockIn.effectiveTime) }
+                    .map { MarkOutcome(MarkKind.EXIT, it, now, workedTime = now - open.entryTime) }
             }
         }
     }

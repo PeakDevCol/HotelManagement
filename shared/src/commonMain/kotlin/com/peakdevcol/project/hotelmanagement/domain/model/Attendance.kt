@@ -9,6 +9,12 @@ import kotlin.time.Instant
 enum class MarkSource {
     PHONE,
     KIOSK,
+
+    /**
+     * RF-ASI-07: written by the administrator, like the exit that was missing. Its time is the one
+     * they gave, as the time of the server and of the device, so it is never under review.
+     */
+    ADMIN,
 }
 
 /**
@@ -40,25 +46,53 @@ val Mark.needsReview: Boolean
 val Mark.effectiveTime: Instant
     get() = if (at == null || needsReview) deviceTime else at
 
+/** A mark made by the administrator: the time they gave is the only one it has. */
+fun adminMark(time: Instant): Mark = Mark(at = time, deviceTime = time, source = MarkSource.ADMIN)
+
 /** One entry and, once marked, its exit. Stored at `Attendance/{id}`; never deleted. */
 data class AttendanceRecord(
     val id: String,
     val employeeId: String,
     val clockIn: Mark,
     val clockOut: Mark? = null,
+    /** RF-ASI-07: what the administrator changed, the oldest first. The marks keep their original values. */
+    val corrections: List<Correction> = emptyList(),
 ) {
     val isOpen: Boolean get() = clockOut == null
-    val needsReview: Boolean get() = clockIn.needsReview || clockOut?.needsReview == true
+
+    /** The time that counts for the entry: the last one the administrator gave it, or the one of the mark. */
+    val entryTime: Instant get() = correctedTime(MarkKind.ENTRY) ?: clockIn.effectiveTime
+
+    val exitTime: Instant? get() = correctedTime(MarkKind.EXIT) ?: clockOut?.effectiveTime
+
+    /** RF-ASI-05: a mark whose two clocks disagree waits until the administrator says which time counts. */
+    val entryNeedsReview: Boolean get() = clockIn.needsReview && correctedTime(MarkKind.ENTRY) == null
+
+    val exitNeedsReview: Boolean get() = clockOut?.needsReview == true && correctedTime(MarkKind.EXIT) == null
+
+    val needsReview: Boolean get() = entryNeedsReview || exitNeedsReview
+
+    val isCorrected: Boolean get() = corrections.isNotEmpty()
 
     /** RF-ASI-04: the hours worked, once the exit is marked. */
-    val workedTime: Duration? get() = clockOut?.let { it.effectiveTime - clockIn.effectiveTime }
+    val workedTime: Duration? get() = exitTime?.let { it - entryTime }
+
+    fun markOf(kind: MarkKind): Mark? = when (kind) {
+        MarkKind.ENTRY -> clockIn
+        MarkKind.EXIT -> clockOut
+    }
+
+    private fun correctedTime(kind: MarkKind): Instant? = corrections.lastOrNull { it.mark == kind }?.time
 }
 
 /**
  * RF-ASI-06: after the hours of the parameter an entry without exit is forgotten. It waits for the
  * administrator, and the next mark of the employee is a new entry instead of an exit hours later.
  */
-fun AttendanceRecord.forgottenAt(maxOpenEntryHours: Int): Instant = clockIn.effectiveTime + maxOpenEntryHours.hours
+fun AttendanceRecord.forgottenAt(maxOpenEntryHours: Int): Instant = entryTime + maxOpenEntryHours.hours
+
+/** RF-ASI-06: an entry left without exit, which only the administrator closes. */
+fun AttendanceRecord.isPendingExit(now: Instant, maxOpenEntryHours: Int): Boolean = isOpen && now >= forgottenAt(maxOpenEntryHours)
 
 /** The entry without exit of an employee, and from when it counts as forgotten. */
 data class OpenEntry(val record: AttendanceRecord, val forgottenAt: Instant) {

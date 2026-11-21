@@ -72,6 +72,13 @@ fun formatClockTime(minuteOfDay: Int): String =
 /** Formats a day the way the hotel reads it: `14 nov 2026`. */
 fun formatCalendarDate(date: CalendarDate): String = "${date.day} ${MONTHS[date.month - 1]} ${date.year}"
 
+/** Two days of a period, without repeating the month or the year they share: `16 – 30 nov 2026`. */
+fun formatDayRange(first: CalendarDate, last: CalendarDate): String = when {
+    first.year != last.year -> "${formatCalendarDate(first)} – ${formatCalendarDate(last)}"
+    first.month != last.month -> "${first.day} ${MONTHS[first.month - 1]} – ${formatCalendarDate(last)}"
+    else -> "${first.day} – ${formatCalendarDate(last)}"
+}
+
 /** Formats a time of the day given in minutes after midnight: `6:00 a. m.`, `11:30 p. m.`. */
 fun formatTimeOfDay(minuteOfDay: Int): String {
     val hour = minuteOfDay / 60
