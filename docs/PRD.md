@@ -82,6 +82,7 @@ Las cuentas las crea solo un administrador, y el primer administrador se crea a 
 | Cerrar la cuenta, reabrirla y registrar el pago | ✅ | ✅ | ✅ |
 | Cancelar un pedido, con motivo | ❌ | ❌ | ✅ |
 | Marcar entrada y salida, y ver su horario | ✅ | ✅ | ✅ |
+| Ver quién tiene la entrada marcada (RF-ASI-09) | ❌ | ✅ | ✅ |
 | Reportar un daño o un objeto olvidado | ✅ | ✅ | ✅ |
 | Tomar y hacer tareas de limpieza o mantenimiento | ✅ (según su área) | ❌ | ✅ |
 | Asignar tareas a un empleado | ❌ | ✅ | ✅ |
@@ -142,11 +143,11 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Roles y permisos | ✅ Hecho en M6 | El menú muestra las secciones según el rol y las ordena según el área. El administrador crea y gestiona empleados desde la app. |
 | Configuración y respaldo | ✅ Hecho en M6 | Inicio del día operativo, y respaldo manual en JSON desde escritorio |
 | Sistema de diseño Majestic | ✅ Hecho en M17 | Colores, letra Manrope, componentes y pruebas de diseño (primer PR), y todas las pantallas de la fase 1 con el diseño nuevo y su prueba de desbordes (segundo PR). |
-| Turnos y asistencia | 🔄 M8 | Horarios del equipo, "Mi horario" y los parámetros de asistencia (primer PR de tres). Faltan la marcación y el seguimiento. |
+| Turnos y asistencia | ✅ Hecho en M8 | Horarios del equipo y "Mi horario"; marcación desde el celular en la zona del hotel, también sin conexión, y desde el computador autorizado de recepción; quién está en turno, para recepción y administración; y "Marcaciones" para el administrador: salidas pendientes, horas por confirmar, correcciones con historial y el reporte de horas. |
 | Habitaciones, reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M10 a M12) |
 | Limpieza y mantenimiento | ⬜ Pendiente | Fase 4 (M14 y M15) |
 
-Hay 362 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android, y 4 tests de la app de escritorio.
+Hay 578 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android; 41 pruebas de diseño en JVM (`DesignSystemLayoutTest` y `ScreensLayoutTest`), y 4 tests de la app de escritorio.
 
 ## 5. Alcance por fase
 
@@ -326,10 +327,10 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-ASI-03 | Marcar entrada ([P29](#12-preguntas-abiertas)) | Desde el celular, solo dentro de la zona del hotel (RF-ASI-10). Desde un computador autorizado de recepción, sin ubicación (RF-ASI-11). Si el celular no da ubicación, la app indica que marque en recepción. Usa la hora del servidor y no deja marcar otra entrada si hay una abierta. | ✅ En "Asistencia", desde el celular o el computador autorizado |
 | RF-ASI-04 | Marcar salida | Con las mismas condiciones de RF-ASI-03. Cierra la entrada abierta y muestra las horas trabajadas. | ✅ En "Asistencia" |
 | RF-ASI-05 | Marcación sin conexión | En el celular, la ubicación funciona sin internet, así que la marcación se valida igual. Se guarda con la hora del dispositivo y queda "por revisar", porque la hora del servidor solo se conoce al sincronizar. | ✅ Con el aviso "Sin conexión" |
-| RF-ASI-06 | Salida olvidada | Una entrada abierta por más horas de las del parámetro queda como "salida pendiente" para el administrador | ⬜ |
-| RF-ASI-07 | Correcciones | El administrador corrige una marcación con un motivo. Se conservan los valores originales. | ⬜ |
-| RF-ASI-08 | Reporte de horas | Por empleado y rango de fechas: horas programadas y trabajadas, llegadas tarde (según la tolerancia) y turnos sin marcación. No calcula nómina ni recargos. Solo lo ve el administrador ([P37](#12-preguntas-abiertas)). | ⬜ |
-| RF-ASI-09 | Quién está trabajando | Recepción y administración ven qué empleados tienen una entrada abierta | ⬜ |
+| RF-ASI-06 | Salida olvidada | Una entrada abierta por más horas de las del parámetro queda como "salida pendiente" para el administrador | ✅ En "Marcaciones", "Por revisar" |
+| RF-ASI-07 | Correcciones | El administrador corrige una marcación con un motivo. Se conservan los valores originales. | ✅ En "Marcaciones", con el historial de cada marcación |
+| RF-ASI-08 | Reporte de horas | Por empleado y rango de fechas: horas programadas y trabajadas, llegadas tarde (según la tolerancia) y turnos sin marcación. No calcula nómina ni recargos. Solo lo ve el administrador ([P37](#12-preguntas-abiertas)). | ✅ En "Marcaciones", "Horas" |
+| RF-ASI-09 | Quién está trabajando | Recepción y administración ven qué empleados tienen una entrada abierta | ✅ En "Asistencia", "En turno ahora" |
 | RF-ASI-10 | Zona del hotel | El administrador fija la ubicación del hotel, el radio y la precisión mínima. Se acepta la marcación si el celular está dentro del radio con esa precisión; si no, pide intentar de nuevo o marcar en recepción. Rechaza ubicaciones simuladas, que Android permite detectar (V5). Solo se guardan la distancia y la precisión, no las coordenadas, y no hay rastreo fuera del momento de marcar. | ✅ En Configuración, "Zona del hotel" |
 | RF-ASI-11 | Computadores autorizados | El administrador autoriza el computador de recepción desde la app de escritorio, y puede revocarlo. Solo un computador autorizado muestra la opción de marcar asistencia. El empleado se identifica con su cuenta y marca, sin cerrar la sesión del computador (V1). | ✅ En Configuración, "Computadores autorizados" |
 
@@ -569,7 +570,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
 | `Shifts/{id}` | `employeeId`, `startAt`, `endAt`, `area`, `createdBy` | Horarios | M8 |
-| `Attendance/{id}` | `employeeId`; de la entrada, `clockInAt` (hora del servidor), `clockInDeviceTime` (hora del dispositivo), `clockInSource` (`phone` o `kiosk`), `clockInDeviceId` (el computador, en recepción), `clockInDistanceMeters` y `clockInAccuracyMeters` (desde el celular); de la salida, los mismos campos con `clockOut`, nulos mientras la entrada está abierta. "Por revisar" no se guarda: se deduce de las dos horas (RF-ASI-05). `correction` (`by`, `reason` y valores originales) llega con RF-ASI-07. | Marcaciones. Sin coordenadas (RF-ASI-10). | M8 |
+| `Attendance/{id}` | `employeeId`; de la entrada, `clockInAt` (hora del servidor), `clockInDeviceTime` (hora del dispositivo), `clockInSource` (`phone` o `kiosk`), `clockInDeviceId` (el computador, en recepción), `clockInDistanceMeters` y `clockInAccuracyMeters` (desde el celular); de la salida, los mismos campos con `clockOut`, nulos mientras la entrada está abierta. "Por revisar" no se guarda: se deduce de las dos horas (RF-ASI-05). Para RF-ASI-07, `corrections` es un mapa por id, con `kind` (`device`, `server`, `other` o `registration`), `mark` (`clockIn` o `clockOut`), `time` (la hora que cuenta desde entonces), `reason`, `by` y `at` (hora del servidor); `lastCorrectionId` dice cuál se acaba de agregar. Las marcaciones no cambian: cuenta la hora de la última corrección de cada una. La salida que faltaba (RF-ASI-06) y las dos marcaciones de un turno sin ellas las escribe el administrador, con `source` `admin` y la hora que dio como hora del servidor y del dispositivo. | Marcaciones. Sin coordenadas (RF-ASI-10). | M8 |
 | `Devices/{id}` | `name`, `authorizedBy`, `authorizedAt`, `active`. El id lo crea la app en cada computador y lo guarda en él. | Computadores autorizados para marcar (RF-ASI-11). Cada computador lee solo el suyo; la lista la ve el administrador. | M8 |
 
 **Habitaciones, reservas y estadías (fase 3)**
@@ -607,7 +608,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 - `Products`, `Categories`, `Taxes`, `RoomTypes`, `Settings`, `ChecklistTemplates`, `MaintenancePlans` y `Devices`: todos leen y solo un administrador escribe.
 - `Rooms`: todos leen. Solo un administrador cambia los datos de la habitación. `occupancy` cambia con el check-in y el check-out, y `housekeeping` con las tareas de limpieza.
 - `Shifts`: cada empleado lee los suyos y solo un administrador escribe.
-- `Attendance`: cada empleado crea y cierra sus propias marcaciones. Recepción también las lee, para ver quién está trabajando (RF-ASI-09, RF-TAR-02). Solo un administrador las corrige.
+- `Attendance`: cada empleado crea y cierra sus propias marcaciones. Recepción lee solo las entradas abiertas, para ver quién está trabajando (RF-ASI-09, RF-TAR-02). Solo un administrador corrige: agrega una corrección a la vez, sin cambiar las anteriores ni las marcaciones, pone la salida que faltaba y registra las marcaciones de un turno que no las tuvo.
 - `Guests` y `Reservations`: solo recepción y administración.
 - `RoomNights`: todos los leen, porque no tienen datos personales. Solo se crea si no existe. Recepción y administración los crean para reservas; mantenimiento, recepción y administración, para bloqueos. Se borran para liberar noches (cancelar, no show, modificar, acortar, cambiar de habitación o levantar un bloqueo), en la misma transacción que ese cambio, y los borra quien puede crearlos.
 - `RoomTasks`: cualquier empleado activo crea tareas. Un empleado del área toma una tarea sin asignar, poniendo su propio `uid`. Solo el empleado asignado la inicia, la devuelve o la termina; si la tarea está a cargo de un proveedor, lo hacen recepción y administración ([P36](#12-preguntas-abiertas)). Recepción y administración asignan. Solo un administrador cancela.
@@ -647,7 +648,7 @@ Las fases ordenan la construcción. El hotel no recibe la app hasta M16, que la 
 | M5 | 1 ✅ | `feature/balance-1` y `-2` | RF-BAL-01 a RF-BAL-04, RF-BAL-06 y RF-BAL-07. Validación V8. | M3 y M4 |
 | M6 | 1 ✅ | `feature/roles-admin-1` y `-2` | RF-AUTH-04, RF-AUTH-05 y RF-EMP-01 a RF-EMP-07. Validación V1. | M2 |
 | M7 | — | — | Era la salida de la fase 1 con su piloto. Se unió a M16 (decisión del 2026-11-17). | — |
-| M8 | 2 | `feature/attendance-1` a `-3` | RF-ASI-01 a RF-ASI-11 y S10, en tres PR: horarios y parámetros (RF-ASI-01 y 02); marcación desde el celular y desde recepción (RF-ASI-03, 04, 05, 10 y 11, y S10); y seguimiento (RF-ASI-06 a 09). Validación V5, en lo que se puede comprobar fuera del hotel: la detección de ubicaciones simuladas. | M6 |
+| M8 | 2 ✅ | `feature/attendance-1` a `-3` | RF-ASI-01 a RF-ASI-11 y S10, en tres PR: horarios y parámetros (RF-ASI-01 y 02); marcación desde el celular y desde recepción (RF-ASI-03, 04, 05, 10 y 11, y S10); y seguimiento (RF-ASI-06 a 09). Validación V5, en lo que se puede comprobar fuera del hotel: la detección de ubicaciones simuladas. | M6 |
 | M9 | — | — | Era la salida de la fase 2. Las pruebas de ubicación dentro y alrededor del hotel pasaron a M16. | — |
 | M10 | 3 | `feature/rooms` | RF-HAB-01 a RF-HAB-04 | M6 |
 | M11 | 3 | `feature/reservations` | RF-RES-01 a RF-RES-07, RF-RES-09 y S9 | M10 |
@@ -658,7 +659,7 @@ Las fases ordenan la construcción. El hotel no recibe la app hasta M16, que la 
 | M16 | Todas | `release/1.0.0` | Salida a producción de la versión 1.0.0, con las cuatro fases. Pruebas en dispositivos reales (Android, Windows e iOS con sesión iniciada), S4, APK firmado con la llave de producción, instalador `.msi` generado en Windows con los módulos de Java que necesitan Firebase y la app, versión visible en el menú, guía del piloto en `docs/`, piloto de 1 a 2 semanas, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V4 y V5 (precisión del GPS en el hotel). | M5, M8 y M15 |
 | M17 | 1 | `feature/design-system-1` y `-2` | Sistema de diseño Majestic (RNF-18). Primer PR: colores claro y oscuro, letra Manrope, íconos, componentes y pruebas de diseño. Segundo PR: navegación por rol y área, y las pantallas de la fase 1 con el diseño nuevo, con cobro desde En curso y propina sugerida (RF-CUR-05, RF-AUTH-05 y RF-EMP-05). | M6 |
 
-**Estado al 2026-11-20:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`: son 45 de los 99 requisitos vigentes de la sección 6. M17, el diseño nuevo, quedó hecho en sus dos PR, para que las fases 2 a 4 se construyan ya con él. La fase 2 empezó: M8 (asistencia) va en su primer PR de tres, con RF-ASI-01 y RF-ASI-02. El orden de trabajo es M8, M10, M11, M12, M14, M15 y M16.
+**Estado al 2026-11-21:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`, y M17, el diseño nuevo, también. La fase 2 queda hecha con M8 (asistencia), en tres PR: con su tercer PR, el seguimiento (RF-ASI-06 a RF-ASI-09), son 56 de los 99 requisitos vigentes de la sección 6. El orden de trabajo sigue con M10, M11, M12, M14, M15 y M16.
 
 Pendientes que no son código y hay que cerrar antes del piloto (M16):
 - Probar en iOS con sesión iniciada: hasta ahora solo se comprobó que compila y arranca.
@@ -887,6 +888,14 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-20 | En recepción la marcación necesita conexión y se confirma en el servidor; sin conexión, se avisa y no se marca. En el celular sí se marca sin conexión (RF-ASI-05). | El computador es compartido: una marcación que quedara esperando a nombre de un empleado saldría después, cuando ya se le dijo que falló |
 | 2026-11-20 | La zona del hotel tiene un radio de 150 m y una precisión mínima de 100 m mientras el administrador no los cambie (el radio, entre 20 y 2.000 m; la precisión, entre 10 y 500 m). Sin la ubicación del hotel, nadie marca desde el celular. | Valores de partida, que se ajustan en el piloto (V5) |
 | 2026-11-21 | Una entrada abierta por más horas de las del parámetro (16 por defecto) ya no se cierra al marcar: la siguiente marcación del empleado es una entrada nueva, y la vieja queda como salida pendiente para el administrador (RF-ASI-06) | Respuesta a P39: que una salida olvidada no bloquee la entrada del turno siguiente ni deje horas falsas |
+| 2026-11-21 | El seguimiento de la asistencia va en una sección nueva, "Marcaciones", en Administración, con "Por revisar" y "Horas". Recepción y los administradores ven quién está en turno en Asistencia (RF-ASI-09). | Decisión del negocio, para el tercer PR de M8 |
+| 2026-11-21 | Una marcación por revisar se confirma con un toque: la hora del celular (o del computador) o la del servidor, sin motivo; queda quién escogió cuál. Otra hora, y la salida que faltó, siempre llevan motivo (RF-ASI-07). | Decisión del negocio: lo común se resuelve rápido y lo raro queda explicado |
+| 2026-11-21 | Se guarda cada corrección, con quién, cuándo, por qué y qué cambió. Las marcaciones nunca cambian; cuenta la hora de la última corrección de cada una. | Decisión del negocio (RF-ASI-07) |
+| 2026-11-21 | Para un turno que terminó sin marcaciones, el administrador puede registrar la entrada y la salida, con motivo. Quedan como puestas por el administrador. | Decisión del negocio: el reporte refleja lo que pasó, con su explicación |
+| 2026-11-21 | Una entrada cuenta para el turno del empleado que empieza más cerca, si cae entre 2 horas antes del inicio y el fin del turno. Llega tarde si entra después del inicio más la tolerancia. Un turno que aún no termina no cuenta como sin marcación, y lo marcado fuera de turnos suma como "sin turno". Cada turno y cada marcación sin turno van en el periodo del día en que empiezan (RF-ASI-08). | Decisión del negocio |
+| 2026-11-21 | Una salida pendiente no suma horas hasta que el administrador pone la salida, y el reporte la señala (RF-ASI-06 y RF-ASI-08) | Decisión del negocio: no inventar horas |
+| 2026-11-21 | El reporte abre en la quincena actual (del 1 al 15, o del 16 a fin de mes), con atajos a la quincena anterior, la semana, el mes y otras fechas, hasta 31 días como el balance. Se lee del servidor; sin conexión avisa en vez de mostrar datos incompletos, y las correcciones también necesitan conexión (RNF-04). | Decisión del negocio; la quincena es como se paga en Colombia |
+| 2026-11-21 | El reporte pide las marcaciones por la hora del servidor, que el empleado no puede cambiar, con 2 días de margen a cada lado, y las ubica por la hora que cuenta. Así una marcación hecha sin conexión entra en su día, y una con la hora del celular muy distinta aparece por revisar en el periodo en que llegó al servidor. No necesita índices nuevos. | Decisión técnica del tercer PR de M8 |
 
 ## 14. Riesgos
 
@@ -1125,11 +1134,11 @@ flowchart TD
         employees["Empleados · fase 1"]
         settings["Parámetros · fase 1"]
         backup["Respaldo · solo escritorio · fase 1"]
-        shifts["Horarios y correcciones de asistencia · fase 2"]
+        shifts["Horarios · fase 2"]
         authorizedComputers["Computadores autorizados · solo escritorio · fase 2"]
         roomSetup["Habitaciones y tipos · fase 3"]
         maintenancePlans["Planes preventivos y listas de chequeo · fase 4"]
-        hoursReport["Reporte de horas · fase 2"]
+        hoursReport["Marcaciones: salidas pendientes, horas por confirmar,<br/>correcciones y reporte de horas · fase 2"]
         taskReports["Reportes de limpieza y mantenimiento · fase 4"]
         roomHistory["Historial por habitación · fase 4"]
     end
@@ -1234,8 +1243,10 @@ flowchart TD
     clockIn -.->|"sin conexión en el celular · RF-ASI-05"| needsReview["Guarda la hora del dispositivo<br/>y queda por revisar"]
     clockOut -.->|"sin conexión en el celular · RF-ASI-05"| needsReview
     clockIn -.->|"pasan las horas máximas del parámetro (16 h) sin salida · RF-ASI-06"| missingClockOut["Salida pendiente"]
-    needsReview --> correction["El administrador corrige con motivo<br/>y se conservan los valores originales · RF-ASI-07"]
-    missingClockOut --> correction
+    needsReview --> correction["El administrador escoge una de las dos horas con un toque,<br/>o pone otra con motivo; las marcaciones no cambian · RF-ASI-07"]
+    missingClockOut --> setExit["El administrador pone la salida con motivo · RF-ASI-06"]
+    shiftWithoutMarks(["Un turno termina sin marcaciones"]) --> registerMarks["El administrador registra la entrada<br/>y la salida con motivo · RF-ASI-07"]
+    correction & setExit & registerMarks --> hoursReport["Reporte de horas por empleado · RF-ASI-08"]
 ```
 
 ### 16.10 Modelo de datos
