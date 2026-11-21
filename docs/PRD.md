@@ -749,6 +749,7 @@ Las respuestas anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | P35 | ¿Cómo se paga una reserva de varias habitaciones? | No es una función: cada habitación es su propia reserva, aunque sea del mismo huésped y las mismas fechas |
 | P36 | ¿Quién mueve el estado de una tarea a cargo de un proveedor externo? | Recepción o administración: inician, devuelven y terminan la tarea |
 | P37 | ¿Quién ve el reporte de horas, los reportes de limpieza y mantenimiento y el historial por habitación? | Por ahora, solo el administrador |
+| P39 | ¿Qué pasa con una entrada que lleva abierta más horas de las del parámetro? | Queda como salida pendiente para el administrador, y la siguiente marcación del empleado es una entrada nueva (2026-11-21) |
 
 ## 13. Registro de decisiones
 
@@ -885,6 +886,7 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-20 | La marcación es un solo botón grande: "Marcar entrada" o "Marcar salida", según haya una entrada abierta. En recepción el empleado escribe su correo y su contraseña, y la app marca la entrada o la salida que le toque. Lo que pasó queda escrito debajo, con la salida si falló: acercarse e intentar de nuevo, o marcar en recepción. | Un paso, y claro para cualquier persona |
 | 2026-11-20 | En recepción la marcación necesita conexión y se confirma en el servidor; sin conexión, se avisa y no se marca. En el celular sí se marca sin conexión (RF-ASI-05). | El computador es compartido: una marcación que quedara esperando a nombre de un empleado saldría después, cuando ya se le dijo que falló |
 | 2026-11-20 | La zona del hotel tiene un radio de 150 m y una precisión mínima de 100 m mientras el administrador no los cambie (el radio, entre 20 y 2.000 m; la precisión, entre 10 y 500 m). Sin la ubicación del hotel, nadie marca desde el celular. | Valores de partida, que se ajustan en el piloto (V5) |
+| 2026-11-21 | Una entrada abierta por más horas de las del parámetro (16 por defecto) ya no se cierra al marcar: la siguiente marcación del empleado es una entrada nueva, y la vieja queda como salida pendiente para el administrador (RF-ASI-06) | Respuesta a P39: que una salida olvidada no bloquee la entrada del turno siguiente ni deje horas falsas |
 
 ## 14. Riesgos
 
