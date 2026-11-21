@@ -15,11 +15,11 @@ class AppNavigationTest {
     private val admin = employee("admin", "Laura Méndez", type = UserType.ADMIN).copy(area = UserArea.MANAGEMENT)
 
     @Test
-    fun anEmployeeOpensOnTheOrdersAndHasNothingElse() {
+    fun anEmployeeOpensOnTheOrdersAndHasAttendanceInTheBar() {
         val navigation = navigationFor(waiter)
 
-        assertEquals(listOf(AppSection.ORDERS), navigation.sections)
-        assertEquals(listOf(AppSection.ORDERS), navigation.mainSections)
+        assertEquals(listOf(AppSection.ORDERS, AppSection.ATTENDANCE), navigation.sections)
+        assertEquals(listOf(AppSection.ORDERS, AppSection.ATTENDANCE), navigation.mainSections)
         assertEquals(AppSection.ORDERS, navigation.startSection)
         assertTrue(navigation.moreSections.isEmpty())
     }
@@ -28,7 +28,7 @@ class AppNavigationTest {
     fun everyAreaWithoutAdministrationOpensOnTheOrders() {
         UserArea.entries.forEach { area ->
             val navigation = navigationFor(waiter.copy(type = UserType.RECEPTION, area = area))
-            assertEquals(listOf(AppSection.ORDERS), navigation.sections, "$area")
+            assertEquals(listOf(AppSection.ORDERS, AppSection.ATTENDANCE), navigation.sections, "$area")
         }
     }
 
@@ -38,22 +38,25 @@ class AppNavigationTest {
 
         assertEquals(AppSection.entries, navigation.sections)
         assertEquals(listOf(AppSection.ORDERS, AppSection.BALANCE), navigation.mainSections)
-        assertEquals(listOf(AppSection.INVENTORY, AppSection.EMPLOYEES, AppSection.SETTINGS), navigation.moreSections)
+        assertEquals(
+            listOf(AppSection.ATTENDANCE, AppSection.SCHEDULES, AppSection.INVENTORY, AppSection.EMPLOYEES, AppSection.SETTINGS),
+            navigation.moreSections,
+        )
     }
 
     @Test
     fun anAdministratorOfAnotherAreaKeepsTheBarOfTheArea() {
         val navigation = navigationFor(admin.copy(area = UserArea.SERVICE))
 
-        assertEquals(listOf(AppSection.ORDERS), navigation.mainSections)
-        assertEquals(AppSection.entries - AppSection.ORDERS, navigation.moreSections)
+        assertEquals(listOf(AppSection.ORDERS, AppSection.ATTENDANCE), navigation.mainSections)
+        assertEquals(AppSection.entries - AppSection.ORDERS - AppSection.ATTENDANCE, navigation.moreSections)
     }
 
     @Test
     fun theAreaNeverGivesPermissionsTheRoleDoesNotHave() {
         val navigation = navigationFor(waiter.copy(area = UserArea.MANAGEMENT))
 
-        assertEquals(listOf(AppSection.ORDERS), navigation.sections)
+        assertEquals(listOf(AppSection.ORDERS, AppSection.ATTENDANCE), navigation.sections)
         assertEquals(listOf(AppSection.ORDERS), navigation.mainSections)
     }
 }

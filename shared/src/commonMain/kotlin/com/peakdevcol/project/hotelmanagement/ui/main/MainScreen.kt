@@ -47,6 +47,7 @@ import com.peakdevcol.project.hotelmanagement.resources.understood
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderScreen
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductsScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.label
+import com.peakdevcol.project.hotelmanagement.ui.attendance.AttendanceScreen
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceScreen
 import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingScreen
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersScreen
@@ -71,6 +72,7 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesScreen
+import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesScreen
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsScreen
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -126,6 +128,7 @@ private fun MainLayout(state: MainState, employee: User, navigation: AppNavigati
                 ScreensWithBottomBar(
                     navController = navController,
                     destination = destination,
+                    phone = phone,
                     showsBar = phone && (destination == null || destination.isSectionStart()),
                     navigation = navigation,
                     state = state,
@@ -141,6 +144,7 @@ private fun MainLayout(state: MainState, employee: User, navigation: AppNavigati
 private fun ScreensWithBottomBar(
     navController: NavHostController,
     destination: NavDestination?,
+    phone: Boolean,
     showsBar: Boolean,
     navigation: AppNavigation,
     state: MainState,
@@ -154,7 +158,7 @@ private fun ScreensWithBottomBar(
                 .fillMaxWidth()
                 .consumeWindowInsets(WindowInsets.systemBars.only(if (showsBar) WindowInsetsSides.Bottom else WindowInsetsSides.Start)),
         ) {
-            MainNavHost(navController = navController, navigation = navigation, state = state, onIntent = onIntent)
+            MainNavHost(navController = navController, navigation = navigation, phone = phone, state = state, onIntent = onIntent)
         }
         if (showsBar) {
             val selected = barItemOf(destination, navigation)
@@ -172,8 +176,17 @@ private fun ScreensWithBottomBar(
 }
 
 @Composable
-private fun MainNavHost(navController: NavHostController, navigation: AppNavigation, state: MainState, onIntent: (MainIntent) -> Unit) {
+private fun MainNavHost(
+    navController: NavHostController,
+    navigation: AppNavigation,
+    phone: Boolean,
+    state: MainState,
+    onIntent: (MainIntent) -> Unit,
+) {
     val back: () -> Unit = { navController.popBackStack() }
+    // On the phone, a section opened from "Más" also goes back to it with the arrow of its top bar,
+    // not only with the gesture or the button of the device.
+    val backToMore: (AppSection) -> (() -> Unit)? = { section -> back.takeIf { phone && section in navigation.moreSections } }
     NavHost(navController = navController, startDestination = navigation.startSection.route()) {
         composable<OrdersRoute> {
             CurrentOrdersScreen(
@@ -188,23 +201,31 @@ private fun MainNavHost(navController: NavHostController, navigation: AppNavigat
         }
         composable<NewOrderRoute> { AddOrderScreen(onClose = back) }
         composable<AddProductsRoute> { entry -> AddProductsScreen(orderId = entry.toRoute<AddProductsRoute>().orderId, onClose = back) }
-        composable<BalanceRoute> { BalanceScreen(onCashClosingClick = { navController.navigate(CashClosingRoute) }) }
+        composable<AttendanceRoute> { AttendanceScreen(onBack = backToMore(AppSection.ATTENDANCE)) }
+        composable<SchedulesRoute> { SchedulesScreen(onBack = backToMore(AppSection.SCHEDULES)) }
+        composable<BalanceRoute> {
+            BalanceScreen(onCashClosingClick = { navController.navigate(CashClosingRoute) }, onBack = backToMore(AppSection.BALANCE))
+        }
         composable<CashClosingRoute> { CashClosingScreen(onBack = back) }
         composable<InventoryRoute> {
             InventoryScreen(
                 onOpenProduct = { productId -> navController.navigate(ProductFormRoute(productId)) },
                 onCategoriesClick = { navController.navigate(CategoriesRoute) },
                 onTaxesClick = { navController.navigate(TaxesRoute) },
+                onBack = backToMore(AppSection.INVENTORY),
             )
         }
         composable<ProductFormRoute> { entry -> ProductFormScreen(productId = entry.toRoute<ProductFormRoute>().productId, onBack = back) }
         composable<CategoriesRoute> { CategoriesScreen(onBack = back) }
         composable<TaxesRoute> { TaxesScreen(onBack = back) }
         composable<EmployeesRoute> {
-            EmployeesScreen(onOpenEmployee = { employeeId -> navController.navigate(EmployeeFormRoute(employeeId)) })
+            EmployeesScreen(
+                onOpenEmployee = { employeeId -> navController.navigate(EmployeeFormRoute(employeeId)) },
+                onBack = backToMore(AppSection.EMPLOYEES),
+            )
         }
         composable<EmployeeFormRoute> { entry -> EmployeeFormScreen(employeeId = entry.toRoute<EmployeeFormRoute>().employeeId, onBack = back) }
-        composable<SettingsRoute> { SettingsScreen() }
+        composable<SettingsRoute> { SettingsScreen(onBack = backToMore(AppSection.SETTINGS)) }
         composable<MoreRoute> {
             MoreScreen(
                 state = state,

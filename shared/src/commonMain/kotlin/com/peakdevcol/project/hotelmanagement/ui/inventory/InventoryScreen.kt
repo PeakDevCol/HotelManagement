@@ -65,6 +65,7 @@ fun InventoryScreen(
     onOpenProduct: (productId: String?) -> Unit,
     onCategoriesClick: () -> Unit,
     onTaxesClick: () -> Unit,
+    onBack: (() -> Unit)? = null,
     viewModel: InventoryViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -83,21 +84,26 @@ fun InventoryScreen(
         state = state,
         onIntent = viewModel::onIntent,
         productForm = { productId, onClose -> ProductFormScreen(productId = productId, onBack = onClose) },
+        onBack = onBack,
     )
 }
 
-/** On wide windows the chosen product opens beside the list, drawn by [productForm]. */
+/**
+ * On wide windows the chosen product opens beside the list, drawn by [productForm]. [onBack] is
+ * the arrow back to "Más", when the section was opened from there on the phone.
+ */
 @Composable
 fun InventoryContent(
     state: InventoryState,
     onIntent: (InventoryIntent) -> Unit,
     productForm: @Composable (productId: String?, onClose: () -> Unit) -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val besideList = maxWidth >= ListDetailMinWidth
         Scaffold(
             topBar = {
-                MajesticTopBar(title = stringResource(Res.string.menu_inventory)) {
+                MajesticTopBar(title = stringResource(Res.string.menu_inventory), onBack = onBack) {
                     if (besideList && state.canCreateProducts) {
                         MajesticButton(
                             text = stringResource(Res.string.inventory_new_product),

@@ -18,9 +18,11 @@ import com.peakdevcol.project.hotelmanagement.resources.ic_calendar_month
 import com.peakdevcol.project.hotelmanagement.resources.ic_category
 import com.peakdevcol.project.hotelmanagement.resources.ic_check
 import com.peakdevcol.project.hotelmanagement.resources.ic_check_circle
+import com.peakdevcol.project.hotelmanagement.resources.ic_chevron_left
 import com.peakdevcol.project.hotelmanagement.resources.ic_chevron_right
 import com.peakdevcol.project.hotelmanagement.resources.ic_close
 import com.peakdevcol.project.hotelmanagement.resources.ic_cloud_upload
+import com.peakdevcol.project.hotelmanagement.resources.ic_content_copy
 import com.peakdevcol.project.hotelmanagement.resources.ic_delete
 import com.peakdevcol.project.hotelmanagement.resources.ic_edit
 import com.peakdevcol.project.hotelmanagement.resources.ic_edit_note
@@ -78,9 +80,11 @@ object MajesticIcons {
     val category = Res.drawable.ic_category
     val check = Res.drawable.ic_check
     val checkCircle = Res.drawable.ic_check_circle
+    val chevronLeft = Res.drawable.ic_chevron_left
     val chevronRight = Res.drawable.ic_chevron_right
     val close = Res.drawable.ic_close
     val cloudUpload = Res.drawable.ic_cloud_upload
+    val copy = Res.drawable.ic_content_copy
     val delete = Res.drawable.ic_delete
     val edit = Res.drawable.ic_edit
     val editNote = Res.drawable.ic_edit_note

@@ -9,7 +9,13 @@ enum class SectionGroup {
 /** The sections of the app, in the order of the side navigation. */
 enum class AppSection(val group: SectionGroup, val onlyAdministrators: Boolean) {
     ORDERS(SectionGroup.OPERATION, onlyAdministrators = false),
+
+    /** RF-ASI-02 to RF-ASI-05: the shifts of the employee and, from the second PR of M8, marking them. */
+    ATTENDANCE(SectionGroup.OPERATION, onlyAdministrators = false),
     BALANCE(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
+
+    /** RF-ASI-01: the shifts of the whole team. */
+    SCHEDULES(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
     INVENTORY(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
     EMPLOYEES(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
     SETTINGS(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
@@ -36,9 +42,10 @@ fun navigationFor(user: User): AppNavigation {
     return AppNavigation(sections = allowed, mainSections = main)
 }
 
-// Only the sections that exist today. Attendance (M8), rooms (phase 3) and tasks (phase 4) join the
-// bar of their areas when they are built (PRD, section 13, 2026-11-20).
+// Only the sections that exist today. Rooms (phase 3) and tasks (phase 4) join the bar of their
+// areas when they are built (PRD, section 13, 2026-11-20). Administration has attendance in "Más".
 private fun UserArea.mainSections(): List<AppSection> = when (this) {
     UserArea.MANAGEMENT -> listOf(AppSection.ORDERS, AppSection.BALANCE)
-    UserArea.SERVICE, UserArea.RECEPTION, UserArea.HOUSEKEEPING, UserArea.MAINTENANCE -> listOf(AppSection.ORDERS)
+    UserArea.SERVICE, UserArea.RECEPTION, UserArea.HOUSEKEEPING, UserArea.MAINTENANCE ->
+        listOf(AppSection.ORDERS, AppSection.ATTENDANCE)
 }

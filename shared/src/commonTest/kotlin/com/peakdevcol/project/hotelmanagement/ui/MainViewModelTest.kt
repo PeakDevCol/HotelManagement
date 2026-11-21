@@ -165,7 +165,7 @@ class MainViewModelTest : MainDispatcherTest() {
     fun theNavigationShowsWhatTheRoleAllows() {
         val employeeState = viewModel().state.value
         assertEquals("Ana Gómez", employeeState.employee?.fullName)
-        assertEquals(listOf(AppSection.ORDERS), employeeState.navigation?.sections)
+        assertEquals(listOf(AppSection.ORDERS, AppSection.ATTENDANCE), employeeState.navigation?.sections)
 
         auth = FakeAuthRepository(userId = "admin")
 

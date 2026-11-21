@@ -1,9 +1,9 @@
 package com.peakdevcol.project.hotelmanagement.domain.usecase
 
-import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettings
 import com.peakdevcol.project.hotelmanagement.domain.model.SettingsError
 import com.peakdevcol.project.hotelmanagement.domain.repository.AuthRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.first
 
 /** RF-EMP-06: an administrator changes the time the operational day starts. */
 class SaveOperationalDayStartUseCase(
@@ -16,6 +16,8 @@ class SaveOperationalDayStartUseCase(
             return Result.failure(SettingsError.InvalidTime)
         }
         val administratorId = authRepository.currentUserId() ?: return Result.failure(SettingsError.NoSession)
-        return settingsRepository.save(HotelSettings(operationalDayStartMinutes = hour * 60 + minute), updatedBy = administratorId)
+        // The other parameters stay as they are: the document is written whole.
+        val current = settingsRepository.observeSettings().first()
+        return settingsRepository.save(current.copy(operationalDayStartMinutes = hour * 60 + minute), updatedBy = administratorId)
     }
 }

@@ -8,6 +8,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettingsDetail
 import com.peakdevcol.project.hotelmanagement.domain.model.SettingsError
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ExportBackupUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveHotelSettingsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveAttendanceRulesUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOperationalDayStartUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +28,12 @@ data class SettingsState(
     val hourText: String = "",
     val minuteText: String = "",
     val showTimeError: Boolean = false,
+    /** RF-ASI-06 and RF-ASI-08, as they are being typed. */
+    val toleranceText: String = "",
+    val maxOpenHoursText: String = "",
+    val showAttendanceError: Boolean = false,
     val isSaving: Boolean = false,
+    val isSavingRules: Boolean = false,
     /** RF-EMP-07: only the desktop app writes backups. */
     val backupAvailable: Boolean = false,
     /** A date like "2026-11-01", or blank for a whole backup. */
@@ -36,13 +42,16 @@ data class SettingsState(
     val isExporting: Boolean = false,
     val lastBackup: BackupSummary? = null,
 ) {
-    val isWorking: Boolean get() = isSaving || isExporting
+    val isWorking: Boolean get() = isSaving || isSavingRules || isExporting
 }
 
 sealed interface SettingsIntent {
     data class HourChange(val text: String) : SettingsIntent
     data class MinuteChange(val text: String) : SettingsIntent
     data object SaveOperationalDayStart : SettingsIntent
+    data class ToleranceChange(val text: String) : SettingsIntent
+    data class MaxOpenHoursChange(val text: String) : SettingsIntent
+    data object SaveAttendanceRules : SettingsIntent
     data class BackupSinceChange(val text: String) : SettingsIntent
     data object ExportBackup : SettingsIntent
 }
@@ -56,6 +65,7 @@ sealed interface SettingsEffect {
 class SettingsViewModel(
     observeHotelSettings: ObserveHotelSettingsUseCase,
     private val saveOperationalDayStart: SaveOperationalDayStartUseCase,
+    private val saveAttendanceRules: SaveAttendanceRulesUseCase,
     private val exportBackup: ExportBackupUseCase,
 ) : ViewModel() {
 
@@ -78,6 +88,11 @@ class SettingsViewModel(
             is SettingsIntent.HourChange -> _state.update { it.copy(hourText = intent.text.digits(), showTimeError = false) }
             is SettingsIntent.MinuteChange -> _state.update { it.copy(minuteText = intent.text.digits(), showTimeError = false) }
             SettingsIntent.SaveOperationalDayStart -> save()
+            is SettingsIntent.ToleranceChange ->
+                _state.update { it.copy(toleranceText = intent.text.filter(Char::isDigit).take(3), showAttendanceError = false) }
+            is SettingsIntent.MaxOpenHoursChange ->
+                _state.update { it.copy(maxOpenHoursText = intent.text.filter(Char::isDigit).take(2), showAttendanceError = false) }
+            SettingsIntent.SaveAttendanceRules -> saveRules()
             is SettingsIntent.BackupSinceChange ->
                 _state.update { it.copy(backupSinceText = intent.text.take(MAX_DATE_LENGTH), showBackupDateError = false) }
             SettingsIntent.ExportBackup -> export()
@@ -88,7 +103,14 @@ class SettingsViewModel(
     private fun SettingsState.showing(detail: HotelSettingsDetail): SettingsState {
         val start = detail.settings.operationalDayStartMinutes
         return if (this.detail == null) {
-            copy(isLoading = false, detail = detail, hourText = (start / 60).toString(), minuteText = (start % 60).toString().padStart(2, '0'))
+            copy(
+                isLoading = false,
+                detail = detail,
+                hourText = (start / 60).toString(),
+                minuteText = (start % 60).toString().padStart(2, '0'),
+                toleranceText = detail.settings.lateToleranceMinutes.toString(),
+                maxOpenHoursText = detail.settings.maxOpenEntryHours.toString(),
+            )
         } else {
             copy(detail = detail)
         }
@@ -107,6 +129,22 @@ class SettingsViewModel(
             when (error) {
                 null -> _effects.send(SettingsEffect.Saved)
                 SettingsError.InvalidTime -> Unit
+                else -> _effects.send(SettingsEffect.SaveFailed(error))
+            }
+        }
+    }
+
+    private fun saveRules() {
+        val state = _state.value
+        if (state.isWorking || state.detail == null) return
+        _state.update { it.copy(isSavingRules = true) }
+        viewModelScope.launch {
+            val error = saveAttendanceRules(state.toleranceText.toIntOrNull(), state.maxOpenHoursText.toIntOrNull())
+                .exceptionOrNull()?.let { it as? SettingsError ?: SettingsError.Unknown }
+            _state.update { it.copy(isSavingRules = false, showAttendanceError = error == SettingsError.InvalidAttendanceRules) }
+            when (error) {
+                null -> _effects.send(SettingsEffect.Saved)
+                SettingsError.InvalidAttendanceRules -> Unit
                 else -> _effects.send(SettingsEffect.SaveFailed(error))
             }
         }

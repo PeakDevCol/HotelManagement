@@ -61,18 +61,21 @@ fun MoreScreen(state: MainState, onOpenSection: (AppSection) -> Unit, onIntent: 
                     )
                 }
             }
-            if (sections.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space2)) {
-                    SectionLabel(text = stringResource(SectionGroup.ADMINISTRATION.title()))
-                    ListGroup {
-                        sections.forEachIndexed { index, section ->
-                            if (index > 0) ListDivider()
-                            ListRow(
-                                title = stringResource(section.title()),
-                                leading = { MajesticIcon(icon = section.icon(), contentDescription = null, tint = MajesticTheme.colors.inkMuted) },
-                                trailing = { MajesticIcon(icon = MajesticIcons.chevronRight, contentDescription = null, tint = MajesticTheme.colors.inkMuted) },
-                                onClick = { onOpenSection(section) },
-                            )
+            SectionGroup.entries.forEach { group ->
+                val ofGroup = sections.filter { it.group == group }
+                if (ofGroup.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space2)) {
+                        SectionLabel(text = stringResource(group.title()))
+                        ListGroup {
+                            ofGroup.forEachIndexed { index, section ->
+                                if (index > 0) ListDivider()
+                                ListRow(
+                                    title = stringResource(section.title()),
+                                    leading = { MajesticIcon(icon = section.icon(), contentDescription = null, tint = MajesticTheme.colors.inkMuted) },
+                                    trailing = { MajesticIcon(icon = MajesticIcons.chevronRight, contentDescription = null, tint = MajesticTheme.colors.inkMuted) },
+                                    onClick = { onOpenSection(section) },
+                                )
+                            }
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
+import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveAttendanceRulesUseCase
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupError
 import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettings
 import com.peakdevcol.project.hotelmanagement.domain.model.SettingsError
@@ -129,5 +130,48 @@ class SettingsUseCasesTest {
 
         assertEquals(false, phone.isAvailable)
         assertEquals(BackupError.NotAvailable, phone("").exceptionOrNull())
+    }
+
+    // ---- Attendance parameters (M8)
+
+    @Test
+    fun theAttendanceRulesStartWithTheirDefaults() = runTest {
+        val current = settings.observeSettings().first()
+
+        assertEquals(10, current.lateToleranceMinutes)
+        assertEquals(16, current.maxOpenEntryHours)
+    }
+
+    @Test
+    fun changingTheAttendanceRulesKeepsTheStartOfTheDay() = runTest {
+        save(hour = 5, minute = 0)
+
+        assertTrue(SaveAttendanceRulesUseCase(auth, settings)(lateToleranceMinutes = 15, maxOpenEntryHours = 12).isSuccess)
+
+        val current = settings.observeSettings().first()
+        assertEquals(5 * 60, current.operationalDayStartMinutes)
+        assertEquals(15, current.lateToleranceMinutes)
+        assertEquals(12, current.maxOpenEntryHours)
+    }
+
+    @Test
+    fun changingTheStartOfTheDayKeepsTheAttendanceRules() = runTest {
+        SaveAttendanceRulesUseCase(auth, settings)(lateToleranceMinutes = 0, maxOpenEntryHours = 24)
+
+        save(hour = 7, minute = 0)
+
+        val current = settings.observeSettings().first()
+        assertEquals(0, current.lateToleranceMinutes)
+        assertEquals(24, current.maxOpenEntryHours)
+    }
+
+    @Test
+    fun attendanceRulesOutOfRangeAreRejected() = runTest {
+        val saveRules = SaveAttendanceRulesUseCase(auth, settings)
+
+        assertEquals(SettingsError.InvalidAttendanceRules, saveRules(121, 16).exceptionOrNull())
+        assertEquals(SettingsError.InvalidAttendanceRules, saveRules(10, 0).exceptionOrNull())
+        assertEquals(SettingsError.InvalidAttendanceRules, saveRules(null, 16).exceptionOrNull())
+        assertNull(settings.observeSettings().first().updatedAt)
     }
 }

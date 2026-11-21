@@ -6,6 +6,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.SettingsError
 import com.peakdevcol.project.hotelmanagement.domain.model.UserType
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ExportBackupUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveHotelSettingsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveAttendanceRulesUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOperationalDayStartUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeBackupRepository
@@ -32,6 +33,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
     private fun viewModel() = SettingsViewModel(
         ObserveHotelSettingsUseCase(settings, users),
         SaveOperationalDayStartUseCase(auth, settings),
+        SaveAttendanceRulesUseCase(auth, settings),
         ExportBackupUseCase(backups),
     )
 
@@ -145,5 +147,31 @@ class SettingsViewModelTest : MainDispatcherTest() {
 
         assertFalse(viewModel.state.value.backupAvailable)
         assertTrue(backups.exports.isEmpty())
+    }
+
+    @Test
+    fun showsAndSavesTheAttendanceRules() = runTest {
+        val viewModel = viewModel()
+        assertEquals("10", viewModel.state.value.toleranceText)
+        assertEquals("16", viewModel.state.value.maxOpenHoursText)
+
+        viewModel.onIntent(SettingsIntent.ToleranceChange("15 min"))
+        viewModel.onIntent(SettingsIntent.MaxOpenHoursChange("12"))
+        viewModel.onIntent(SettingsIntent.SaveAttendanceRules)
+
+        assertEquals(15, settings.settings.value.lateToleranceMinutes)
+        assertEquals(12, settings.settings.value.maxOpenEntryHours)
+        assertEquals(SettingsEffect.Saved, viewModel.effects.first())
+    }
+
+    @Test
+    fun attendanceRulesOutOfRangeShowTheirError() {
+        val viewModel = viewModel()
+
+        viewModel.onIntent(SettingsIntent.MaxOpenHoursChange("30"))
+        viewModel.onIntent(SettingsIntent.SaveAttendanceRules)
+
+        assertTrue(viewModel.state.value.showAttendanceError)
+        assertEquals(16, settings.settings.value.maxOpenEntryHours)
     }
 }

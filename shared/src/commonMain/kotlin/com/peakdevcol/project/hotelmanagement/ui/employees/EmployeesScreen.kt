@@ -49,7 +49,11 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /** RF-EMP-01: every employee, also the inactive ones. */
 @Composable
-fun EmployeesScreen(onOpenEmployee: (employeeId: String?) -> Unit, viewModel: EmployeesViewModel = koinViewModel()) {
+fun EmployeesScreen(
+    onOpenEmployee: (employeeId: String?) -> Unit,
+    onBack: (() -> Unit)? = null,
+    viewModel: EmployeesViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(viewModel) {
@@ -64,21 +68,26 @@ fun EmployeesScreen(onOpenEmployee: (employeeId: String?) -> Unit, viewModel: Em
         state = state,
         onIntent = viewModel::onIntent,
         employeeForm = { employeeId, onClose -> EmployeeFormScreen(employeeId = employeeId, onBack = onClose) },
+        onBack = onBack,
     )
 }
 
-/** On wide windows the chosen employee opens beside the list, drawn by [employeeForm]. */
+/**
+ * On wide windows the chosen employee opens beside the list, drawn by [employeeForm]. [onBack] is
+ * the arrow back to "Más", when the section was opened from there on the phone.
+ */
 @Composable
 fun EmployeesContent(
     state: EmployeesState,
     onIntent: (EmployeesIntent) -> Unit,
     employeeForm: @Composable (employeeId: String?, onClose: () -> Unit) -> Unit,
+    onBack: (() -> Unit)? = null,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val besideList = maxWidth >= ListDetailMinWidth
         Scaffold(
             topBar = {
-                MajesticTopBar(title = stringResource(Res.string.menu_employees)) {
+                MajesticTopBar(title = stringResource(Res.string.menu_employees), onBack = onBack) {
                     if (besideList) {
                         MajesticButton(
                             text = stringResource(Res.string.employees_new),

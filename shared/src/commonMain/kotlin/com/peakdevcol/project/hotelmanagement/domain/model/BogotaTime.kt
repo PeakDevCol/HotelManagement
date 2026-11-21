@@ -28,6 +28,47 @@ fun formatBogotaTime(instant: Instant): String {
 /** Whole minutes from [from] to [to], never negative even if the clocks of two devices differ. */
 fun minutesBetween(from: Instant, to: Instant): Long = (to - from).inWholeMinutes.coerceAtLeast(0)
 
+private val WEEKDAYS = listOf("lun", "mar", "mié", "jue", "vie", "sáb", "dom")
+
+/** The minutes after midnight of a moment, in Colombian time. */
+fun minuteOfDayIn(instant: Instant): Int {
+    val localSeconds = instant.epochSeconds + BOGOTA_OFFSET_SECONDS
+    return localSeconds.mod(SECONDS_PER_DAY).toInt() / 60
+}
+
+/** A day with its weekday, the way a schedule reads it: `lun 16 nov`. */
+fun formatWeekday(date: CalendarDate): String {
+    // 1970-01-01 was a Thursday, three days after a Monday.
+    val weekday = WEEKDAYS[(date.epochDay + 3).mod(7L).toInt()]
+    return "$weekday ${date.day} ${MONTHS[date.month - 1]}"
+}
+
+/**
+ * Reads a time of a 24-hour clock, in minutes after midnight: `6`, `18`, `6:30` and `18:30`, or
+ * only digits, `630` and `1830`, since the numeric keyboard of a phone has no colon. Null when it
+ * is not a time of the day.
+ */
+fun parseClockTime(text: String): Int? {
+    val trimmed = text.trim()
+    val parts = if (':' in trimmed) {
+        trimmed.split(':')
+    } else if (trimmed.length > 2) {
+        listOf(trimmed.dropLast(2), trimmed.takeLast(2))
+    } else {
+        listOf(trimmed)
+    }
+    if (parts.size > 2 || parts.any { part -> part.isEmpty() || part.length > 2 || !part.all(Char::isDigit) }) return null
+    if (parts.size == 2 && parts[1].length != 2) return null
+    val hour = parts[0].toInt()
+    val minute = parts.getOrNull(1)?.toInt() ?: 0
+    if (hour !in 0..23 || minute !in 0..59) return null
+    return hour * 60 + minute
+}
+
+/** A time of a 24-hour clock written for a field: `06:30`. */
+fun formatClockTime(minuteOfDay: Int): String =
+    "${(minuteOfDay / 60).toString().padStart(2, '0')}:${(minuteOfDay % 60).toString().padStart(2, '0')}"
+
 /** Formats a day the way the hotel reads it: `14 nov 2026`. */
 fun formatCalendarDate(date: CalendarDate): String = "${date.day} ${MONTHS[date.month - 1]} ${date.year}"
 
