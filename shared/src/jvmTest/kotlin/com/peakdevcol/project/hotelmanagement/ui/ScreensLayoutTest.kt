@@ -19,6 +19,9 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.peakdevcol.project.hotelmanagement.domain.model.AttendanceError
+import com.peakdevcol.project.hotelmanagement.domain.model.AttendanceRecord
+import com.peakdevcol.project.hotelmanagement.domain.model.AuthorizedDevice
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupSummary
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceFilter
 import com.peakdevcol.project.hotelmanagement.domain.model.BalancePeriod
@@ -39,7 +42,13 @@ import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettingsDetail
 import com.peakdevcol.project.hotelmanagement.domain.model.Inventory
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryError
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryProduct
+import com.peakdevcol.project.hotelmanagement.domain.model.Mark
+import com.peakdevcol.project.hotelmanagement.domain.model.MarkDelivery
+import com.peakdevcol.project.hotelmanagement.domain.model.MarkKind
+import com.peakdevcol.project.hotelmanagement.domain.model.MarkOutcome
+import com.peakdevcol.project.hotelmanagement.domain.model.MarkSource
 import com.peakdevcol.project.hotelmanagement.domain.model.MethodSales
+import com.peakdevcol.project.hotelmanagement.domain.model.OpenEntry
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderAction
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDetail
@@ -71,6 +80,10 @@ import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductsState
 import com.peakdevcol.project.hotelmanagement.ui.addorder.ProductPickerState
 import com.peakdevcol.project.hotelmanagement.ui.attendance.AttendanceContent
 import com.peakdevcol.project.hotelmanagement.ui.attendance.AttendanceState
+import com.peakdevcol.project.hotelmanagement.ui.attendance.MarkResult
+import com.peakdevcol.project.hotelmanagement.ui.attendance.PhoneMarking
+import com.peakdevcol.project.hotelmanagement.ui.attendance.ReceptionMarkingState
+import com.peakdevcol.project.hotelmanagement.ui.attendance.ReceptionResult
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceContent
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceState
 import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingContent
@@ -88,11 +101,15 @@ import com.peakdevcol.project.hotelmanagement.ui.designsystem.assertNothingSpill
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.saveSnapshotIfAsked
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSizes
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
+import com.peakdevcol.project.hotelmanagement.ui.devices.DevicesContent
+import com.peakdevcol.project.hotelmanagement.ui.devices.DevicesState
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormContent
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormState
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesContent
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesState
 import com.peakdevcol.project.hotelmanagement.ui.employees.OpenEmployee
+import com.peakdevcol.project.hotelmanagement.ui.hotelzone.HotelZoneContent
+import com.peakdevcol.project.hotelmanagement.ui.hotelzone.HotelZoneState
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesContent
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesState
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryContent
@@ -115,6 +132,8 @@ import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesState
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsContent
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsState
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
@@ -381,7 +400,10 @@ class ScreensLayoutTest {
         SettingsContent(
             state = SettingsState(
                 isLoading = false,
-                detail = HotelSettingsDetail(HotelSettings(operationalDayStartMinutes = 360, updatedBy = "admin", updatedAt = now), admin.fullName),
+                detail = HotelSettingsDetail(
+                    HotelSettings(operationalDayStartMinutes = 360, hotelLatitude = 4.60971, hotelLongitude = -74.08175, zoneRadiusMeters = 2_000, updatedBy = "admin", updatedAt = now),
+                    admin.fullName,
+                ),
                 hourText = "6",
                 minuteText = "00",
                 showTimeError = true,
@@ -396,11 +418,118 @@ class ScreensLayoutTest {
     private val night = shift("night", "admin", "2026-11-20", "22:00", "06:00", area = UserArea.RECEPTION)
     private val morning = shift("morning", "admin", "2026-11-21", "06:00", "14:30")
 
+    private val scheduleState = AttendanceState(isLoading = false, today = CalendarDate(2026, 11, 20), days = listOf(night, morning).byStartDay())
+    private val noReception = ReceptionMarkingState(isChecking = false)
+
+    // An entry pending and under review, and a mark that failed far from the hotel.
+    private val openEntry = AttendanceRecord(
+        id = "a-1",
+        employeeId = "admin",
+        clockIn = Mark(at = null, deviceTime = Instant.parse("2026-11-19T11:02:00Z"), source = MarkSource.PHONE, distanceMeters = 40, accuracyMeters = 18),
+    )
+
     @Test
     fun attendance() = checkEveryFrame("asistencia") {
         AttendanceContent(
-            state = AttendanceState(isLoading = false, today = CalendarDate(2026, 11, 20), days = listOf(night, morning).byStartDay()),
+            state = scheduleState.copy(
+                marking = PhoneMarking(
+                    now = Instant.parse("2026-11-19T22:47:00Z"),
+                    isLoading = false,
+                    openEntry = OpenEntry(openEntry, forgottenAt = Instant.parse("2026-11-20T03:02:00Z")),
+                    result = MarkResult.Failed(MarkKind.EXIT, AttendanceError.OutsideZone(1_850)),
+                ),
+            ),
             onIntent = {},
+            reception = noReception,
+            onReceptionIntent = {},
+        )
+    }
+
+    @Test
+    fun attendanceOffline() = checkEveryFrame("asistencia sin conexión") {
+        AttendanceContent(
+            state = scheduleState.copy(
+                marking = PhoneMarking(
+                    now = Instant.parse("2026-11-20T12:00:00Z"),
+                    isLoading = false,
+                    openEntry = OpenEntry(openEntry, forgottenAt = Instant.parse("2026-11-20T03:02:00Z")),
+                    result = MarkResult.Done(MarkOutcome(MarkKind.EXIT, MarkDelivery.PENDING, now, workedTime = 11.hours + 58.minutes)),
+                ),
+            ),
+            onIntent = {},
+            reception = noReception,
+            onReceptionIntent = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun receptionMarking() = checkEveryFrame("marcación en recepción") {
+        AttendanceContent(
+            state = scheduleState,
+            onIntent = {},
+            reception = ReceptionMarkingState(
+                isAvailable = true,
+                isChecking = false,
+                emailText = admin.email,
+                result = ReceptionResult.Done(MarkOutcome(MarkKind.EXIT, MarkDelivery.SENT, now, workedTime = 8.hours + 3.minutes, employeeName = admin.fullName)),
+            ),
+            onReceptionIntent = {},
+        )
+    }
+
+    @Test
+    fun attendanceWithoutMarking() = checkEveryFrame("asistencia sin marcación") {
+        AttendanceContent(state = scheduleState, onIntent = {}, reception = noReception, onReceptionIntent = {})
+    }
+
+    @Test
+    fun hotelZone() = checkEveryFrame("zona del hotel") {
+        HotelZoneContent(
+            state = HotelZoneState(
+                isLoading = false,
+                latitudeText = "4.609710123456789",
+                longitudeText = "-74.081750123456789",
+                radiusText = "2000",
+                accuracyText = "500",
+                showError = true,
+                canUseMyLocation = true,
+                isLocating = true,
+            ),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun devices() = checkEveryFrame("computadores autorizados") {
+        DevicesContent(
+            state = DevicesState(
+                isLoading = false,
+                devices = listOf(
+                    AuthorizedDevice("pc-1", "Recepción principal del primer piso junto al ascensor", "admin", authorizedAt = now),
+                    AuthorizedDevice("pc-2", "Bar de la piscina", "admin", authorizedAt = now),
+                ),
+                thisDeviceId = "pc-3",
+                canAuthorizeThisDevice = true,
+                nameText = "Recepción del segundo piso, al lado de la escalera",
+            ),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun devicesThisOneAuthorized() = checkEveryFrame("este computador autorizado") {
+        DevicesContent(
+            state = DevicesState(
+                isLoading = false,
+                devices = listOf(AuthorizedDevice("pc-1", "Recepción principal del primer piso junto al ascensor", "admin", authorizedAt = now)),
+                thisDeviceId = "pc-1",
+                canAuthorizeThisDevice = true,
+            ),
+            onIntent = {},
+            onBack = {},
         )
     }
 

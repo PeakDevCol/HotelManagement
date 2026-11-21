@@ -319,9 +319,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // RF-EMP-06: the parameters of the hotel. Every active employee reads them, because they
-    // decide how each device groups the sales by day; only an administrator changes them, and
-    // every change says who made it and when.
     // RF-ASI-01 and RF-ASI-02 (M8).
     match /Shifts/{shiftId} {
       function isValidShift(shift) {
@@ -344,15 +341,112 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // RF-ASI-03 to RF-ASI-05 and RF-ASI-11 (M8): an entry and, later, its exit. Each mark keeps the
+    // time of the server and the one of the device; from a phone, the distance to the hotel and the
+    // accuracy, never the coordinates (RF-ASI-10); at reception, the authorized computer. The rules
+    // cannot check where a phone is (R12): the app does, and the administrator reviews.
+    match /Attendance/{attendanceId} {
+      function isAuthorizedComputer(deviceId) {
+        return get(/databases/$(database)/documents/Devices/$(deviceId)).data.active == true;
+      }
+
+      function isValidMark(source, deviceId, distance, accuracy) {
+        return (source == 'phone' && deviceId == null
+            && distance is int && distance >= 0 && accuracy is int && accuracy >= 0)
+          || (source == 'kiosk' && deviceId is string && distance == null && accuracy == null
+            && isAuthorizedComputer(deviceId));
+      }
+
+      function hasNoExit(record) {
+        return record.get('clockOutAt', null) == null
+          && record.get('clockOutDeviceTime', null) == null
+          && record.get('clockOutSource', null) == null
+          && record.get('clockOutDeviceId', null) == null
+          && record.get('clockOutDistanceMeters', null) == null
+          && record.get('clockOutAccuracyMeters', null) == null;
+      }
+
+      // An employee marks their own entry, with the time of the server: a mark made without
+      // connection gets it when it reaches the server (RF-ASI-05).
+      function isOwnEntry(entry) {
+        return entry.keys().hasAll(['employeeId', 'clockInAt', 'clockInDeviceTime', 'clockInSource'])
+          && entry.keys().hasOnly(['employeeId', 'clockInAt', 'clockInDeviceTime', 'clockInSource', 'clockInDeviceId',
+            'clockInDistanceMeters', 'clockInAccuracyMeters', 'clockOutAt', 'clockOutDeviceTime', 'clockOutSource',
+            'clockOutDeviceId', 'clockOutDistanceMeters', 'clockOutAccuracyMeters'])
+          && entry.employeeId == request.auth.uid
+          && entry.clockInAt == request.time
+          && entry.clockInDeviceTime is timestamp
+          && isValidMark(entry.clockInSource, entry.get('clockInDeviceId', null),
+            entry.get('clockInDistanceMeters', null), entry.get('clockInAccuracyMeters', null))
+          && hasNoExit(entry);
+      }
+
+      // The exit closes the entry once, and changes nothing else (RF-ASI-04).
+      function isOwnExit() {
+        let exit = request.resource.data;
+        return resource.data.employeeId == request.auth.uid
+          && hasNoExit(resource.data)
+          && exit.diff(resource.data).affectedKeys().hasOnly(['clockOutAt', 'clockOutDeviceTime', 'clockOutSource',
+            'clockOutDeviceId', 'clockOutDistanceMeters', 'clockOutAccuracyMeters'])
+          && exit.clockOutAt == request.time
+          && exit.clockOutDeviceTime is timestamp
+          && isValidMark(exit.clockOutSource, exit.get('clockOutDeviceId', null),
+            exit.get('clockOutDistanceMeters', null), exit.get('clockOutAccuracyMeters', null));
+      }
+
+      // Each employee asks only for their own marks, by employeeId.
+      allow read: if isAdmin() || (isActiveEmployee() && resource.data.employeeId == request.auth.uid);
+      allow create: if isActiveEmployee() && isOwnEntry(request.resource.data);
+      allow update: if isActiveEmployee() && isOwnExit();
+      // A mark is never deleted: the administrator corrects it with a reason (RF-ASI-07).
+      allow delete: if false;
+    }
+
+    // RF-ASI-11 (M8): the computers of reception where the employees mark with their account.
+    match /Devices/{deviceId} {
+      function isValidAuthorization(device) {
+        return device.keys().hasAll(['name', 'authorizedBy', 'authorizedAt', 'active'])
+          && device.keys().hasOnly(['name', 'authorizedBy', 'authorizedAt', 'active'])
+          && device.name is string
+          && device.name.size() > 0
+          && device.name.size() <= 40
+          && device.authorizedBy == request.auth.uid
+          && device.authorizedAt == request.time
+          && device.active == true;
+      }
+
+      // A revoked computer stays, so the marks made on it still say where they came from.
+      function isRevocation() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active'])
+          && request.resource.data.active == false;
+      }
+
+      // A computer reads its own document, by its random id; only an administrator lists them all.
+      allow get: if isActiveEmployee();
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidAuthorization(request.resource.data);
+      allow update: if isAdmin() && (isValidAuthorization(request.resource.data) || isRevocation());
+      allow delete: if false;
+    }
+
+    // RF-EMP-06: the parameters of the hotel. Every active employee reads them, because they
+    // decide how each device groups the sales by day and where attendance is marked; only an
+    // administrator changes them, and every change says who made it and when.
     match /Settings/{settingsId} {
-      // The attendance parameters (M8) are optional, so a document saved before them is still valid.
+      // The parameters of each phase are optional, so a document saved before them is still valid.
       function isValidHotelSettings(settings) {
-        return settings.keys().hasOnly(['operationalDayStartMinutes', 'lateToleranceMinutes', 'maxOpenEntryHours', 'updatedBy', 'updatedAt'])
+        return settings.keys().hasOnly(['operationalDayStartMinutes', 'lateToleranceMinutes', 'maxOpenEntryHours',
+            'hotelLatitude', 'hotelLongitude', 'zoneRadiusMeters', 'minAccuracyMeters', 'updatedBy', 'updatedAt'])
           && settings.operationalDayStartMinutes is int
           && settings.operationalDayStartMinutes >= 0
           && settings.operationalDayStartMinutes < 1440
           && (!('lateToleranceMinutes' in settings) || (settings.lateToleranceMinutes is int && settings.lateToleranceMinutes >= 0 && settings.lateToleranceMinutes <= 120))
           && (!('maxOpenEntryHours' in settings) || (settings.maxOpenEntryHours is int && settings.maxOpenEntryHours >= 1 && settings.maxOpenEntryHours <= 24))
+          // RF-ASI-10: the location of the hotel, never of an employee. Null until it is set.
+          && (settings.get('hotelLatitude', null) == null || (settings.hotelLatitude is number && settings.hotelLatitude >= -90 && settings.hotelLatitude <= 90))
+          && (settings.get('hotelLongitude', null) == null || (settings.hotelLongitude is number && settings.hotelLongitude >= -180 && settings.hotelLongitude <= 180))
+          && (!('zoneRadiusMeters' in settings) || (settings.zoneRadiusMeters is int && settings.zoneRadiusMeters >= 20 && settings.zoneRadiusMeters <= 2000))
+          && (!('minAccuracyMeters' in settings) || (settings.minAccuracyMeters is int && settings.minAccuracyMeters >= 10 && settings.minAccuracyMeters <= 500))
           && settings.updatedBy == request.auth.uid
           && settings.updatedAt == request.time;
       }

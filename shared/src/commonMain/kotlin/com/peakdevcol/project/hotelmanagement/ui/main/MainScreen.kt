@@ -65,6 +65,7 @@ import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcon
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSizes
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticSpacing
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticTheme
+import com.peakdevcol.project.hotelmanagement.ui.devices.DevicesScreen
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesScreen
 import com.peakdevcol.project.hotelmanagement.ui.employees.label
@@ -73,6 +74,7 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesScreen
 import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesScreen
+import com.peakdevcol.project.hotelmanagement.ui.hotelzone.HotelZoneScreen
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsScreen
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -225,7 +227,15 @@ private fun MainNavHost(
             )
         }
         composable<EmployeeFormRoute> { entry -> EmployeeFormScreen(employeeId = entry.toRoute<EmployeeFormRoute>().employeeId, onBack = back) }
-        composable<SettingsRoute> { SettingsScreen(onBack = backToMore(AppSection.SETTINGS)) }
+        composable<SettingsRoute> {
+            SettingsScreen(
+                onOpenHotelZone = { navController.navigate(HotelZoneRoute) },
+                onOpenDevices = { navController.navigate(DevicesRoute) },
+                onBack = backToMore(AppSection.SETTINGS),
+            )
+        }
+        composable<HotelZoneRoute> { HotelZoneScreen(onBack = back) }
+        composable<DevicesRoute> { DevicesScreen(onBack = back) }
         composable<MoreRoute> {
             MoreScreen(
                 state = state,

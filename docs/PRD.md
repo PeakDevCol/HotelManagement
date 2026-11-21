@@ -323,15 +323,15 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 |---|---|---|---|
 | RF-ASI-01 | Horarios | El administrador asigna turnos a cada empleado (inicio, fin y área opcional). Un turno puede cruzar la medianoche. Se puede copiar la semana anterior. Avisa si dos turnos del mismo empleado se cruzan. | ✅ En "Horarios" |
 | RF-ASI-02 | Mi horario | Cada empleado ve sus turnos de las próximas dos semanas | ✅ En "Asistencia" |
-| RF-ASI-03 | Marcar entrada ([P29](#12-preguntas-abiertas)) | Desde el celular, solo dentro de la zona del hotel (RF-ASI-10). Desde un computador autorizado de recepción, sin ubicación (RF-ASI-11). Si el celular no da ubicación, la app indica que marque en recepción. Usa la hora del servidor y no deja marcar otra entrada si hay una abierta. | ⬜ |
-| RF-ASI-04 | Marcar salida | Con las mismas condiciones de RF-ASI-03. Cierra la entrada abierta y muestra las horas trabajadas. | ⬜ |
-| RF-ASI-05 | Marcación sin conexión | En el celular, la ubicación funciona sin internet, así que la marcación se valida igual. Se guarda con la hora del dispositivo y queda "por revisar", porque la hora del servidor solo se conoce al sincronizar. | ⬜ |
+| RF-ASI-03 | Marcar entrada ([P29](#12-preguntas-abiertas)) | Desde el celular, solo dentro de la zona del hotel (RF-ASI-10). Desde un computador autorizado de recepción, sin ubicación (RF-ASI-11). Si el celular no da ubicación, la app indica que marque en recepción. Usa la hora del servidor y no deja marcar otra entrada si hay una abierta. | ✅ En "Asistencia", desde el celular o el computador autorizado |
+| RF-ASI-04 | Marcar salida | Con las mismas condiciones de RF-ASI-03. Cierra la entrada abierta y muestra las horas trabajadas. | ✅ En "Asistencia" |
+| RF-ASI-05 | Marcación sin conexión | En el celular, la ubicación funciona sin internet, así que la marcación se valida igual. Se guarda con la hora del dispositivo y queda "por revisar", porque la hora del servidor solo se conoce al sincronizar. | ✅ Con el aviso "Sin conexión" |
 | RF-ASI-06 | Salida olvidada | Una entrada abierta por más horas de las del parámetro queda como "salida pendiente" para el administrador | ⬜ |
 | RF-ASI-07 | Correcciones | El administrador corrige una marcación con un motivo. Se conservan los valores originales. | ⬜ |
 | RF-ASI-08 | Reporte de horas | Por empleado y rango de fechas: horas programadas y trabajadas, llegadas tarde (según la tolerancia) y turnos sin marcación. No calcula nómina ni recargos. Solo lo ve el administrador ([P37](#12-preguntas-abiertas)). | ⬜ |
 | RF-ASI-09 | Quién está trabajando | Recepción y administración ven qué empleados tienen una entrada abierta | ⬜ |
-| RF-ASI-10 | Zona del hotel | El administrador fija la ubicación del hotel, el radio y la precisión mínima. Se acepta la marcación si el celular está dentro del radio con esa precisión; si no, pide intentar de nuevo o marcar en recepción. Rechaza ubicaciones simuladas, que Android permite detectar (V5). Solo se guardan la distancia y la precisión, no las coordenadas, y no hay rastreo fuera del momento de marcar. | ⬜ |
-| RF-ASI-11 | Computadores autorizados | El administrador autoriza el computador de recepción desde la app de escritorio, y puede revocarlo. Solo un computador autorizado muestra la opción de marcar asistencia. El empleado se identifica con su cuenta y marca, sin cerrar la sesión del computador (V1). | ⬜ |
+| RF-ASI-10 | Zona del hotel | El administrador fija la ubicación del hotel, el radio y la precisión mínima. Se acepta la marcación si el celular está dentro del radio con esa precisión; si no, pide intentar de nuevo o marcar en recepción. Rechaza ubicaciones simuladas, que Android permite detectar (V5). Solo se guardan la distancia y la precisión, no las coordenadas, y no hay rastreo fuera del momento de marcar. | ✅ En Configuración, "Zona del hotel" |
+| RF-ASI-11 | Computadores autorizados | El administrador autoriza el computador de recepción desde la app de escritorio, y puede revocarlo. Solo un computador autorizado muestra la opción de marcar asistencia. El empleado se identifica con su cuenta y marca, sin cerrar la sesión del computador (V1). | ✅ En Configuración, "Computadores autorizados" |
 
 ### 6.8 Habitaciones (`HAB`, fase 3)
 El estado de una habitación se guarda en tres partes independientes, para que la fase 4 no cambie el modelo:
@@ -562,15 +562,15 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | `Products/{id}` | `name`, `unitPrice`, `categoryId`, `taxId`, `active` | Inventario. Se desactivan, no se borran. | M4 |
 | `Categories/{id}` | `name`, `position` | Categorías del inventario, en el orden que define el administrador (RF-INV-04) | M4 |
 | `Taxes/{id}` | `name`, `rate`, `active` | Impuestos opcionales (P14). `rate` es un entero en centésimas de punto: 19 % es `1900` y 8,5 % es `850`. Se desactivan, no se borran. | M4 |
-| `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt`. En la fase 1: `operationalDayStartMinutes`, en minutos después de la medianoche (360 = 6:00 a. m.). En M8: `lateToleranceMinutes` y `maxOpenEntryHours`. | Cada fase agrega los suyos | M6 |
+| `Settings/hotel` | Los parámetros de RF-EMP-06, con `updatedBy` y `updatedAt`. En la fase 1: `operationalDayStartMinutes`, en minutos después de la medianoche (360 = 6:00 a. m.). En M8: `lateToleranceMinutes` y `maxOpenEntryHours`; y para RF-ASI-10, `hotelLatitude` y `hotelLongitude` (la ubicación del hotel, nulas hasta fijarla), `zoneRadiusMeters` (150 por defecto) y `minAccuracyMeters` (100 por defecto). | Cada fase agrega los suyos | M6 |
 
 **Asistencia (fase 2)**
 
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
 | `Shifts/{id}` | `employeeId`, `startAt`, `endAt`, `area`, `createdBy` | Horarios | M8 |
-| `Attendance/{id}` | `employeeId`, `clockInAt`, `clockOutAt`, `source` (`phone` o `kiosk`), `deviceId`, `distanceMeters`, `accuracyMeters`, `offline`, `deviceTime`, `needsReview` y `correction` (`by`, `reason` y valores originales) | Marcaciones. Sin coordenadas (RF-ASI-10). | M8 |
-| `Devices/{id}` | `name`, `authorizedBy`, `authorizedAt`, `active` | Computadores autorizados para marcar (RF-ASI-11) | M8 |
+| `Attendance/{id}` | `employeeId`; de la entrada, `clockInAt` (hora del servidor), `clockInDeviceTime` (hora del dispositivo), `clockInSource` (`phone` o `kiosk`), `clockInDeviceId` (el computador, en recepción), `clockInDistanceMeters` y `clockInAccuracyMeters` (desde el celular); de la salida, los mismos campos con `clockOut`, nulos mientras la entrada está abierta. "Por revisar" no se guarda: se deduce de las dos horas (RF-ASI-05). `correction` (`by`, `reason` y valores originales) llega con RF-ASI-07. | Marcaciones. Sin coordenadas (RF-ASI-10). | M8 |
+| `Devices/{id}` | `name`, `authorizedBy`, `authorizedAt`, `active`. El id lo crea la app en cada computador y lo guarda en él. | Computadores autorizados para marcar (RF-ASI-11). Cada computador lee solo el suyo; la lista la ve el administrador. | M8 |
 
 **Habitaciones, reservas y estadías (fase 3)**
 
@@ -630,7 +630,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | S7 | Las reglas nuevas pueden bloquear a todos o dejar huecos | ~~Tests de las reglas en el emulador de Firebase~~: descartados el 2026-11-14 (sección 13). En su lugar, antes de publicar las reglas se revisan a mano, por rol y por cada cambio de estado, con el simulador de reglas de la consola de Firebase, y se despliegan en un horario de poca operación. Las de M2 se comprobaron el 2026-11-14 con peticiones reales después de publicarlas: sin sesión, cuenta sin perfil y administrador. | M2 ✅ |
 | S8 | Registro abierto | Quitar la pantalla (RF-AUTH-02) y exigir documento activo en las reglas (RF-AUTH-07) | M2 ✅ |
 | S9 | Datos personales de huéspedes | Reglas por rol revisadas con el simulador de reglas de la consola (S7). Los documentos de identidad no aparecen en logs, mensajes de error ni respaldos sin control. | M11 |
-| S10 | Ubicación de los empleados | Pedir el permiso solo al marcar, explicar para qué se usa y no guardar coordenadas (RF-ASI-10) | M8 |
+| S10 | Ubicación de los empleados | Pedir el permiso solo al marcar, explicar para qué se usa y no guardar coordenadas (RF-ASI-10). Hecho: antes del permiso del sistema, la app explica que solo guarda a cuántos metros del hotel se marcó; la ubicación se lee una vez al marcar o al fijar la zona, y el permiso es solo mientras se usa la app. | M8 ✅ |
 
 ## 10. Hoja de ruta
 
@@ -702,7 +702,7 @@ Queda una pregunta de negocio abierta, que se responde antes de M16. Las validac
 | V2 | Que los pedidos guardados sin conexión se conserven al cerrar y abrir la app, en Android y en escritorio. **Resuelta en escritorio el 2026-11-14:** se cumple, una vez que la base local sale de la carpeta temporal (sección 13). En Android se probó a mano el 2026-11-15 en modo avión, cerrando y abriendo la app: se cumple. | En escritorio, guardar los pendientes en un archivo local propio | RF-ORD-09 | M3 |
 | V3 | Que App Check no tiene proveedor para la app de escritorio (JVM). **Resuelta el 2026-11-17:** no lo tiene. Firebase trae proveedores para Android (Play Integrity), Apple (DeviceCheck y App Attest) y web (reCAPTCHA); uno propio necesita un servidor, es decir, Blaze. GitLive tampoco tiene un módulo de App Check. App Check no se usa en la versión 1.0.0 (sección 13). | Si lo tuviera, exigirlo; si no, dejarlo en modo de monitoreo | S4, R12 | M16 |
 | V4 | Uso real de Firestore durante el piloto, contra la cuota diaria de Spark | Reducir listeners y lecturas. Pasar a Blaze solo con una decisión nueva. | RNF-12 | M16 |
-| V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 (detección de ubicaciones simuladas) y M16 (precisión en el hotel) |
+| V5 | Precisión del GPS dentro del hotel y detección de ubicaciones simuladas. **La detección, resuelta el 2026-11-20** (sección 13): Android e iOS la marcan y la app la rechaza. Falta medir la precisión dentro del hotel. | Ajustar el radio y la precisión; siempre queda el computador de recepción | RF-ASI-10 | M8 (detección de ubicaciones simuladas) y M16 (precisión en el hotel) |
 | V6 | Que agregar productos sin conexión desde dos dispositivos no pise líneas ni el total (`arrayUnion` e `increment`). Y que, si otro dispositivo cerró el pedido mientras tanto, la app detecte que el servidor rechazó esos productos y avise, aunque se haya cerrado y abierto la app. **Resuelta el 2026-11-16:** se cumple con `arrayUnion` y sin `increment` (sección 13). Dos dispositivos sin conexión agregaron líneas al mismo pedido y el servidor conservó las de ambos; con el pedido cerrado mientras tanto, el servidor rechazó las líneas y la app lo detectó después de reiniciar. | Permitir agregar productos solo con conexión | RF-CUR-13 | M3 |
 | V7 | Tamaño de las fotos comprimidas, y que solo se lean al abrir el detalle | Bajar la calidad o quitar las fotos | RF-TAR-07 | M14 |
 | V8 | Si GitLive permite consultas de suma y conteo en Firestore para el balance. **Resuelta el 2026-11-17:** GitLive 2.7.0 tiene `count()` y `sum()` en Android, escritorio e iOS (revisado en el código de la librería, no con una petición real), solo contra el servidor y con la suma como decimal. No se usan: solo dan totales de una consulta y no sirven para el desglose por producto (sección 13). | Sumar en el cliente, consultando solo el rango elegido | RF-BAL-01 | M5 |
@@ -749,6 +749,7 @@ Las respuestas anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | P35 | ¿Cómo se paga una reserva de varias habitaciones? | No es una función: cada habitación es su propia reserva, aunque sea del mismo huésped y las mismas fechas |
 | P36 | ¿Quién mueve el estado de una tarea a cargo de un proveedor externo? | Recepción o administración: inician, devuelven y terminan la tarea |
 | P37 | ¿Quién ve el reporte de horas, los reportes de limpieza y mantenimiento y el historial por habitación? | Por ahora, solo el administrador |
+| P39 | ¿Qué pasa con una entrada que lleva abierta más horas de las del parámetro? | Queda como salida pendiente para el administrador, y la siguiente marcación del empleado es una entrada nueva (2026-11-21) |
 
 ## 13. Registro de decisiones
 
@@ -882,6 +883,10 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-20 | "Mi horario" va en la sección Asistencia, donde después se marca. En servicio, recepción, limpieza y mantenimiento, la barra inferior queda Pedidos · Asistencia · Más. Administración tiene Asistencia y Horarios en "Más". | Un toque desde la barra para ver el turno y, en el segundo PR, marcarlo |
 | 2026-11-20 | Los horarios se ven por semana, de lunes a domingo. "Copiar semana anterior" agrega los turnos que falten, sin repetir los que ya están. Un turno se borra, porque es un plan; las marcaciones no se borran. | Lo más común es repetir la semana y ajustar lo que cambia |
 | 2026-11-20 | Las horas de un turno se escriben en formato de 24 horas, con o sin dos puntos (06:00 o 0600), porque el teclado numérico del celular no tiene dos puntos. Si el fin es antes del inicio, el turno termina al día siguiente. | Menos toques que un selector de hora |
+| 2026-11-20 | La marcación es un solo botón grande: "Marcar entrada" o "Marcar salida", según haya una entrada abierta. En recepción el empleado escribe su correo y su contraseña, y la app marca la entrada o la salida que le toque. Lo que pasó queda escrito debajo, con la salida si falló: acercarse e intentar de nuevo, o marcar en recepción. | Un paso, y claro para cualquier persona |
+| 2026-11-20 | En recepción la marcación necesita conexión y se confirma en el servidor; sin conexión, se avisa y no se marca. En el celular sí se marca sin conexión (RF-ASI-05). | El computador es compartido: una marcación que quedara esperando a nombre de un empleado saldría después, cuando ya se le dijo que falló |
+| 2026-11-20 | La zona del hotel tiene un radio de 150 m y una precisión mínima de 100 m mientras el administrador no los cambie (el radio, entre 20 y 2.000 m; la precisión, entre 10 y 500 m). Sin la ubicación del hotel, nadie marca desde el celular. | Valores de partida, que se ajustan en el piloto (V5) |
+| 2026-11-21 | Una entrada abierta por más horas de las del parámetro (16 por defecto) ya no se cierra al marcar: la siguiente marcación del empleado es una entrada nueva, y la vieja queda como salida pendiente para el administrador (RF-ASI-06) | Respuesta a P39: que una salida olvidada no bloquee la entrada del turno siguiente ni deje horas falsas |
 
 ## 14. Riesgos
 

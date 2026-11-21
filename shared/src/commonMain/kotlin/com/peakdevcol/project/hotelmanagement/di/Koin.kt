@@ -4,8 +4,11 @@ import com.peakdevcol.project.hotelmanagement.AppConfig
 import com.peakdevcol.project.hotelmanagement.data.backup.backupRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirebaseAccountCreationRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirebaseAuthRepository
+import com.peakdevcol.project.hotelmanagement.data.firebase.FirebaseReceptionMarkingRepository
+import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreAttendanceRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreCashClosingRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreCategoryRepository
+import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreDeviceRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreOrderRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestorePaymentRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreProductRepository
@@ -14,21 +17,30 @@ import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreShiftReposi
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreTaxRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreUserRepository
 import com.peakdevcol.project.hotelmanagement.data.local.LocalPendingAdditionRepository
+import com.peakdevcol.project.hotelmanagement.data.local.LocalThisDevice
 import com.peakdevcol.project.hotelmanagement.data.local.localTextStore
+import com.peakdevcol.project.hotelmanagement.data.location.canMarkForOthersOnThisPlatform
+import com.peakdevcol.project.hotelmanagement.data.location.locationProvider
 import com.peakdevcol.project.hotelmanagement.domain.repository.AccountCreationRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.AttendanceRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.AuthRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.BackupRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.CashClosingRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.CategoryRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.DeviceRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.LocationProvider
 import com.peakdevcol.project.hotelmanagement.domain.repository.OrderRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.PaymentRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.PendingAdditionRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ProductRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.ReceptionMarkingRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.SettingsRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ShiftRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.TaxRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.ThisDevice
 import com.peakdevcol.project.hotelmanagement.domain.repository.UserRepository
 import com.peakdevcol.project.hotelmanagement.domain.usecase.AddProductsToOrderUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.AuthorizeThisDeviceUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CancelOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ChargeOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CloseOrderUseCase
@@ -39,29 +51,40 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.DeleteShiftUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DismissRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ExportBackupUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetProductsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.IdentifyThisDeviceUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadBalanceUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadCashClosingUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.LocateThisDeviceUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.LocationAccessUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LogOutUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoginUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.MarkAtReceptionUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.MarkWithPhoneUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.MoveCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveAccessUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveDevicesUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveEmployeesUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveHotelSettingsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveHotelZoneUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveInventoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveMyScheduleUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOpenEntryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOpenOrdersUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOrderDetailUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingCollectionUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObservePendingOrderCountUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveReceptionMarkingUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveRejectedAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveScheduleWeekUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReconcilePendingAdditionsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.RemoveProductFromOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReopenOrderUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.RevokeDeviceUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveAttendanceRulesUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveCashClosingUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveCategoryUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveHotelZoneUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOperationalDayStartUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveProductUseCase
@@ -73,12 +96,15 @@ import com.peakdevcol.project.hotelmanagement.ui.AppViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddOrderViewModel
 import com.peakdevcol.project.hotelmanagement.ui.addorder.AddProductsViewModel
 import com.peakdevcol.project.hotelmanagement.ui.attendance.AttendanceViewModel
+import com.peakdevcol.project.hotelmanagement.ui.attendance.ReceptionMarkingViewModel
 import com.peakdevcol.project.hotelmanagement.ui.balance.BalanceViewModel
 import com.peakdevcol.project.hotelmanagement.ui.balance.CashClosingViewModel
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.CurrentOrdersViewModel
 import com.peakdevcol.project.hotelmanagement.ui.currentorders.OrderDetailViewModel
+import com.peakdevcol.project.hotelmanagement.ui.devices.DevicesViewModel
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeeFormViewModel
 import com.peakdevcol.project.hotelmanagement.ui.employees.EmployeesViewModel
+import com.peakdevcol.project.hotelmanagement.ui.hotelzone.HotelZoneViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormViewModel
@@ -101,6 +127,8 @@ import org.koin.dsl.module
 
 private const val PENDING_ADDITIONS_FILE = "pending-additions"
 private const val ACCOUNT_CREATION_APP = "account-creation"
+private const val RECEPTION_MARKING_APP = "reception-marking"
+private const val THIS_DEVICE_FILE = "this-device"
 
 private val dataModule = module {
     single<AuthRepository> { FirebaseAuthRepository(auth = lazy { Firebase.auth }) }
@@ -121,6 +149,22 @@ private val dataModule = module {
     single<TaxRepository> { FirestoreTaxRepository(firestore = lazy { Firebase.firestore }) }
     single<SettingsRepository> { FirestoreSettingsRepository(firestore = lazy { Firebase.firestore }) }
     single<ShiftRepository> { FirestoreShiftRepository(firestore = lazy { Firebase.firestore }) }
+    single<AttendanceRepository> { FirestoreAttendanceRepository(firestore = lazy { Firebase.firestore }) }
+    single<DeviceRepository> { FirestoreDeviceRepository(firestore = lazy { Firebase.firestore }) }
+    single<ReceptionMarkingRepository> {
+        val config = get<AppConfig>()
+        FirebaseReceptionMarkingRepository(
+            receptionApp = lazy { Firebase.initialize(config.platformContext, Firebase.app.options, RECEPTION_MARKING_APP) },
+        )
+    }
+    single<ThisDevice> {
+        val config = get<AppConfig>()
+        LocalThisDevice(
+            store = lazy { localTextStore(config.localDataDirectory, THIS_DEVICE_FILE) },
+            canMarkForOthers = canMarkForOthersOnThisPlatform(),
+        )
+    }
+    single<LocationProvider> { locationProvider(get()) }
     single<BackupRepository> { backupRepository(firestore = lazy { Firebase.firestore }) }
     single<PendingAdditionRepository> {
         val config = get<AppConfig>()
@@ -170,6 +214,20 @@ private val domainModule = module {
     factoryOf(::DeleteShiftUseCase)
     factoryOf(::CopyPreviousWeekUseCase)
     factoryOf(::SaveAttendanceRulesUseCase)
+    factoryOf(::ObserveOpenEntryUseCase)
+    factory { MarkWithPhoneUseCase(authRepository = get(), attendanceRepository = get(), settingsRepository = get(), locationProvider = get()) }
+    factory {
+        MarkAtReceptionUseCase(receptionMarkingRepository = get(), deviceRepository = get(), settingsRepository = get(), thisDevice = get())
+    }
+    factoryOf(::ObserveReceptionMarkingUseCase)
+    factoryOf(::LocationAccessUseCase)
+    factoryOf(::LocateThisDeviceUseCase)
+    factoryOf(::ObserveHotelZoneUseCase)
+    factoryOf(::SaveHotelZoneUseCase)
+    factoryOf(::ObserveDevicesUseCase)
+    factoryOf(::AuthorizeThisDeviceUseCase)
+    factoryOf(::RevokeDeviceUseCase)
+    factoryOf(::IdentifyThisDeviceUseCase)
 }
 
 private val uiModule = module {
@@ -183,7 +241,10 @@ private val uiModule = module {
     viewModelOf(::SettingsViewModel)
     viewModelOf(::BalanceViewModel)
     viewModelOf(::CashClosingViewModel)
-    viewModel { AttendanceViewModel(observeMySchedule = get()) }
+    viewModel { AttendanceViewModel(observeMySchedule = get(), observeOpenEntry = get(), markWithPhone = get(), locationAccess = get()) }
+    viewModelOf(::ReceptionMarkingViewModel)
+    viewModelOf(::HotelZoneViewModel)
+    viewModelOf(::DevicesViewModel)
     viewModel {
         SchedulesViewModel(
             observeScheduleWeek = get(),

@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.Shift
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.error_check_connection
+import com.peakdevcol.project.hotelmanagement.resources.marking_not_here
 import com.peakdevcol.project.hotelmanagement.resources.my_schedule_empty_message
 import com.peakdevcol.project.hotelmanagement.resources.my_schedule_empty_title
 import com.peakdevcol.project.hotelmanagement.resources.my_schedule_error
@@ -26,6 +27,8 @@ import com.peakdevcol.project.hotelmanagement.resources.my_schedule_hint
 import com.peakdevcol.project.hotelmanagement.resources.my_schedule_title
 import com.peakdevcol.project.hotelmanagement.resources.nav_attendance
 import com.peakdevcol.project.hotelmanagement.resources.retry
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Banner
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.BannerTone
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.EmptyState
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListDivider
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListGroup
@@ -42,16 +45,36 @@ import com.peakdevcol.project.hotelmanagement.ui.main.AppMessagesHost
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-/** RF-ASI-02: the shifts of the employee. The second PR of M8 puts marking the entry and the exit on top. */
+/**
+ * RF-ASI-02 to RF-ASI-05 and RF-ASI-11: marking the entry and the exit, from the phone or, on the
+ * authorized computer of reception, for each employee; and the shifts of the employee below.
+ */
 @Composable
-fun AttendanceScreen(onBack: (() -> Unit)? = null, viewModel: AttendanceViewModel = koinViewModel()) {
+fun AttendanceScreen(
+    onBack: (() -> Unit)? = null,
+    viewModel: AttendanceViewModel = koinViewModel(),
+    receptionViewModel: ReceptionMarkingViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    AttendanceContent(state = state, onIntent = viewModel::onIntent, onBack = onBack)
+    val reception by receptionViewModel.state.collectAsStateWithLifecycle()
+    AttendanceContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        reception = reception,
+        onReceptionIntent = receptionViewModel::onIntent,
+        onBack = onBack,
+    )
 }
 
 /** [onBack] is the arrow back to "Más", when the section was opened from there on the phone. */
 @Composable
-fun AttendanceContent(state: AttendanceState, onIntent: (AttendanceIntent) -> Unit, onBack: (() -> Unit)? = null) {
+fun AttendanceContent(
+    state: AttendanceState,
+    onIntent: (AttendanceIntent) -> Unit,
+    reception: ReceptionMarkingState,
+    onReceptionIntent: (ReceptionMarkingIntent) -> Unit,
+    onBack: (() -> Unit)? = null,
+) {
     Scaffold(
         topBar = { MajesticTopBar(title = stringResource(Res.string.nav_attendance), onBack = onBack) },
         snackbarHost = { AppMessagesHost() },
@@ -66,6 +89,7 @@ fun AttendanceContent(state: AttendanceState, onIntent: (AttendanceIntent) -> Un
                     .padding(MajesticSpacing.space4),
                 verticalArrangement = Arrangement.spacedBy(MajesticSpacing.space4),
             ) {
+                Marking(state = state, onIntent = onIntent, reception = reception, onReceptionIntent = onReceptionIntent)
                 Column {
                     Text(text = stringResource(Res.string.my_schedule_title), style = MajesticTheme.typography.title, color = MajesticTheme.colors.ink)
                     Text(text = stringResource(Res.string.my_schedule_hint), style = MajesticTheme.typography.caption, color = MajesticTheme.colors.inkMuted)
@@ -73,6 +97,26 @@ fun AttendanceContent(state: AttendanceState, onIntent: (AttendanceIntent) -> Un
                 MySchedule(state = state, onIntent = onIntent)
             }
         }
+    }
+    if (state.isExplainingPermission) {
+        LocationExplanation(
+            onPermissionResult = { granted -> onIntent(AttendanceIntent.PermissionResult(granted)) },
+            onDismiss = { onIntent(AttendanceIntent.DismissPermission) },
+        )
+    }
+}
+
+@Composable
+private fun Marking(
+    state: AttendanceState,
+    onIntent: (AttendanceIntent) -> Unit,
+    reception: ReceptionMarkingState,
+    onReceptionIntent: (ReceptionMarkingIntent) -> Unit,
+) {
+    when {
+        reception.isAvailable -> ReceptionMarkingCard(state = reception, onIntent = onReceptionIntent)
+        state.marking != null -> PhoneMarkingCard(marking = state.marking, onIntent = onIntent)
+        !reception.isChecking -> Banner(tone = BannerTone.Info, icon = MajesticIcons.info, message = stringResource(Res.string.marking_not_here))
     }
 }
 
