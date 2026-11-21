@@ -13,7 +13,6 @@ import com.peakdevcol.project.hotelmanagement.domain.model.AttendanceRecord
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkKind
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkOutcome
-import com.peakdevcol.project.hotelmanagement.domain.model.effectiveTime
 import com.peakdevcol.project.hotelmanagement.domain.model.formatBogotaTime
 import com.peakdevcol.project.hotelmanagement.domain.model.formatWeekday
 import com.peakdevcol.project.hotelmanagement.domain.model.operationalDateOf
@@ -90,7 +89,7 @@ private fun EntryStatus(marking: PhoneMarking) {
                 text = when {
                     marking.isLoading -> stringResource(Res.string.marking_checking)
                     current == null -> stringResource(Res.string.marking_no_entry)
-                    else -> stringResource(Res.string.marking_entered_at, formatBogotaTime(current.clockIn.effectiveTime))
+                    else -> stringResource(Res.string.marking_entered_at, formatBogotaTime(current.entryTime))
                 },
                 style = MajesticTheme.typography.bodyLarge,
                 color = MajesticTheme.colors.ink,
@@ -109,7 +108,7 @@ private fun EntryStatus(marking: PhoneMarking) {
         }
     }
     if (current == null && forgotten != null) {
-        val clockIn = forgotten.clockIn.effectiveTime
+        val clockIn = forgotten.entryTime
         Banner(
             tone = BannerTone.Warning,
             icon = MajesticIcons.warning,
@@ -121,7 +120,7 @@ private fun EntryStatus(marking: PhoneMarking) {
 /** "Llevas 3 h 15 min · pendiente de enviar". */
 @Composable
 private fun AttendanceRecord.progress(marking: PhoneMarking): String = listOfNotNull(
-    stringResource(Res.string.marking_worked_so_far, durationLabel(marking.now - clockIn.effectiveTime)),
+    stringResource(Res.string.marking_worked_so_far, durationLabel(marking.now - entryTime)),
     if (clockIn.at == null) stringResource(Res.string.marking_pending) else null,
     if (needsReview) stringResource(Res.string.marking_needs_review) else null,
 ).joinToString(" · ")

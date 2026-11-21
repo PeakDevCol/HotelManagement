@@ -39,7 +39,7 @@ class AppNavigationTest {
         assertEquals(AppSection.entries, navigation.sections)
         assertEquals(listOf(AppSection.ORDERS, AppSection.BALANCE), navigation.mainSections)
         assertEquals(
-            listOf(AppSection.ATTENDANCE, AppSection.SCHEDULES, AppSection.INVENTORY, AppSection.EMPLOYEES, AppSection.SETTINGS),
+            listOf(AppSection.ATTENDANCE, AppSection.SCHEDULES, AppSection.ATTENDANCE_REVIEW, AppSection.INVENTORY, AppSection.EMPLOYEES, AppSection.SETTINGS),
             navigation.moreSections,
         )
     }

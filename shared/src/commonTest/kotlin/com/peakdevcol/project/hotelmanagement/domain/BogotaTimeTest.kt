@@ -1,6 +1,8 @@
 package com.peakdevcol.project.hotelmanagement.domain
 
+import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
 import com.peakdevcol.project.hotelmanagement.domain.model.formatBogotaDateTime
+import com.peakdevcol.project.hotelmanagement.domain.model.formatDayRange
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -34,5 +36,12 @@ class BogotaTimeTest {
     fun handlesLeapDays() {
         assertEquals("29 feb 2028, 3:00 p. m.", format("2028-02-29T20:00:00Z"))
         assertEquals("1 mar 2027, 9:10 a. m.", format("2027-03-01T14:10:00Z"))
+    }
+
+    @Test
+    fun aPeriodDoesNotRepeatTheMonthOrTheYearItShares() {
+        assertEquals("16 – 30 nov 2026", formatDayRange(CalendarDate(2026, 11, 16), CalendarDate(2026, 11, 30)))
+        assertEquals("16 nov – 15 dic 2026", formatDayRange(CalendarDate(2026, 11, 16), CalendarDate(2026, 12, 15)))
+        assertEquals("16 dic 2026 – 15 ene 2027", formatDayRange(CalendarDate(2026, 12, 16), CalendarDate(2027, 1, 15)))
     }
 }

@@ -8,6 +8,7 @@ import com.peakdevcol.project.hotelmanagement.resources.menu_inventory
 import com.peakdevcol.project.hotelmanagement.resources.menu_settings
 import com.peakdevcol.project.hotelmanagement.resources.nav_cash
 import com.peakdevcol.project.hotelmanagement.resources.nav_attendance
+import com.peakdevcol.project.hotelmanagement.resources.nav_attendance_review
 import com.peakdevcol.project.hotelmanagement.resources.nav_cash_and_balance
 import com.peakdevcol.project.hotelmanagement.resources.nav_group_administration
 import com.peakdevcol.project.hotelmanagement.resources.nav_group_operation
@@ -23,6 +24,7 @@ fun AppSection.title(): StringResource = when (this) {
     AppSection.ATTENDANCE -> Res.string.nav_attendance
     AppSection.BALANCE -> Res.string.nav_cash_and_balance
     AppSection.SCHEDULES -> Res.string.nav_schedules
+    AppSection.ATTENDANCE_REVIEW -> Res.string.nav_attendance_review
     AppSection.INVENTORY -> Res.string.menu_inventory
     AppSection.EMPLOYEES -> Res.string.menu_employees
     AppSection.SETTINGS -> Res.string.menu_settings
@@ -39,6 +41,7 @@ fun AppSection.icon(): DrawableResource = when (this) {
     AppSection.ATTENDANCE -> MajesticIcons.attendance
     AppSection.BALANCE -> MajesticIcons.payments
     AppSection.SCHEDULES -> MajesticIcons.calendar
+    AppSection.ATTENDANCE_REVIEW -> MajesticIcons.editNote
     AppSection.INVENTORY -> MajesticIcons.inventory
     AppSection.EMPLOYEES -> MajesticIcons.employees
     AppSection.SETTINGS -> MajesticIcons.settings
@@ -49,6 +52,7 @@ fun AppSection.selectedIcon(): DrawableResource = when (this) {
     AppSection.ATTENDANCE -> MajesticIcons.attendanceFilled
     AppSection.BALANCE -> MajesticIcons.paymentsFilled
     AppSection.SCHEDULES -> MajesticIcons.calendar
+    AppSection.ATTENDANCE_REVIEW -> MajesticIcons.editNote
     AppSection.INVENTORY -> MajesticIcons.inventoryFilled
     AppSection.EMPLOYEES -> MajesticIcons.employeesFilled
     AppSection.SETTINGS -> MajesticIcons.settingsFilled

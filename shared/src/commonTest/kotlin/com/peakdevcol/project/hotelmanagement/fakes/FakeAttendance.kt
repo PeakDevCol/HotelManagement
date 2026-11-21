@@ -3,18 +3,23 @@ package com.peakdevcol.project.hotelmanagement.fakes
 import com.peakdevcol.project.hotelmanagement.domain.model.AttendanceError
 import com.peakdevcol.project.hotelmanagement.domain.model.AttendanceRecord
 import com.peakdevcol.project.hotelmanagement.domain.model.AuthorizedDevice
+import com.peakdevcol.project.hotelmanagement.domain.model.Correction
+import com.peakdevcol.project.hotelmanagement.domain.model.CorrectionError
 import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettings
 import com.peakdevcol.project.hotelmanagement.domain.model.LocationReading
 import com.peakdevcol.project.hotelmanagement.domain.model.Mark
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkDelivery
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkSource
+import com.peakdevcol.project.hotelmanagement.domain.model.ReportError
 import com.peakdevcol.project.hotelmanagement.domain.model.User
+import com.peakdevcol.project.hotelmanagement.domain.repository.AttendanceCorrectionRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.AttendanceRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.DeviceRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.LocationProvider
 import com.peakdevcol.project.hotelmanagement.domain.repository.LocationResult
 import com.peakdevcol.project.hotelmanagement.domain.repository.ReceptionMarkingRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ReceptionSession
+import com.peakdevcol.project.hotelmanagement.domain.repository.TeamAttendanceRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ThisDevice
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +47,13 @@ fun phoneMark(at: String?, deviceTime: String = at!!, distanceMeters: Int = 10, 
 
 fun entry(id: String, employeeId: String, at: String, clockOut: String? = null) =
     AttendanceRecord(id = id, employeeId = employeeId, clockIn = phoneMark(at), clockOut = clockOut?.let { phoneMark(it) })
+
+/** A record by Colombian times, like `bogotaRecord("a", "ana", "2026-11-20 06:05", "2026-11-20 14:01")`. */
+fun bogotaRecord(id: String, employeeId: String, entry: String, exit: String? = null) =
+    entry(id, employeeId, bogotaInstant(entry), exit?.let(::bogotaInstant))
+
+/** A moment written in Colombian time, `2026-11-20 06:05`, as the ISO text of UTC. */
+fun bogotaInstant(text: String): String = Instant.parse(text.replace(' ', 'T') + ":00-05:00").toString()
 
 class FakeAttendanceRepository(vararg records: AttendanceRecord) : AttendanceRepository {
     val records = MutableStateFlow(records.toList())
@@ -136,5 +148,50 @@ class FakeReceptionMarkingRepository(
         override suspend fun openEntry(): Result<AttendanceRecord?> = Result.success(attendance.observeOpenEntry(employee.id).first())
         override suspend fun saveEntry(record: AttendanceRecord): Result<MarkDelivery> = attendance.saveEntry(record)
         override suspend fun saveExit(recordId: String, exit: Mark): Result<MarkDelivery> = attendance.saveExit(recordId, exit)
+    }
+}
+
+/** The marks of every employee, over the records of [attendance], as Firestore holds them. */
+class FakeTeamAttendanceRepository(private val attendance: FakeAttendanceRepository) : TeamAttendanceRepository {
+    var readFailure: ReportError? = null
+    var listenFailure: Throwable? = null
+
+    /** The range of every reading, in order. */
+    val reads = mutableListOf<Pair<Instant, Instant>>()
+
+    override fun observeOpenEntries(): Flow<List<AttendanceRecord>> = attendance.records.map { all ->
+        listenFailure?.let { throw it }
+        all.filter { it.isOpen }
+    }
+
+    // By the time of the server: a mark that has not reached it is not there yet.
+    override suspend fun records(from: Instant, to: Instant): Result<List<AttendanceRecord>> {
+        reads += from to to
+        readFailure?.let { return Result.failure(it) }
+        return Result.success(attendance.records.value.filter { record -> record.clockIn.at?.let { it >= from && it < to } == true })
+    }
+}
+
+/** The corrections of the administrator, over the records of [attendance]. */
+class FakeAttendanceCorrectionRepository(private val attendance: FakeAttendanceRepository) : AttendanceCorrectionRepository {
+    var failure: CorrectionError? = null
+    val corrections = mutableListOf<Correction>()
+
+    override suspend fun addCorrection(recordId: String, correction: Correction, missingExit: Mark?): Result<Unit> {
+        failure?.let { return Result.failure(it) }
+        val record = attendance.records.value.firstOrNull { it.id == recordId } ?: return Result.failure(CorrectionError.Changed)
+        if (missingExit != null && record.clockOut != null) return Result.failure(CorrectionError.Changed)
+        attendance.records.value = attendance.records.value.map {
+            if (it.id == recordId) it.copy(clockOut = missingExit ?: it.clockOut, corrections = it.corrections + correction) else it
+        }
+        corrections += correction
+        return Result.success(Unit)
+    }
+
+    override suspend fun register(record: AttendanceRecord): Result<Unit> {
+        failure?.let { return Result.failure(it) }
+        attendance.records.value += record
+        corrections += record.corrections
+        return Result.success(Unit)
     }
 }

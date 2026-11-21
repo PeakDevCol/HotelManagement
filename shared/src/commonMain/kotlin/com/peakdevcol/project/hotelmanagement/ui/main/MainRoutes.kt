@@ -24,6 +24,13 @@ data object AttendanceRoute
 data object SchedulesRoute
 
 @Serializable
+data object AttendanceReviewRoute
+
+/** The hours of one employee in the period that "Marcaciones" shows. */
+@Serializable
+data class EmployeeAttendanceRoute(val employeeId: String)
+
+@Serializable
 data object BalanceRoute
 
 @Serializable
@@ -67,6 +74,7 @@ fun AppSection.route(): Any = when (this) {
     AppSection.ATTENDANCE -> AttendanceRoute
     AppSection.BALANCE -> BalanceRoute
     AppSection.SCHEDULES -> SchedulesRoute
+    AppSection.ATTENDANCE_REVIEW -> AttendanceReviewRoute
     AppSection.INVENTORY -> InventoryRoute
     AppSection.EMPLOYEES -> EmployeesRoute
     AppSection.SETTINGS -> SettingsRoute
@@ -79,6 +87,7 @@ fun NavDestination.section(): AppSection? = when {
     hasRoute(AttendanceRoute::class) -> AppSection.ATTENDANCE
     hasRoute(BalanceRoute::class) || hasRoute(CashClosingRoute::class) -> AppSection.BALANCE
     hasRoute(SchedulesRoute::class) -> AppSection.SCHEDULES
+    hasRoute(AttendanceReviewRoute::class) || hasRoute(EmployeeAttendanceRoute::class) -> AppSection.ATTENDANCE_REVIEW
     hasRoute(InventoryRoute::class) || hasRoute(ProductFormRoute::class) ||
         hasRoute(CategoriesRoute::class) || hasRoute(TaxesRoute::class) -> AppSection.INVENTORY
     hasRoute(EmployeesRoute::class) || hasRoute(EmployeeFormRoute::class) -> AppSection.EMPLOYEES
@@ -89,5 +98,5 @@ fun NavDestination.section(): AppSection? = when {
 /** The screens the navigation leads to. The rest open from them, without the bottom bar of the phone. */
 fun NavDestination.isSectionStart(): Boolean =
     hasRoute(OrdersRoute::class) || hasRoute(AttendanceRoute::class) || hasRoute(BalanceRoute::class) ||
-        hasRoute(SchedulesRoute::class) || hasRoute(InventoryRoute::class) ||
+        hasRoute(SchedulesRoute::class) || hasRoute(AttendanceReviewRoute::class) || hasRoute(InventoryRoute::class) ||
         hasRoute(EmployeesRoute::class) || hasRoute(SettingsRoute::class) || hasRoute(MoreRoute::class)

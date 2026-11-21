@@ -16,6 +16,9 @@ enum class AppSection(val group: SectionGroup, val onlyAdministrators: Boolean) 
 
     /** RF-ASI-01: the shifts of the whole team. */
     SCHEDULES(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
+
+    /** RF-ASI-05 to RF-ASI-08: what waits for the administrator, the corrections and the report of hours (P37). */
+    ATTENDANCE_REVIEW(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
     INVENTORY(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
     EMPLOYEES(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
     SETTINGS(SectionGroup.ADMINISTRATION, onlyAdministrators = true),

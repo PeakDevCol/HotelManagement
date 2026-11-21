@@ -6,7 +6,6 @@ import com.peakdevcol.project.hotelmanagement.domain.model.Mark
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkKind
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkOutcome
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkSource
-import com.peakdevcol.project.hotelmanagement.domain.model.effectiveTime
 import com.peakdevcol.project.hotelmanagement.domain.model.newId
 import com.peakdevcol.project.hotelmanagement.domain.model.toClose
 import com.peakdevcol.project.hotelmanagement.domain.repository.DeviceRepository
@@ -40,7 +39,7 @@ class MarkAtReceptionUseCase(
                     .map { MarkOutcome(MarkKind.ENTRY, it, now, employeeName = session.employee.fullName) }
             } else {
                 session.saveExit(open.id, mark).map {
-                    MarkOutcome(MarkKind.EXIT, it, now, workedTime = now - open.clockIn.effectiveTime, employeeName = session.employee.fullName)
+                    MarkOutcome(MarkKind.EXIT, it, now, workedTime = now - open.entryTime, employeeName = session.employee.fullName)
                 }
             }
         }

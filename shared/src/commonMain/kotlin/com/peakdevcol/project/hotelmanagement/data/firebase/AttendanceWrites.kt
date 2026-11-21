@@ -22,7 +22,12 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration
 
 internal const val EMPLOYEE_ID_FIELD = "employeeId"
+internal const val CLOCK_IN_AT_FIELD = "clockInAt"
 internal const val CLOCK_OUT_AT_FIELD = "clockOutAt"
+private const val CLOCK_OUT_DEVICE_TIME_FIELD = "clockOutDeviceTime"
+private const val CLOCK_OUT_SOURCE_FIELD = "clockOutSource"
+internal const val CORRECTIONS_FIELD = "corrections"
+internal const val LAST_CORRECTION_ID_FIELD = "lastCorrectionId"
 
 /**
  * The entry without exit of an employee. Two equalities need no composite index, and the query
@@ -32,17 +37,29 @@ internal fun CollectionReference.openEntriesOf(employeeId: String): Query =
     where { all(EMPLOYEE_ID_FIELD equalTo employeeId, CLOCK_OUT_AT_FIELD equalTo null) }
 
 /** The time of the server reads as null while the mark has not reached it. */
-internal fun QuerySnapshot.toOpenEntry(): AttendanceRecord? =
-    documents.mapNotNull { it.data<AttendanceDto>(ServerTimestampBehavior.NONE).toRecord(it.id) }.maxByOrNull { it.clockIn.deviceTime }
+internal fun QuerySnapshot.toRecords(): List<AttendanceRecord> =
+    documents.mapNotNull { it.data<AttendanceDto>(ServerTimestampBehavior.NONE).toRecord(it.id) }
+
+internal fun QuerySnapshot.toOpenEntry(): AttendanceRecord? = toRecords().maxByOrNull { it.clockIn.deviceTime }
 
 /** The exit closes the entry: only these fields change, as the rules require. */
 internal fun FieldsAndValuesUpdateDSL.exitFields(exit: Mark) {
     CLOCK_OUT_AT_FIELD to FieldValue.serverTimestamp
-    "clockOutDeviceTime" to exit.deviceTime.toTimestamp()
-    "clockOutSource" to exit.source.code()
+    CLOCK_OUT_DEVICE_TIME_FIELD to exit.deviceTime.toTimestamp()
+    CLOCK_OUT_SOURCE_FIELD to exit.source.code()
     "clockOutDeviceId" to exit.deviceId
     "clockOutDistanceMeters" to exit.distanceMeters
     "clockOutAccuracyMeters" to exit.accuracyMeters
+}
+
+/**
+ * RF-ASI-06: the exit the administrator writes for an entry without one, with the time they gave
+ * as both times. The rest of the exit stays empty, as the rules require.
+ */
+internal fun FieldsAndValuesUpdateDSL.adminExitFields(exit: Mark) {
+    CLOCK_OUT_AT_FIELD to exit.deviceTime.toTimestamp()
+    CLOCK_OUT_DEVICE_TIME_FIELD to exit.deviceTime.toTimestamp()
+    CLOCK_OUT_SOURCE_FIELD to exit.source.code()
 }
 
 /**
