@@ -9,8 +9,9 @@ interface BackupRepository {
     val isAvailable: Boolean
 
     /**
-     * Writes a JSON file with every collection. With [since], orders and payments older than
-     * that moment are left out; the rest is always exported whole.
+     * Writes a JSON file with every collection. With [since], the orders, payments, cash closings,
+     * shifts and attendance marks that started before that moment are left out; the rest is
+     * always exported whole.
      */
     suspend fun export(since: Instant?): Result<BackupSummary>
 }
