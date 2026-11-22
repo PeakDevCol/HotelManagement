@@ -45,6 +45,12 @@ class OperationalDayTest {
     }
 
     @Test
+    fun aDayIsWrittenAsItIsReadBack() {
+        assertEquals("2026-03-05", CalendarDate(2026, 3, 5).isoText)
+        assertEquals(CalendarDate(2026, 12, 31), CalendarDate.parse(CalendarDate(2026, 12, 31).isoText))
+    }
+
+    @Test
     fun formatsADayTheWayTheHotelReadsIt() {
         assertEquals("1 nov 2026", formatCalendarDate(CalendarDate(2026, 11, 1)))
     }

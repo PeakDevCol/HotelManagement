@@ -123,6 +123,8 @@ internal class DesktopBackupRepository(
             FirestorePaths.CATEGORIES,
             FirestorePaths.TAXES,
             FirestorePaths.SETTINGS,
+            FirestorePaths.ROOM_TYPES,
+            FirestorePaths.ROOMS,
         )
         const val PARALLEL_ORDERS = 10
         val FILE_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
