@@ -149,7 +149,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M11 y M12) |
 | Limpieza y mantenimiento | ⬜ Pendiente | Fase 4 (M14 y M15) |
 
-Hay 618 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android; 50 pruebas de diseño en JVM (`DesignSystemLayoutTest` y `ScreensLayoutTest`), y 4 tests de la app de escritorio.
+Hay 618 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android; 50 pruebas de diseño en JVM (`DesignSystemLayoutTest` y `ScreensLayoutTest`), una del respaldo en JVM (`BackupCollectionsTest`), y 4 tests de la app de escritorio.
 
 ## 5. Alcance por fase
 
@@ -299,7 +299,7 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-EMP-04 | Crear empleados ([P1](#12-preguntas-abiertas)) | El administrador ingresa nombre, correo, rol y área. La cuenta se crea sin cerrar la sesión del administrador (V1), y el empleado recibe el correo de Firebase para crear su contraseña, así nadie más la conoce. Si el perfil no se puede guardar, la cuenta recién creada se elimina. Desde el empleado se puede reenviar el correo. | ✅ |
 | RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve, en qué sección abre la app y qué secciones van en su barra inferior (RF-AUTH-05). | ✅ La navegación. Las tareas de habitación llegan en la fase 4. |
 | RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo, desde Menú → Configuración. | ✅ El parámetro de la fase 1. Los demás llegan con su fase. |
-| RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. El archivo queda en `Documentos/HotelManagement/Respaldos`, con cada documento tal como está en Firestore y el historial de cada pedido. "Desde una fecha" aplica a pedidos, pagos y cierres de caja; lo demás se exporta completo. | ✅ |
+| RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. El archivo queda en `Documentos/HotelManagement/Respaldos`, con cada documento tal como está en Firestore y el historial de cada pedido. "Desde una fecha" aplica a pedidos, pagos, cierres de caja, turnos y marcaciones, por el día en que empiezan; lo demás se exporta completo. | ✅ |
 
 | Parámetro | Por defecto | Desde |
 |---|---|---|
@@ -904,6 +904,7 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-21 | Una habitación nueva empieza Disponible: libre y limpia | Decisión 4A de M10 |
 | 2026-11-21 | Hasta las tareas de limpieza de la fase 4, cualquier empleado marca limpia una habitación libre que está por limpiar, y también la devuelve a por limpiar para deshacer un error. Queda quién y cuándo (`housekeepingChangedBy` y `housekeepingChangedAt`). | Decisión 5A de M10 (RF-HAB-03) |
 | 2026-11-21 | El tablero es una grilla por piso: cada habitación muestra su número, su estado con color, ícono y palabra, y su tipo. Los filtros por estado dicen cuántas hay en cada uno. Un toque abre la habitación, con marcar limpia y, para el administrador, editarla. | Decisión 6A de M10 (RF-HAB-04) |
+| 2026-11-21 | El respaldo (RF-EMP-07) exporta también las colecciones de asistencia, que M8 no había agregado, y las de habitaciones. Turnos y marcaciones respetan "desde una fecha", por el día en que empiezan, porque crecen cada día; los computadores autorizados, los tipos y las habitaciones van completos. Una prueba falla si una colección nueva queda por fuera. | Decisión del negocio, en M10 |
 | 2026-11-21 | Marcar limpia funciona sin conexión, como las tareas de limpieza que reemplaza (RNF-04). Las reglas solo lo aceptan si la habitación sigue libre, activa y en el estado de antes, así que una marca vieja no pisa un check-in ni a otro empleado. El administrador cambia solo número, tipo, piso y si está activa, nunca el estado. El número de habitación no se repite, ni siquiera con una inactiva, y lo comprueba la app; tampoco el nombre de un tipo. Tipos y habitaciones se desactivan, no se borran. | Decisión técnica de M10 |
 
 ## 14. Riesgos
