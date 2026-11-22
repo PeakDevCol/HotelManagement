@@ -13,6 +13,7 @@ import com.peakdevcol.project.hotelmanagement.resources.nav_cash_and_balance
 import com.peakdevcol.project.hotelmanagement.resources.nav_group_administration
 import com.peakdevcol.project.hotelmanagement.resources.nav_group_operation
 import com.peakdevcol.project.hotelmanagement.resources.nav_orders
+import com.peakdevcol.project.hotelmanagement.resources.nav_rooms
 import com.peakdevcol.project.hotelmanagement.resources.nav_schedules
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.theme.MajesticIcons
 import org.jetbrains.compose.resources.DrawableResource
@@ -21,6 +22,7 @@ import org.jetbrains.compose.resources.StringResource
 /** The name of the section in the side navigation and on top of its screen. */
 fun AppSection.title(): StringResource = when (this) {
     AppSection.ORDERS -> Res.string.nav_orders
+    AppSection.ROOMS -> Res.string.nav_rooms
     AppSection.ATTENDANCE -> Res.string.nav_attendance
     AppSection.BALANCE -> Res.string.nav_cash_and_balance
     AppSection.SCHEDULES -> Res.string.nav_schedules
@@ -38,6 +40,7 @@ fun AppSection.shortTitle(): StringResource = when (this) {
 
 fun AppSection.icon(): DrawableResource = when (this) {
     AppSection.ORDERS -> MajesticIcons.receipt
+    AppSection.ROOMS -> MajesticIcons.room
     AppSection.ATTENDANCE -> MajesticIcons.attendance
     AppSection.BALANCE -> MajesticIcons.payments
     AppSection.SCHEDULES -> MajesticIcons.calendar
@@ -49,6 +52,7 @@ fun AppSection.icon(): DrawableResource = when (this) {
 
 fun AppSection.selectedIcon(): DrawableResource = when (this) {
     AppSection.ORDERS -> MajesticIcons.receiptFilled
+    AppSection.ROOMS -> MajesticIcons.roomFilled
     AppSection.ATTENDANCE -> MajesticIcons.attendanceFilled
     AppSection.BALANCE -> MajesticIcons.paymentsFilled
     AppSection.SCHEDULES -> MajesticIcons.calendar

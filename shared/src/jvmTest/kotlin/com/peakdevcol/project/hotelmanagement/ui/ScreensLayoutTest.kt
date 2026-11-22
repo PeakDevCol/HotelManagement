@@ -32,6 +32,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.BalancePeriod
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceReport
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceSummary
 import com.peakdevcol.project.hotelmanagement.domain.model.BalanceTotals
+import com.peakdevcol.project.hotelmanagement.domain.model.BoardRoom
 import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
 import com.peakdevcol.project.hotelmanagement.domain.model.CashClosing
 import com.peakdevcol.project.hotelmanagement.domain.model.CashClosingDraft
@@ -46,6 +47,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.DaySales
 import com.peakdevcol.project.hotelmanagement.domain.model.EmployeeSales
 import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettings
 import com.peakdevcol.project.hotelmanagement.domain.model.HotelSettingsDetail
+import com.peakdevcol.project.hotelmanagement.domain.model.Housekeeping
 import com.peakdevcol.project.hotelmanagement.domain.model.Inventory
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryError
 import com.peakdevcol.project.hotelmanagement.domain.model.InventoryProduct
@@ -55,6 +57,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.MarkKind
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkOutcome
 import com.peakdevcol.project.hotelmanagement.domain.model.MarkSource
 import com.peakdevcol.project.hotelmanagement.domain.model.MethodSales
+import com.peakdevcol.project.hotelmanagement.domain.model.Occupancy
 import com.peakdevcol.project.hotelmanagement.domain.model.OpenEntry
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderAction
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
@@ -70,6 +73,12 @@ import com.peakdevcol.project.hotelmanagement.domain.model.Product
 import com.peakdevcol.project.hotelmanagement.domain.model.ProductSales
 import com.peakdevcol.project.hotelmanagement.domain.model.ProductSelection
 import com.peakdevcol.project.hotelmanagement.domain.model.ReportError
+import com.peakdevcol.project.hotelmanagement.domain.model.Room
+import com.peakdevcol.project.hotelmanagement.domain.model.RoomBoard
+import com.peakdevcol.project.hotelmanagement.domain.model.RoomError
+import com.peakdevcol.project.hotelmanagement.domain.model.RoomStatus
+import com.peakdevcol.project.hotelmanagement.domain.model.RoomType
+import com.peakdevcol.project.hotelmanagement.domain.model.RoomTypeCatalog
 import com.peakdevcol.project.hotelmanagement.domain.model.Tax
 import com.peakdevcol.project.hotelmanagement.domain.model.User
 import com.peakdevcol.project.hotelmanagement.domain.model.UserArea
@@ -148,6 +157,15 @@ import com.peakdevcol.project.hotelmanagement.ui.main.LocalWideWindow
 import com.peakdevcol.project.hotelmanagement.ui.main.MainState
 import com.peakdevcol.project.hotelmanagement.ui.main.MoreScreen
 import com.peakdevcol.project.hotelmanagement.ui.main.rememberAppMessages
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomDetailFields
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomForm
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomFormFields
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomTypeForm
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomTypeFormFields
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomTypesContent
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomTypesState
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomsContent
+import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomsState
 import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesContent
 import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesState
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsContent
@@ -715,6 +733,72 @@ class ScreensLayoutTest {
         ) {
             content()
         }
+    }
+
+    // ---- Habitaciones (RF-HAB-01 to RF-HAB-04), long on purpose
+
+    private val doubleType = RoomType("double", "Doble", capacity = 2, baseRate = 250_000)
+    private val suiteType = RoomType("suite", "Suite presidencial con jacuzzi y vista al mar", capacity = 12, baseRate = 1_284_000, taxId = "consumption")
+    private val oldType = RoomType("old", "Sencilla antigua del primer piso junto a la recepción", capacity = 1, baseRate = 90_000, taxId = "vat", active = false)
+    private val boardRooms = listOf(
+        BoardRoom(Room("r-101", 101, "double", floor = 1), doubleType),
+        BoardRoom(
+            Room("r-102", 102, "suite", floor = 1, housekeeping = Housekeeping.DIRTY, housekeepingChangedBy = "ana", housekeepingChangedAt = now),
+            suiteType,
+            housekeepingChangedByName = employeeName,
+        ),
+        BoardRoom(Room("r-1204", 1_204, "suite", floor = 12, occupancy = Occupancy.OCCUPIED, expectedCheckOutDate = CalendarDate(2026, 11, 22)), suiteType),
+        BoardRoom(Room("r-9999", 9_999, "gone", floor = 99, housekeeping = Housekeeping.CLEANING), type = null),
+    )
+    private val roomBoard = RoomBoard(
+        rooms = boardRooms,
+        inactiveRooms = listOf(BoardRoom(Room("r-305", 305, "old", floor = 3, active = false), oldType)),
+        types = listOf(doubleType, oldType, suiteType),
+        canManage = true,
+    )
+    private val roomsState = RoomsState(isLoading = false, board = roomBoard)
+    private val roomTypeCatalog = RoomTypeCatalog(types = listOf(doubleType, oldType, suiteType), taxes = taxes)
+
+    @Test
+    fun rooms() = checkEveryFrame("habitaciones") {
+        RoomsContent(state = roomsState, onIntent = {}, onBack = {})
+    }
+
+    @Test
+    fun roomsOfAnEmployee() = checkEveryFrame("habitaciones de un empleado") {
+        RoomsContent(state = RoomsState(isLoading = false, board = roomBoard.copy(inactiveRooms = emptyList(), canManage = false), filter = RoomStatus.OCCUPIED), onIntent = {})
+    }
+
+    @Test
+    fun roomsWithoutTypes() = checkEveryFrame("habitaciones sin tipos") {
+        RoomsContent(state = RoomsState(isLoading = false, board = RoomBoard(canManage = true)), onIntent = {})
+    }
+
+    @Test
+    fun roomDetail() = checkEveryFrame("habitación por limpiar") {
+        EditorFrame { RoomDetailFields(room = boardRooms[1], state = roomsState.copy(markingRoomId = "r-102"), onIntent = {}) }
+    }
+
+    @Test
+    fun roomDetailOccupied() = checkEveryFrame("habitación ocupada") {
+        EditorFrame { RoomDetailFields(room = boardRooms[2], state = roomsState, onIntent = {}) }
+    }
+
+    @Test
+    fun roomForm() = checkEveryFrame("datos de la habitación") {
+        val form = RoomForm(roomId = "r-305", numberText = "9999", floorText = "99", roomTypeId = "old", active = false, error = RoomError.DuplicateNumber)
+        EditorFrame { RoomFormFields(form = form, state = roomsState.copy(form = form), onIntent = {}) }
+    }
+
+    @Test
+    fun roomTypes() = checkEveryFrame("tipos de habitación") {
+        RoomTypesContent(state = RoomTypesState(isLoading = false, catalog = roomTypeCatalog), onIntent = {}, onBack = {})
+    }
+
+    @Test
+    fun roomTypeForm() = checkEveryFrame("tipo de habitación") {
+        val form = RoomTypeForm(typeId = "old", name = oldType.name, capacityText = "12", rateDigits = "1284000", taxId = "vat", active = false, error = RoomError.DuplicateTypeName)
+        EditorFrame { RoomTypeFormFields(form = form, state = RoomTypesState(isLoading = false, catalog = roomTypeCatalog, form = form), onIntent = {}) }
     }
 
     @Test

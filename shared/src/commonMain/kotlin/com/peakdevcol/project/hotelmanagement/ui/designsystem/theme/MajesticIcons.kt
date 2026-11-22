@@ -20,6 +20,7 @@ import com.peakdevcol.project.hotelmanagement.resources.ic_check
 import com.peakdevcol.project.hotelmanagement.resources.ic_check_circle
 import com.peakdevcol.project.hotelmanagement.resources.ic_chevron_left
 import com.peakdevcol.project.hotelmanagement.resources.ic_chevron_right
+import com.peakdevcol.project.hotelmanagement.resources.ic_cleaning_services
 import com.peakdevcol.project.hotelmanagement.resources.ic_close
 import com.peakdevcol.project.hotelmanagement.resources.ic_cloud_upload
 import com.peakdevcol.project.hotelmanagement.resources.ic_computer
@@ -85,6 +86,7 @@ object MajesticIcons {
     val checkCircle = Res.drawable.ic_check_circle
     val chevronLeft = Res.drawable.ic_chevron_left
     val chevronRight = Res.drawable.ic_chevron_right
+    val cleaning = Res.drawable.ic_cleaning_services
     val close = Res.drawable.ic_close
     val computer = Res.drawable.ic_computer
     val cloudUpload = Res.drawable.ic_cloud_upload
