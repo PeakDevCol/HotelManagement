@@ -2,8 +2,11 @@ package com.peakdevcol.project.hotelmanagement.data.backup
 
 import com.peakdevcol.project.hotelmanagement.data.firebase.CLOCK_IN_AT_FIELD
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestorePaths
+import com.peakdevcol.project.hotelmanagement.data.firebase.RESERVATION_CHECK_OUT_FIELD
+import com.peakdevcol.project.hotelmanagement.data.firebase.ROOM_NIGHT_DATE_FIELD
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupError
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupSummary
+import com.peakdevcol.project.hotelmanagement.domain.model.operationalDateOf
 import com.peakdevcol.project.hotelmanagement.domain.repository.BackupRepository
 import dev.gitlive.firebase.firestore.DocumentSnapshot
 import dev.gitlive.firebase.firestore.FirebaseFirestore
@@ -60,11 +63,19 @@ internal class DesktopBackupRepository(
     private suspend fun readCollections(since: Instant?): Map<String, Map<String, Any?>> =
         WHOLE_COLLECTIONS.associateWith { name -> documentsOf(name, dateField = null, since = null) } +
             DATED_COLLECTIONS.mapValues { (name, dateField) -> documentsOf(name, dateField, since) } +
+            DAY_COLLECTIONS.mapValues { (name, dayField) -> documentsFromDay(name, dayField, since) } +
             mapOf(FirestorePaths.ORDERS to ordersWithHistory(since))
 
     // Source.SERVER: a backup made from the cache of the device could silently miss documents.
     private suspend fun documentsOf(collection: String, dateField: String?, since: Instant?): Map<String, Any?> =
         snapshotsOf(collection, dateField, since).associate { it.id to it.plainData() }
+
+    // Days are written as `2026-11-22`, so the ones from the day of [since] on compare as text.
+    private suspend fun documentsFromDay(collection: String, dayField: String, since: Instant?): Map<String, Any?> {
+        val all = firestore.value.collection(collection)
+        val query = if (since != null) all.where { dayField greaterThanOrEqualTo operationalDateOf(since, dayStartMinutes = 0).isoText } else all
+        return query.get(Source.SERVER).documents.associate { it.id to it.plainData() }
+    }
 
     private suspend fun snapshotsOf(collection: String, dateField: String?, since: Instant?): List<DocumentSnapshot> {
         val all = firestore.value.collection(collection)
@@ -131,6 +142,8 @@ internal val WHOLE_COLLECTIONS = listOf(
     FirestorePaths.DEVICES,
     FirestorePaths.ROOM_TYPES,
     FirestorePaths.ROOMS,
+    // Decision 6A of M11: personal data, which is why Settings warns to keep the file safe (Ley 1581).
+    FirestorePaths.GUESTS,
 )
 
 /**
@@ -142,4 +155,13 @@ internal val DATED_COLLECTIONS = mapOf(
     FirestorePaths.CASH_CLOSINGS to "createdAt",
     FirestorePaths.SHIFTS to "startAt",
     FirestorePaths.ATTENDANCE to CLOCK_IN_AT_FIELD,
+)
+
+/**
+ * Decision 6A of M11: the collections that grow every day and say when with a day of Colombia
+ * written as text. A reservation goes if it ends on that day or later, and a night if it is on it or later.
+ */
+internal val DAY_COLLECTIONS = mapOf(
+    FirestorePaths.RESERVATIONS to RESERVATION_CHECK_OUT_FIELD,
+    FirestorePaths.ROOM_NIGHTS to ROOM_NIGHT_DATE_FIELD,
 )

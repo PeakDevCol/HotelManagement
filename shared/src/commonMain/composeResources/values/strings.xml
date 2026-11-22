@@ -210,7 +210,8 @@
     <string name="settings_backup_hint">Guarda en este computador una copia de todos los datos en un archivo. Se recomienda hacerlo cada mes.</string>
     <string name="settings_backup_only_desktop">El respaldo se hace desde la aplicación de escritorio.</string>
     <string name="settings_backup_date">Desde una fecha (opcional)</string>
-    <string name="settings_backup_date_hint">Pedidos, pagos, cierres de caja, turnos y marcaciones desde ese día; lo demás va completo. Vacía, se copia todo.</string>
+    <string name="settings_backup_date_hint">Pedidos, pagos, cierres de caja, turnos, marcaciones, reservas y noches desde ese día; lo demás va completo. Vacía, se copia todo.</string>
+    <string name="settings_backup_personal_data">El archivo trae los datos personales de los huéspedes. Guárdalo en un lugar seguro y no lo compartas (Ley 1581 de 2012).</string>
     <string name="settings_backup_date_error">Escribe la fecha como año-mes-día, por ejemplo 2026-11-01, o déjala vacía.</string>
     <string name="settings_backup_export">Exportar respaldo</string>
     <string name="settings_backup_done">Respaldo guardado: %1$d documentos en %2$s</string>

@@ -47,6 +47,7 @@ import com.peakdevcol.project.hotelmanagement.resources.settings_backup_export
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_hint
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_not_allowed
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_only_desktop
+import com.peakdevcol.project.hotelmanagement.resources.settings_backup_personal_data
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_title
 import com.peakdevcol.project.hotelmanagement.resources.settings_day_start_hint
 import com.peakdevcol.project.hotelmanagement.resources.settings_day_start_preview
@@ -288,6 +289,8 @@ private fun Backup(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
         help = stringResource(if (state.backupAvailable) Res.string.settings_backup_hint else Res.string.settings_backup_only_desktop),
     ) {
         if (!state.backupAvailable) return@SectionCard
+        // Decision 6A of M11 and RNF-14: the file has the data of the guests.
+        Banner(tone = BannerTone.Warning, icon = MajesticIcons.warning, message = stringResource(Res.string.settings_backup_personal_data))
         MajesticTextField(
             value = state.backupSinceText,
             onValueChange = { onIntent(SettingsIntent.BackupSinceChange(it)) },
