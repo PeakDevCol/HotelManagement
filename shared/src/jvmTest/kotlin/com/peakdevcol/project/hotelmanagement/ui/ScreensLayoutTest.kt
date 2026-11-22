@@ -152,11 +152,13 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesState
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginContent
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginMessage
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginState
+import com.peakdevcol.project.hotelmanagement.ui.main.DaysRangePicker
 import com.peakdevcol.project.hotelmanagement.ui.main.LocalAppMessages
 import com.peakdevcol.project.hotelmanagement.ui.main.LocalWideWindow
 import com.peakdevcol.project.hotelmanagement.ui.main.MainState
 import com.peakdevcol.project.hotelmanagement.ui.main.MoreScreen
 import com.peakdevcol.project.hotelmanagement.ui.main.rememberAppMessages
+import com.peakdevcol.project.hotelmanagement.ui.main.rememberDaysRangePickerState
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomDetailFields
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomForm
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomFormFields
@@ -184,15 +186,27 @@ import kotlin.time.Instant
 class ScreensLayoutTest {
     private val frames = listOf(320.dp, 360.dp, 720.dp, 1024.dp).flatMap { width -> listOf(1f, 1.3f).map { scale -> LayoutFrame(width, scale) } }
 
-    private fun checkEveryFrame(name: String, content: @Composable () -> Unit) = runDesktopComposeUiTest(width = 1100, height = 900) {
+    private val snapshots = listOf(LayoutFrame(360.dp, 1f), LayoutFrame(360.dp, 1f, darkTheme = true), LayoutFrame(1024.dp, 1f))
+
+    // Material fixes its date pickers at 360 dp on every platform, whatever the width of the window.
+    private val datePickerFrames = listOf(1f, 1.3f).map { scale -> LayoutFrame(360.dp, scale) }
+    private val datePickerSnapshots = listOf(LayoutFrame(360.dp, 1f), LayoutFrame(360.dp, 1f, darkTheme = true), LayoutFrame(360.dp, 1.3f))
+
+    private fun checkEveryFrame(
+        name: String,
+        frames: List<LayoutFrame> = this.frames,
+        snapshots: List<LayoutFrame> = this.snapshots,
+        checkSplitWords: Boolean = false,
+        content: @Composable () -> Unit,
+    ) = runDesktopComposeUiTest(width = 1100, height = 900) {
         var frame by mutableStateOf(frames.first())
         setContent { ScreenFrame(frame, content) }
         frames.forEach { next ->
             frame = next
             waitForIdle()
-            assertNothingSpills("$name a $next")
+            assertNothingSpills("$name a $next", checkSplitWords)
         }
-        listOf(LayoutFrame(360.dp, 1f), LayoutFrame(360.dp, 1f, darkTheme = true), LayoutFrame(1024.dp, 1f)).forEach { snapshot ->
+        snapshots.forEach { snapshot ->
             frame = snapshot
             waitForIdle()
             saveSnapshotIfAsked(name, snapshot)
@@ -357,6 +371,16 @@ class ScreensLayoutTest {
             onIntent = {},
             onBack = {},
         )
+    }
+
+    @Test
+    fun daysRange() = checkEveryFrame("elegir periodo", datePickerFrames, datePickerSnapshots, checkSplitWords = true) {
+        DaysRangePicker(state = rememberDaysRangePickerState(CalendarDate(2026, 11, 1), CalendarDate(2026, 11, 30)))
+    }
+
+    @Test
+    fun daysRangeAcrossYears() = checkEveryFrame("elegir periodo entre dos años", datePickerFrames, datePickerSnapshots, checkSplitWords = true) {
+        DaysRangePicker(state = rememberDaysRangePickerState(CalendarDate(2025, 12, 28), CalendarDate(2026, 1, 13)))
     }
 
     @Test
