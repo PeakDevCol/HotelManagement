@@ -29,6 +29,8 @@ import com.peakdevcol.project.hotelmanagement.resources.ic_delete
 import com.peakdevcol.project.hotelmanagement.resources.ic_edit
 import com.peakdevcol.project.hotelmanagement.resources.ic_edit_note
 import com.peakdevcol.project.hotelmanagement.resources.ic_error
+import com.peakdevcol.project.hotelmanagement.resources.ic_event_available
+import com.peakdevcol.project.hotelmanagement.resources.ic_event_available_filled
 import com.peakdevcol.project.hotelmanagement.resources.ic_expand_more
 import com.peakdevcol.project.hotelmanagement.resources.ic_filter_list
 import com.peakdevcol.project.hotelmanagement.resources.ic_group
@@ -129,6 +131,8 @@ object MajesticIcons {
     val attendanceFilled = Res.drawable.ic_badge_filled
     val room = Res.drawable.ic_bed
     val roomFilled = Res.drawable.ic_bed_filled
+    val reservation = Res.drawable.ic_event_available
+    val reservationFilled = Res.drawable.ic_event_available_filled
 }
 
 /** The icon of each kind of destination (Mesa, Habitación, Piscina, Bar, Otro). */

@@ -172,6 +172,23 @@ import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesContent
 import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesState
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsContent
 import com.peakdevcol.project.hotelmanagement.ui.settings.SettingsState
+import com.peakdevcol.project.hotelmanagement.domain.model.AvailableRoom
+import com.peakdevcol.project.hotelmanagement.domain.model.DocumentType
+import com.peakdevcol.project.hotelmanagement.domain.model.Guest
+import com.peakdevcol.project.hotelmanagement.domain.model.GuestError
+import com.peakdevcol.project.hotelmanagement.domain.model.Reservation
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationError
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationSource
+import com.peakdevcol.project.hotelmanagement.domain.model.Stay
+import com.peakdevcol.project.hotelmanagement.ui.reservations.GuestForm
+import com.peakdevcol.project.hotelmanagement.ui.reservations.GuestFormFields
+import com.peakdevcol.project.hotelmanagement.ui.reservations.GuestSearch
+import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationContent
+import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationState
+import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationDetailFields
+import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsContent
+import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsState
+import com.peakdevcol.project.hotelmanagement.ui.reservations.RoomSearch
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -823,6 +840,129 @@ class ScreensLayoutTest {
     fun roomTypeForm() = checkEveryFrame("tipo de habitación") {
         val form = RoomTypeForm(typeId = "old", name = oldType.name, capacityText = "12", rateDigits = "1284000", taxId = "vat", active = false, error = RoomError.DuplicateTypeName)
         EditorFrame { RoomTypeFormFields(form = form, state = RoomTypesState(isLoading = false, catalog = roomTypeCatalog, form = form), onIntent = {}) }
+    }
+
+    // ---- Reservations (M11), with long names, large amounts and the longest dates
+
+    private val longGuest = Guest(
+        id = "g-ana",
+        fullName = "Ana María Rojas Restrepo de la Cruz",
+        phone = "+57 310 555 1234 ext. 108",
+        documentType = DocumentType.PASSPORT,
+        documentNumber = "AB1234567890",
+    )
+    private val suite = RoomType("suite", "Suite presidencial con jacuzzi y vista al mar", capacity = 12, baseRate = 1_284_000, taxId = "vat")
+    private val freeRooms = listOf(
+        AvailableRoom(Room("r-1204", 1204, "suite", floor = 12), suite, nightlyRate = 1_284_000, taxRate = 1_900),
+        AvailableRoom(Room("r-9999", 9999, "suite", floor = 99), suite, nightlyRate = 1_284_000, taxRate = 1_900),
+    )
+    private val longStay = Stay(CalendarDate(2026, 12, 28), CalendarDate(2027, 1, 27))
+    private val reservationsList = listOf(
+        Reservation(
+            id = "r1",
+            guestId = "g-ana",
+            guestName = longGuest.fullName,
+            roomId = "r-1204",
+            roomNumber = 1204,
+            stay = longStay,
+            adults = 12,
+            children = 8,
+            nightlyRates = List(longStay.nightCount) { 1_284_000L },
+            taxAmount = 6_150_252,
+            source = ReservationSource.WHATSAPP,
+            notes = "Llega en el último vuelo de la noche; pidió cuna, cama extra, almohadas sin plumas y que la habitación quede lejos del ascensor y de la piscina.",
+        ),
+        Reservation(
+            id = "r2",
+            guestId = "g-luis",
+            guestName = "Luis",
+            roomId = "r-9999",
+            roomNumber = 9999,
+            stay = Stay(CalendarDate(2026, 12, 30), CalendarDate(2026, 12, 31)),
+            adults = 1,
+            children = 0,
+            nightlyRates = listOf(250_000),
+            taxAmount = 0,
+            source = ReservationSource.DIRECT,
+        ),
+    )
+
+    @Test
+    fun reservations() = checkEveryFrame("reservas") {
+        ReservationsContent(state = ReservationsState(isLoading = false, reservations = reservationsList, query = "Ana María Rojas Restrepo de la Cruz"), onIntent = {}, onBack = {})
+    }
+
+    @Test
+    fun reservationsEmpty() = checkEveryFrame("reservas vacías") {
+        ReservationsContent(state = ReservationsState(isLoading = false), onIntent = {})
+    }
+
+    @Test
+    fun reservationDetail() = checkEveryFrame("detalle de la reserva") {
+        EditorFrame { ReservationDetailFields(reservationsList.first()) }
+    }
+
+    @Test
+    fun newReservationOfAnAdministrator() = checkEveryFrame("nueva reserva") {
+        NewReservationContent(
+            state = NewReservationState(
+                isStarting = false,
+                today = CalendarDate(2026, 12, 28),
+                canChangeRate = true,
+                stay = longStay,
+                adults = 12,
+                children = 8,
+                roomSearch = RoomSearch.Found(freeRooms),
+                roomId = "r-1204",
+                guest = longGuest,
+                source = ReservationSource.WHATSAPP,
+                rateText = "1284000",
+                notes = reservationsList.first().notes,
+                error = ReservationError.NightsTaken(listOf(CalendarDate(2026, 12, 31), CalendarDate(2027, 1, 1))),
+            ),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun newReservationSearchingTheGuest() = checkEveryFrame("nueva reserva buscando huésped") {
+        NewReservationContent(
+            state = NewReservationState(
+                isStarting = false,
+                today = CalendarDate(2026, 12, 28),
+                stay = longStay,
+                roomSearch = RoomSearch.Found(emptyList()),
+                guestQuery = "Ana María Rojas Restrepo de la Cruz",
+                guestSearch = GuestSearch.Found(listOf(longGuest, longGuest.copy(id = "g-2", documentType = null, documentNumber = null))),
+            ),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun newReservationWithoutDays() = checkEveryFrame("nueva reserva sin fechas") {
+        NewReservationContent(
+            state = NewReservationState(isStarting = false, today = CalendarDate(2026, 12, 28), guestSearch = GuestSearch.Failed(GuestError.NoConnection)),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun guestForm() = checkEveryFrame("datos del huésped") {
+        val form = GuestForm(
+            existing = longGuest,
+            fullName = longGuest.fullName,
+            phone = longGuest.phone,
+            documentType = DocumentType.PASSPORT,
+            documentNumber = "AB1234567890",
+            nationality = "República Bolivariana de Venezuela",
+            email = "ana.maria.rojas.restrepo.de.la.cruz@correo-electronico.com",
+            error = GuestError.DuplicateDocument,
+        )
+        EditorFrame { GuestFormFields(form = form, isSaving = true, onIntent = {}) }
     }
 
     @Test

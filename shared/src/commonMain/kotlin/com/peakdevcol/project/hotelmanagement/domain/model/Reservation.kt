@@ -125,6 +125,15 @@ sealed class ReservationError(message: String) : Exception(message) {
     data object Unknown : ReservationError("Unknown error")
 }
 
+/** Decision 2A of M11: whether the guest has words that start with what was typed, or the room is the number typed. */
+fun Reservation.matches(query: String): Boolean {
+    val typed = query.trim()
+    if (typed.isEmpty()) return true
+    if (typed.all(Char::isDigit)) return roomNumber.toString().startsWith(typed)
+    val nameWords = guestName.searchable().split(' ')
+    return typed.searchable().split(Regex("\\s+")).all { word -> nameWords.any { it.startsWith(word) } }
+}
+
 /** RF-RES-02 and decision 4A: a stay that starts today or later and lasts from 1 to 30 nights. */
 fun Stay.check(today: CalendarDate): ReservationError? = when {
     checkOut <= checkIn -> ReservationError.CheckOutNotAfterCheckIn

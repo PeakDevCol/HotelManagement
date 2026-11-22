@@ -145,6 +145,8 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesViewModel
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginViewModel
 import com.peakdevcol.project.hotelmanagement.ui.main.MainViewModel
+import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationViewModel
+import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsViewModel
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomTypesViewModel
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomsViewModel
 import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesViewModel
@@ -336,6 +338,16 @@ private val uiModule = module {
     viewModelOf(::DevicesViewModel)
     viewModelOf(::RoomsViewModel)
     viewModelOf(::RoomTypesViewModel)
+    viewModelOf(::ReservationsViewModel)
+    viewModel {
+        NewReservationViewModel(
+            getReservationContext = get(),
+            findAvailableRooms = get(),
+            searchGuests = get(),
+            saveGuest = get(),
+            createReservation = get(),
+        )
+    }
     viewModel {
         SchedulesViewModel(
             observeScheduleWeek = get(),
