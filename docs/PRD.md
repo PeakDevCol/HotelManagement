@@ -149,7 +149,7 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M11 y M12) |
 | Limpieza y mantenimiento | ⬜ Pendiente | Fase 4 (M14 y M15) |
 
-Hay 618 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android; 50 pruebas de diseño en JVM (`DesignSystemLayoutTest` y `ScreensLayoutTest`), una del respaldo en JVM (`BackupCollectionsTest`), y 4 tests de la app de escritorio.
+Hay 618 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android; 50 pruebas de diseño en JVM (`DesignSystemLayoutTest` y `ScreensLayoutTest`), dos de guarda en JVM (`BackupCollectionsTest`, que el respaldo lleve todas las colecciones, y `NavigationRoutesTest`, que escritorio pueda abrir cada ruta), y 4 tests de la app de escritorio.
 
 ## 5. Alcance por fase
 

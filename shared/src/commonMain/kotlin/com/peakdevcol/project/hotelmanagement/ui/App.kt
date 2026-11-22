@@ -31,11 +31,12 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
+// Not private: on the JVM, navigation reads the serializer of a route by reflection, and a private class refuses it (RNF-01).
 @Serializable
-private data object LoginRoute
+internal data object LoginRoute
 
 @Serializable
-private data object SessionRoute
+internal data object SessionRoute
 
 @Composable
 fun App() {
