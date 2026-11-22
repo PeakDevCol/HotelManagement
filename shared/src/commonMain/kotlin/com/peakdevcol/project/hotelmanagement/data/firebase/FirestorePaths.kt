@@ -16,4 +16,7 @@ internal object FirestorePaths {
     const val DEVICES = "Devices"
     const val ROOM_TYPES = "RoomTypes"
     const val ROOMS = "Rooms"
+    const val GUESTS = "Guests"
+    const val RESERVATIONS = "Reservations"
+    const val ROOM_NIGHTS = "RoomNights"
 }
