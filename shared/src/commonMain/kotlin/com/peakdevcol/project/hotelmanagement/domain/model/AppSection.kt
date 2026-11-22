@@ -10,6 +10,9 @@ enum class SectionGroup {
 enum class AppSection(val group: SectionGroup, val onlyAdministrators: Boolean) {
     ORDERS(SectionGroup.OPERATION, onlyAdministrators = false),
 
+    /** RF-HAB-01 to RF-HAB-04: the board of every employee, where an administrator also sets the rooms up (decision 1A). */
+    ROOMS(SectionGroup.OPERATION, onlyAdministrators = false),
+
     /** RF-ASI-02 to RF-ASI-05: the shifts of the employee and, from the second PR of M8, marking them. */
     ATTENDANCE(SectionGroup.OPERATION, onlyAdministrators = false),
     BALANCE(SectionGroup.ADMINISTRATION, onlyAdministrators = true),
@@ -45,10 +48,13 @@ fun navigationFor(user: User): AppNavigation {
     return AppNavigation(sections = allowed, mainSections = main)
 }
 
-// Only the sections that exist today. Rooms (phase 3) and tasks (phase 4) join the bar of their
-// areas when they are built (PRD, section 13, 2026-11-20). Administration has attendance in "Más".
+// Only the sections that exist today: tasks (phase 4) join the bar of their areas when they are
+// built (PRD, section 13, 2026-11-20). With decision 2A of M10, reception, housekeeping and
+// maintenance open on the rooms; service and administration have them in "Más", like
+// administration has attendance.
 private fun UserArea.mainSections(): List<AppSection> = when (this) {
     UserArea.MANAGEMENT -> listOf(AppSection.ORDERS, AppSection.BALANCE)
-    UserArea.SERVICE, UserArea.RECEPTION, UserArea.HOUSEKEEPING, UserArea.MAINTENANCE ->
-        listOf(AppSection.ORDERS, AppSection.ATTENDANCE)
+    UserArea.SERVICE -> listOf(AppSection.ORDERS, AppSection.ATTENDANCE)
+    UserArea.RECEPTION, UserArea.HOUSEKEEPING, UserArea.MAINTENANCE ->
+        listOf(AppSection.ROOMS, AppSection.ORDERS, AppSection.ATTENDANCE)
 }

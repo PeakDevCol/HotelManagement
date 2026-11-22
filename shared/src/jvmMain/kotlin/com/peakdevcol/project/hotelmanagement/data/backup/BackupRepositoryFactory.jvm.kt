@@ -1,5 +1,6 @@
 package com.peakdevcol.project.hotelmanagement.data.backup
 
+import com.peakdevcol.project.hotelmanagement.data.firebase.CLOCK_IN_AT_FIELD
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestorePaths
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupError
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupSummary
@@ -57,11 +58,9 @@ internal class DesktopBackupRepository(
     }
 
     private suspend fun readCollections(since: Instant?): Map<String, Map<String, Any?>> =
-        WHOLE_COLLECTIONS.associateWith { name -> documentsOf(name, dateField = null, since = null) } + mapOf(
-            FirestorePaths.ORDERS to ordersWithHistory(since),
-            FirestorePaths.PAYMENTS to documentsOf(FirestorePaths.PAYMENTS, dateField = "receivedAt", since = since),
-            FirestorePaths.CASH_CLOSINGS to documentsOf(FirestorePaths.CASH_CLOSINGS, dateField = "createdAt", since = since),
-        )
+        WHOLE_COLLECTIONS.associateWith { name -> documentsOf(name, dateField = null, since = null) } +
+            DATED_COLLECTIONS.mapValues { (name, dateField) -> documentsOf(name, dateField, since) } +
+            mapOf(FirestorePaths.ORDERS to ordersWithHistory(since))
 
     // Source.SERVER: a backup made from the cache of the device could silently miss documents.
     private suspend fun documentsOf(collection: String, dateField: String?, since: Instant?): Map<String, Any?> =
@@ -117,14 +116,30 @@ internal class DesktopBackupRepository(
     }
 
     private companion object {
-        val WHOLE_COLLECTIONS = listOf(
-            FirestorePaths.USERS,
-            FirestorePaths.PRODUCTS,
-            FirestorePaths.CATEGORIES,
-            FirestorePaths.TAXES,
-            FirestorePaths.SETTINGS,
-        )
         const val PARALLEL_ORDERS = 10
         val FILE_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
     }
 }
+
+/** The collections the backup always exports whole. Besides them go [DATED_COLLECTIONS] and the orders. */
+internal val WHOLE_COLLECTIONS = listOf(
+    FirestorePaths.USERS,
+    FirestorePaths.PRODUCTS,
+    FirestorePaths.CATEGORIES,
+    FirestorePaths.TAXES,
+    FirestorePaths.SETTINGS,
+    FirestorePaths.DEVICES,
+    FirestorePaths.ROOM_TYPES,
+    FirestorePaths.ROOMS,
+)
+
+/**
+ * RF-EMP-07: the collections that grow every day, with the field that says when each document
+ * started. A backup from a date leaves out what started before it, like the orders by `dateOrder`.
+ */
+internal val DATED_COLLECTIONS = mapOf(
+    FirestorePaths.PAYMENTS to "receivedAt",
+    FirestorePaths.CASH_CLOSINGS to "createdAt",
+    FirestorePaths.SHIFTS to "startAt",
+    FirestorePaths.ATTENDANCE to CLOCK_IN_AT_FIELD,
+)

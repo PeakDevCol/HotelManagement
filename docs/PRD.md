@@ -90,6 +90,7 @@ Las cuentas las crea solo un administrador, y el primer administrador se crea a 
 | Cancelar una tarea, con motivo | ❌ | ❌ | ✅ |
 | Entregar un objeto olvidado a su dueño | ❌ | ✅ | ✅ |
 | Ver el tablero de habitaciones | ✅ (sin datos de huéspedes) | ✅ | ✅ |
+| Marcar limpia una habitación libre, hasta las tareas de la fase 4 (RF-HAB-03) | ✅ | ✅ | ✅ |
 | Crear y modificar reservas, y hacer check-in y check-out | ❌ | ✅ | ✅ |
 | Ver datos personales de huéspedes | ❌ | ✅ | ✅ |
 | Hacer el cierre de caja | ❌ | ❌ | ✅ |
@@ -144,10 +145,11 @@ Sirven para revisar que los requisitos cubren el trabajo diario y para guiar el 
 | Configuración y respaldo | ✅ Hecho en M6 | Inicio del día operativo, y respaldo manual en JSON desde escritorio |
 | Sistema de diseño Majestic | ✅ Hecho en M17 | Colores, letra Manrope, componentes y pruebas de diseño (primer PR), y todas las pantallas de la fase 1 con el diseño nuevo y su prueba de desbordes (segundo PR). |
 | Turnos y asistencia | ✅ Hecho en M8 | Horarios del equipo y "Mi horario"; marcación desde el celular en la zona del hotel, también sin conexión, y desde el computador autorizado de recepción; quién está en turno, para recepción y administración; y "Marcaciones" para el administrador: salidas pendientes, horas por confirmar, correcciones con historial y el reporte de horas. |
-| Habitaciones, reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M10 a M12) |
+| Habitaciones | ✅ Hecho en M10 | Tablero en tiempo real para todos, por piso y con filtros por estado, donde cualquier empleado marca limpia una habitación libre hasta la fase 4. El administrador configura ahí mismo los tipos, con su tarifa por noche, y las habitaciones. Recepción, limpieza y mantenimiento abren en él. |
+| Reservas, check-in y check-out | ⬜ Pendiente | Fase 3 (M11 y M12) |
 | Limpieza y mantenimiento | ⬜ Pendiente | Fase 4 (M14 y M15) |
 
-Hay 578 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android; 41 pruebas de diseño en JVM (`DesignSystemLayoutTest` y `ScreensLayoutTest`), y 4 tests de la app de escritorio.
+Hay 618 tests en `commonTest` (dominio, datos y ViewModels), que pasan en JVM y en Android; 50 pruebas de diseño en JVM (`DesignSystemLayoutTest` y `ScreensLayoutTest`), dos de guarda en JVM (`BackupCollectionsTest`, que el respaldo lleve todas las colecciones, y `NavigationRoutesTest`, que escritorio pueda abrir cada ruta), y 4 tests de la app de escritorio.
 
 ## 5. Alcance por fase
 
@@ -297,7 +299,7 @@ Las fechas se agrupan por **día operativo**, de 6:00 a. m. a 5:59 a. m. en hora
 | RF-EMP-04 | Crear empleados ([P1](#12-preguntas-abiertas)) | El administrador ingresa nombre, correo, rol y área. La cuenta se crea sin cerrar la sesión del administrador (V1), y el empleado recibe el correo de Firebase para crear su contraseña, así nadie más la conoce. Si el perfil no se puede guardar, la cuenta recién creada se elimina. Desde el empleado se puede reenviar el correo. | ✅ |
 | RF-EMP-05 | Área | Cada empleado tiene un área: servicio, recepción, limpieza, mantenimiento o administración. Define qué tareas de habitación ve, en qué sección abre la app y qué secciones van en su barra inferior (RF-AUTH-05). | ✅ La navegación. Las tareas de habitación llegan en la fase 4. |
 | RF-EMP-06 | Parámetros ([P33](#12-preguntas-abiertas)) | El administrador cambia los parámetros de la tabla siguiente desde la app. Cada cambio queda con quién y cuándo, desde Menú → Configuración. | ✅ El parámetro de la fase 1. Los demás llegan con su fase. |
-| RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. El archivo queda en `Documentos/HotelManagement/Respaldos`, con cada documento tal como está en Firestore y el historial de cada pedido. "Desde una fecha" aplica a pedidos, pagos y cierres de caja; lo demás se exporta completo. | ✅ |
+| RF-EMP-07 | Respaldo manual ([P34](#12-preguntas-abiertas)) | Desde la app de escritorio, el administrador exporta un respaldo en JSON de las colecciones, completo o desde una fecha. Se recomienda hacerlo cada mes. El archivo queda en `Documentos/HotelManagement/Respaldos`, con cada documento tal como está en Firestore y el historial de cada pedido. "Desde una fecha" aplica a pedidos, pagos, cierres de caja, turnos y marcaciones, por el día en que empiezan; lo demás se exporta completo. | ✅ |
 
 | Parámetro | Por defecto | Desde |
 |---|---|---|
@@ -355,10 +357,10 @@ En el tablero cada habitación muestra un solo estado ([P31](#12-preguntas-abier
 
 | ID | Requisito | Criterios de aceptación | Estado |
 |---|---|---|---|
-| RF-HAB-01 | Tipos de habitación | Nombre, capacidad, tarifa base por noche e impuesto opcional ([P27](#12-preguntas-abiertas)) | ⬜ |
-| RF-HAB-02 | Habitaciones | Número, tipo, piso y si está activa. Solo administradores. | ⬜ |
-| RF-HAB-03 | Estado de la habitación | Según las tablas de arriba. El check-in la pasa a `occupied`, y el check-out a `vacant` y `dirty`. En la fase 3, cualquier empleado la marca limpia, para poder probar el check-in; la fase 4 lo reemplaza por las tareas de limpieza. | ⬜ |
-| RF-HAB-04 | Tablero de habitaciones | Todas las habitaciones con su estado y la salida prevista y, solo para recepción y administración, el huésped actual. En tiempo real. | ⬜ |
+| RF-HAB-01 | Tipos de habitación | Nombre, capacidad, tarifa base por noche e impuesto opcional ([P27](#12-preguntas-abiertas)) | ✅ En "Habitaciones", "Tipos de habitación". La tarifa incluye el impuesto. |
+| RF-HAB-02 | Habitaciones | Número, tipo, piso y si está activa. Solo administradores. | ✅ Desde el tablero. Una habitación nueva empieza disponible. |
+| RF-HAB-03 | Estado de la habitación | Según las tablas de arriba. El check-in la pasa a `occupied`, y el check-out a `vacant` y `dirty`. En la fase 3, cualquier empleado la marca limpia, para poder probar el check-in; la fase 4 lo reemplaza por las tareas de limpieza. | ✅ Las tres partes y marcar limpia (o devolver a por limpiar). El check-in y el check-out la cambian desde M12. |
+| RF-HAB-04 | Tablero de habitaciones | Todas las habitaciones con su estado y la salida prevista y, solo para recepción y administración, el huésped actual. En tiempo real. | ✅ En "Habitaciones", por piso y con filtros por estado. El huésped actual se agrega con el check-in, en M12. |
 | RF-HAB-05 | Temporadas ([P27](#12-preguntas-abiertas)) | Después: el administrador define temporadas con fechas y tarifa por tipo de habitación, y cada noche toma la tarifa de su temporada | — |
 
 ### 6.9 Reservas (`RES`, fase 3)
@@ -577,8 +579,8 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 
 | Colección | Campos principales | Notas | Hito |
 |---|---|---|---|
-| `RoomTypes/{id}` | `name`, `capacity`, `baseRate`, `taxId`, `active` | | M10 |
-| `Rooms/{id}` | `number`, `roomTypeId`, `floor`, `occupancy`, `housekeeping`, `expectedCheckOutDate`, `active` | Estado en partes (sección 6.8). Los bloqueos viven en `RoomBlocks`. `expectedCheckOutDate` solo tiene valor mientras la habitación está ocupada: la pone el check-in, la cambian RF-EST-05 y RF-EST-06 y la borra el check-out. Así todos ven la salida prevista sin leer `Reservations` (RF-HAB-04). | M10 |
+| `RoomTypes/{id}` | `name`, `capacity`, `baseRate`, `taxId`, `active` | `capacity` es de 1 a 20 personas. `baseRate` es en pesos e incluye el impuesto de `taxId`, como el precio de un producto. Se desactivan, no se borran. | M10 |
+| `Rooms/{id}` | `number`, `roomTypeId`, `floor`, `occupancy`, `housekeeping`, `expectedCheckOutDate`, `active`, `housekeepingChangedBy`, `housekeepingChangedAt` | Estado en partes (sección 6.8): `occupancy` es `vacant` u `occupied`, y `housekeeping`, `dirty`, `cleaning` o `clean`. Se crea `vacant` y `clean`. Los bloqueos viven en `RoomBlocks`. `expectedCheckOutDate` (`yyyy-MM-dd`) solo tiene valor mientras la habitación está ocupada: la pone el check-in, la cambian RF-EST-05 y RF-EST-06 y la borra el check-out. Así todos ven la salida prevista sin leer `Reservations` (RF-HAB-04). `housekeepingChangedBy` y `housekeepingChangedAt` (hora del servidor) dicen quién cambió la limpieza por última vez. Se desactivan, no se borran. | M10 |
 | `Guests/{id}` | `fullName`, `documentType`, `documentNumber`, `nationality`, `phone`, `email`, `dataConsentAt` | Datos personales: solo recepción y administración (RNF-14) | M11 |
 | `Reservations/{id}` | `guestId`, `roomId`, `checkInDate`, `checkOutDate`, `adults`, `children`, `companions`, `nightlyRates`, `taxAmount`, `total`, `paidAmount`, `source`, `state`, `notes`, y quién y cuándo de cada cambio | Una habitación por reserva (P35). `nightlyRates` guarda la tarifa de cada noche, así las temporadas (RF-HAB-05) no cambian el modelo. | M11 |
 | `RoomNights/{roomId}_{date}` | `reservationId` o `blockId`, y `arrival` | Un documento por habitación y noche, con `date` en formato `yyyy-MM-dd`, creado en la misma transacción que la reserva o el bloqueo. Como las reglas solo permiten crearlo si no existe, no se puede reservar ni bloquear dos veces la misma noche. `arrival` es `true` en la primera noche de una reserva, así limpieza sabe qué habitaciones tienen llegada hoy sin leer `Reservations` (RF-LIM-02). | M11 |
@@ -606,7 +608,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
   - Solo un administrador cancela. Nadie modifica un pedido `paid` o `cancelled`.
 - `Payments`, `CashClosings` y los historiales (`events`): se crean y no se editan ni se borran. Solo un administrador crea cierres.
 - `Products`, `Categories`, `Taxes`, `RoomTypes`, `Settings`, `ChecklistTemplates`, `MaintenancePlans` y `Devices`: todos leen y solo un administrador escribe.
-- `Rooms`: todos leen. Solo un administrador cambia los datos de la habitación. `occupancy` cambia con el check-in y el check-out, y `housekeeping` con las tareas de limpieza.
+- `Rooms`: todos leen. Solo un administrador crea habitaciones, libres y limpias, y cambia sus datos (número, tipo, piso y si está activa), nunca su estado. `occupancy` cambia con el check-in y el check-out, y `housekeeping` con las tareas de limpieza. Hasta la fase 4, cualquier empleado activo marca limpia una habitación libre y activa, o la devuelve a por limpiar, con su `uid` y la hora del servidor (RF-HAB-03).
 - `Shifts`: cada empleado lee los suyos y solo un administrador escribe.
 - `Attendance`: cada empleado crea y cierra sus propias marcaciones. Recepción lee solo las entradas abiertas, para ver quién está trabajando (RF-ASI-09, RF-TAR-02). Solo un administrador corrige: agrega una corrección a la vez, sin cambiar las anteriores ni las marcaciones, pone la salida que faltaba y registra las marcaciones de un turno que no las tuvo.
 - `Guests` y `Reservations`: solo recepción y administración.
@@ -632,6 +634,7 @@ Como no hay datos productivos ([P9](#12-preguntas-abiertas)), el modelo objetivo
 | S8 | Registro abierto | Quitar la pantalla (RF-AUTH-02) y exigir documento activo en las reglas (RF-AUTH-07) | M2 ✅ |
 | S9 | Datos personales de huéspedes | Reglas por rol revisadas con el simulador de reglas de la consola (S7). Los documentos de identidad no aparecen en logs, mensajes de error ni respaldos sin control. | M11 |
 | S10 | Ubicación de los empleados | Pedir el permiso solo al marcar, explicar para qué se usa y no guardar coordenadas (RF-ASI-10). Hecho: antes del permiso del sistema, la app explica que solo guarda a cuántos metros del hotel se marcó; la ubicación se lee una vez al marcar o al fijar la zona, y el permiso es solo mientras se usa la app. | M8 ✅ |
+| S11 | Palabras partidas en dos líneas | Las pruebas de diseño ya revisan que ninguna palabra se parta en dos líneas, pero solo en el calendario de fechas. Falta activarlo en todas las pantallas y corregir las que hoy la parten, casi todas a 320 dp o con la letra al 130 %: cierre de caja ("Efectivo esperado"), empleado (el correo y los chips del tipo y el área), cobro y la selección del método ("Transferencia"), la lista de pedidos ("Habitación 1204"), el aviso del inicio de sesión (el correo), el aviso sin conexión de Marcaciones › Horas y la grilla de productos. Puede haber más: cada prueba se detiene en el primer ancho que falla. | Sin asignar |
 
 ## 10. Hoja de ruta
 
@@ -650,16 +653,16 @@ Las fases ordenan la construcción. El hotel no recibe la app hasta M16, que la 
 | M7 | — | — | Era la salida de la fase 1 con su piloto. Se unió a M16 (decisión del 2026-11-17). | — |
 | M8 | 2 ✅ | `feature/attendance-1` a `-3` | RF-ASI-01 a RF-ASI-11 y S10, en tres PR: horarios y parámetros (RF-ASI-01 y 02); marcación desde el celular y desde recepción (RF-ASI-03, 04, 05, 10 y 11, y S10); y seguimiento (RF-ASI-06 a 09). Validación V5, en lo que se puede comprobar fuera del hotel: la detección de ubicaciones simuladas. | M6 |
 | M9 | — | — | Era la salida de la fase 2. Las pruebas de ubicación dentro y alrededor del hotel pasaron a M16. | — |
-| M10 | 3 | `feature/rooms` | RF-HAB-01 a RF-HAB-04 | M6 |
+| M10 | 3 ✅ | `feature/rooms` | RF-HAB-01 a RF-HAB-04, en un PR | M6 |
 | M11 | 3 | `feature/reservations` | RF-RES-01 a RF-RES-07, RF-RES-09 y S9 | M10 |
-| M12 | 3 | `feature/stays` | RF-EST-01 a RF-EST-07, RF-EST-09 y RF-BAL-08 | M11 |
+| M12 | 3 | `feature/stays` | RF-EST-01 a RF-EST-07, RF-EST-09 y RF-BAL-08, y el huésped actual en el tablero de habitaciones (RF-HAB-04) | M11 |
 | M13 | — | — | Era la salida de la fase 3 con un piloto en recepción. Se unió a M16. | — |
 | M14 | 4 | `feature/maintenance` | RF-TAR-01 a RF-TAR-09 y RF-MAN-01 a RF-MAN-06. Validación V7. | M11 |
 | M15 | 4 | `feature/housekeeping` | RF-LIM-01 a RF-LIM-07 | M12 y M14 |
 | M16 | Todas | `release/1.0.0` | Salida a producción de la versión 1.0.0, con las cuatro fases. Pruebas en dispositivos reales (Android, Windows e iOS con sesión iniciada), S4, APK firmado con la llave de producción, instalador `.msi` generado en Windows con los módulos de Java que necesitan Firebase y la app, versión visible en el menú, guía del piloto en `docs/`, piloto de 1 a 2 semanas, distribución en Android y escritorio (P10 y P22), etiqueta `v1.0.0` y merge a `main`. Validaciones V4 y V5 (precisión del GPS en el hotel). | M5, M8 y M15 |
 | M17 | 1 | `feature/design-system-1` y `-2` | Sistema de diseño Majestic (RNF-18). Primer PR: colores claro y oscuro, letra Manrope, íconos, componentes y pruebas de diseño. Segundo PR: navegación por rol y área, y las pantallas de la fase 1 con el diseño nuevo, con cobro desde En curso y propina sugerida (RF-CUR-05, RF-AUTH-05 y RF-EMP-05). | M6 |
 
-**Estado al 2026-11-21:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`, y M17, el diseño nuevo, también. La fase 2 queda hecha con M8 (asistencia), en tres PR: con su tercer PR, el seguimiento (RF-ASI-06 a RF-ASI-09), son 56 de los 99 requisitos vigentes de la sección 6. El orden de trabajo sigue con M10, M11, M12, M14, M15 y M16.
+**Estado al 2026-11-21:** la fase 1 (M1 a M6) está terminada y fusionada en `develop`, y M17, el diseño nuevo, también. La fase 2 quedó hecha con M8 (asistencia), en tres PR. La fase 3 empieza con M10 (habitaciones): son 60 de los 99 requisitos vigentes de la sección 6. El orden de trabajo sigue con M11, M12, M14, M15 y M16.
 
 Pendientes que no son código y hay que cerrar antes del piloto (M16):
 - Probar en iOS con sesión iniciada: hasta ahora solo se comprobó que compila y arranca.
@@ -896,6 +899,15 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-21 | Una salida pendiente no suma horas hasta que el administrador pone la salida, y el reporte la señala (RF-ASI-06 y RF-ASI-08) | Decisión del negocio: no inventar horas |
 | 2026-11-21 | El reporte abre en la quincena actual (del 1 al 15, o del 16 a fin de mes), con atajos a la quincena anterior, la semana, el mes y otras fechas, hasta 31 días como el balance. Se lee del servidor; sin conexión avisa en vez de mostrar datos incompletos, y las correcciones también necesitan conexión (RNF-04). | Decisión del negocio; la quincena es como se paga en Colombia |
 | 2026-11-21 | El reporte pide las marcaciones por la hora del servidor, que el empleado no puede cambiar, con 2 días de margen a cada lado, y las ubica por la hora que cuenta. Así una marcación hecha sin conexión entra en su día, y una con la hora del celular muy distinta aparece por revisar en el periodo en que llegó al servidor. No necesita índices nuevos. | Decisión técnica del tercer PR de M8 |
+| 2026-11-21 | M10 va en un solo PR. Los tipos y las habitaciones se configuran desde el mismo tablero, solo por un administrador: "Tipos de habitación" y "Agregar habitación", como las categorías y los impuestos desde el inventario. | Decisiones 1A y 6A de M10: el hito es pequeño, y no hace falta otra sección |
+| 2026-11-21 | Recepción, limpieza y mantenimiento abren en Habitaciones, con la barra Habitaciones · Pedidos · Asistencia · Más. Servicio y administración tienen Habitaciones en "Más". | Decisión 2A de M10 |
+| 2026-11-21 | La tarifa base por noche incluye el impuesto del tipo, como el precio de los productos: es lo que paga el huésped (RF-HAB-01, P27) | Decisión 3A de M10 |
+| 2026-11-21 | Una habitación nueva empieza Disponible: libre y limpia | Decisión 4A de M10 |
+| 2026-11-21 | Hasta las tareas de limpieza de la fase 4, cualquier empleado marca limpia una habitación libre que está por limpiar, y también la devuelve a por limpiar para deshacer un error. Queda quién y cuándo (`housekeepingChangedBy` y `housekeepingChangedAt`). | Decisión 5A de M10 (RF-HAB-03) |
+| 2026-11-21 | El tablero es una grilla por piso: cada habitación muestra su número, su estado con color, ícono y palabra, y su tipo. Los filtros por estado dicen cuántas hay en cada uno. Un toque abre la habitación, con marcar limpia y, para el administrador, editarla. | Decisión 6A de M10 (RF-HAB-04) |
+| 2026-11-21 | El respaldo (RF-EMP-07) exporta también las colecciones de asistencia, que M8 no había agregado, y las de habitaciones. Turnos y marcaciones respetan "desde una fecha", por el día en que empiezan, porque crecen cada día; los computadores autorizados, los tipos y las habitaciones van completos. Una prueba falla si una colección nueva queda por fuera. | Decisión del negocio, en M10 |
+| 2026-11-21 | Marcar limpia funciona sin conexión, como las tareas de limpieza que reemplaza (RNF-04). Las reglas solo lo aceptan si la habitación sigue libre, activa y en el estado de antes, así que una marca vieja no pisa un check-in ni a otro empleado. El administrador cambia solo número, tipo, piso y si está activa, nunca el estado. El número de habitación no se repite, ni siquiera con una inactiva, y lo comprueba la app; tampoco el nombre de un tipo. Tipos y habitaciones se desactivan, no se borran. | Decisión técnica de M10 |
+| 2026-11-21 | El calendario para elegir un periodo (balance y reporte de horas) escribe el rango como el resto de la app, "1 – 30 nov 2026", con la letra de títulos y alineado con "Elige el primer y el último día". Material lo escribía en letra de encabezado y partía la última fecha en dos líneas en Android, iOS y escritorio. Las pruebas de diseño del calendario revisan que ninguna palabra se parta; en las demás pantallas queda pendiente (S11). | Ajuste visual pedido por el negocio, incluido en el PR de M10 |
 
 ## 14. Riesgos
 
@@ -1006,7 +1018,8 @@ flowchart LR
         dirty["Por limpiar · dirty"] -->|"iniciar la limpieza · RF-LIM-03"| cleaning["En limpieza · cleaning"]
         cleaning -->|"terminar la limpieza"| clean["Limpia · clean"]
         clean -->|"check-out, cambio de habitación, repaso del día o fin de un mantenimiento"| dirty
-        dirty -.->|"solo en la fase 3: cualquier empleado la marca limpia"| clean
+        dirty -.->|"solo en la fase 3: cualquier empleado la marca limpia · RF-HAB-03"| clean
+        clean -.->|"solo en la fase 3: devolverla a por limpiar, para deshacer un error"| dirty
     end
     subgraph roomBlock ["Bloqueo"]
         unblocked["Sin bloqueo"] -->|"bloquear entre dos fechas · RF-MAN-03"| blocked["En mantenimiento"]
@@ -1116,7 +1129,8 @@ flowchart TD
     end
 
     subgraph roomsAndReservations ["Habitaciones y reservas · fase 3"]
-        roomBoard["Tablero de habitaciones · todos<br/>sin datos de huéspedes para basic"]
+        roomBoard["Tablero de habitaciones · todos<br/>sin datos de huéspedes para basic<br/>recepción, limpieza y mantenimiento abren aquí"]
+        roomBoard -.->|"solo administradores"| roomSetup["Tipos de habitación, agregar y editar habitaciones · M10"]
         reservationCalendar["Calendario y reservas<br/>recepción y administración"]
         arrivalsAndDepartures["Llegadas y salidas del día<br/>recepción y administración"] --> checkIn["Check-in"]
         guestsInHouse["Huéspedes en casa<br/>recepción y administración"] --> checkOut["Check-out y pagos de la estadía"]
@@ -1136,7 +1150,6 @@ flowchart TD
         backup["Respaldo · solo escritorio · fase 1"]
         shifts["Horarios · fase 2"]
         authorizedComputers["Computadores autorizados · solo escritorio · fase 2"]
-        roomSetup["Habitaciones y tipos · fase 3"]
         maintenancePlans["Planes preventivos y listas de chequeo · fase 4"]
         hoursReport["Marcaciones: salidas pendientes, horas por confirmar,<br/>correcciones y reporte de horas · fase 2"]
         taskReports["Reportes de limpieza y mantenimiento · fase 4"]

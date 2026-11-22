@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderDestination
 import com.peakdevcol.project.hotelmanagement.domain.model.OrderState
 import com.peakdevcol.project.hotelmanagement.domain.model.PaymentMethod
+import com.peakdevcol.project.hotelmanagement.domain.model.RoomStatus
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.AmountRow
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Avatar
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Banner
@@ -57,6 +58,9 @@ import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Pending
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ProductTile
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ProductTileMinWidth
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.QuantityStepper
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.RoomStatusBadge
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.RoomTile
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.RoomTileMinWidth
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ScrollingChipRow
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SearchField
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.SegmentedControl
@@ -164,6 +168,28 @@ class DesignSystemLayoutTest {
                 selected = true,
             )
             OrderSummaryBar(detail = "Habitación 1204 · 14 productos sin enviar todavía", totalAmount = 1_284_000, actionText = "Confirmar", onAction = {})
+        }
+    }
+
+    // RF-HAB-04: every state, a number of four digits, a long type and an inactive room.
+    @Test
+    fun rooms() = checkEveryFrame("tarjetas de habitación") {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                RoomStatus.entries.forEach { RoomStatusBadge(it) }
+            }
+            LazyVerticalGrid(columns = GridCells.Adaptive(RoomTileMinWidth), modifier = Modifier.height(520.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                val rooms = listOf(
+                    Triple(204, "Doble", RoomStatus.AVAILABLE),
+                    Triple(9_999, "Suite presidencial con jacuzzi y vista al mar", RoomStatus.OCCUPIED),
+                    Triple(305, "Sencilla", RoomStatus.DIRTY),
+                    Triple(1_204, "Familiar", RoomStatus.CLEANING),
+                )
+                items(rooms) { (number, type, status) ->
+                    RoomTile(number = number, typeName = type, status = status, onClick = {}, detail = if (status == RoomStatus.OCCUPIED) "Sale el dom 22 nov" else null)
+                }
+                item { RoomTile(number = 101, typeName = "Doble", status = RoomStatus.AVAILABLE, onClick = {}, inactive = true) }
+            }
         }
     }
 

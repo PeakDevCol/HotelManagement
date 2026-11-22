@@ -40,6 +40,7 @@ import com.peakdevcol.project.hotelmanagement.resources.settings_attendance_hint
 import com.peakdevcol.project.hotelmanagement.resources.settings_attendance_title
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_date
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_date_error
+import com.peakdevcol.project.hotelmanagement.resources.settings_backup_date_hint
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_done
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_error_file
 import com.peakdevcol.project.hotelmanagement.resources.settings_backup_export
@@ -292,6 +293,7 @@ private fun Backup(state: SettingsState, onIntent: (SettingsIntent) -> Unit) {
             onValueChange = { onIntent(SettingsIntent.BackupSinceChange(it)) },
             label = stringResource(Res.string.settings_backup_date),
             placeholder = BACKUP_DATE_EXAMPLE,
+            help = stringResource(Res.string.settings_backup_date_hint),
             error = if (state.showBackupDateError) stringResource(Res.string.settings_backup_date_error) else null,
             modifier = Modifier.fillMaxWidth(),
         )

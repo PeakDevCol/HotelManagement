@@ -540,6 +540,87 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Rooms (PRD, section 6.8, M10). Every active employee reads them, for the board (RF-HAB-04).
+    // RF-HAB-01: the rate of a night is in whole pesos and includes the tax, like a price (decision 3A).
+    match /RoomTypes/{roomTypeId} {
+      function isValidRoomType(type) {
+        return type.keys().hasAll(['name', 'capacity', 'baseRate', 'active'])
+          && type.keys().hasOnly(['name', 'capacity', 'baseRate', 'taxId', 'active'])
+          && type.name is string
+          && type.name.size() > 0
+          && type.capacity is int
+          && type.capacity >= 1
+          && type.capacity <= 20
+          && type.baseRate is int
+          && type.baseRate > 0
+          && (type.get('taxId', null) == null || type.taxId is string)
+          && type.active is bool;
+      }
+
+      allow read: if isActiveEmployee();
+      allow create, update: if isAdmin() && isValidRoomType(request.resource.data);
+      // A type is deactivated, never deleted: rooms and reservations point to it.
+      allow delete: if false;
+    }
+
+    // RF-HAB-02 and RF-HAB-03: the state is kept in parts (section 6.8). Only an administrator
+    // changes the data of a room; the occupancy moves with the check-in and the check-out (M12).
+    match /Rooms/{roomId} {
+      function isValidRoom(room) {
+        return room.keys().hasAll(['number', 'roomTypeId', 'floor', 'occupancy', 'housekeeping', 'active'])
+          && room.keys().hasOnly(['number', 'roomTypeId', 'floor', 'occupancy', 'housekeeping', 'expectedCheckOutDate',
+            'active', 'housekeepingChangedBy', 'housekeepingChangedAt'])
+          && room.number is int
+          && room.number >= 1
+          && room.number <= 9999
+          && room.roomTypeId is string
+          && room.roomTypeId.size() > 0
+          && room.floor is int
+          && room.floor >= 0
+          && room.floor <= 99
+          && room.occupancy in ['vacant', 'occupied']
+          && room.housekeeping in ['dirty', 'cleaning', 'clean']
+          && room.active is bool;
+      }
+
+      // Decision 4A: a new room is free and clean, with nobody in it and nothing marked yet.
+      function isNewRoom(room) {
+        return isValidRoom(room)
+          && room.occupancy == 'vacant'
+          && room.housekeeping == 'clean'
+          && room.get('expectedCheckOutDate', null) == null
+          && room.get('housekeepingChangedBy', null) == null
+          && room.get('housekeepingChangedAt', null) == null;
+      }
+
+      // The number, the type, the floor and whether it is active; never the state.
+      function isDataChange() {
+        return isValidRoom(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['number', 'roomTypeId', 'floor', 'active']);
+      }
+
+      // Decision 5A: until the cleaning tasks of phase 4, any employee marks a free room clean, or
+      // back to be cleaned, in their name and with the time of the server. A mark made without
+      // connection is rejected if the room changed meanwhile: occupied, or already marked.
+      function isHousekeepingByHand() {
+        let room = request.resource.data;
+        return room.diff(resource.data).affectedKeys().hasOnly(['housekeeping', 'housekeepingChangedBy', 'housekeepingChangedAt'])
+          && resource.data.occupancy == 'vacant'
+          && resource.data.active == true
+          && resource.data.housekeeping in ['dirty', 'clean']
+          && room.housekeeping in ['dirty', 'clean']
+          && room.housekeeping != resource.data.housekeeping
+          && room.housekeepingChangedBy == request.auth.uid
+          && room.housekeepingChangedAt == request.time;
+      }
+
+      allow read: if isActiveEmployee();
+      allow create: if isAdmin() && isNewRoom(request.resource.data);
+      allow update: if (isAdmin() && isDataChange()) || (isActiveEmployee() && isHousekeepingByHand());
+      // A room is deactivated, never deleted: its reservations and tasks point to it.
+      allow delete: if false;
+    }
+
     // RF-EMP-06: the parameters of the hotel. Every active employee reads them, because they
     // decide how each device groups the sales by day and where attendance is marked; only an
     // administrator changes them, and every change says who made it and when.

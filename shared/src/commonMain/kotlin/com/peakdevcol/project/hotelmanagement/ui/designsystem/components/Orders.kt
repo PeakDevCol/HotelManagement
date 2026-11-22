@@ -64,8 +64,9 @@ fun PendingToSendBadge(modifier: Modifier = Modifier) {
     Badge(stringResource(Res.string.order_pending_to_send), MajesticIcons.cloudUpload, Color.Transparent, colors.warning, modifier, outlined = true)
 }
 
+/** A state with a word and an icon on a pill, shared by the badges of orders and rooms. */
 @Composable
-private fun Badge(
+internal fun Badge(
     text: String,
     icon: DrawableResource,
     container: Color,

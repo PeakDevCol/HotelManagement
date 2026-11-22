@@ -17,6 +17,10 @@ data class CalendarDate(val year: Int, val month: Int, val day: Int) : Comparabl
             return firstOfNextMonth.plusDays(-1)
         }
 
+    /** The day as it is stored and read back by [parse]: `2026-11-01`. */
+    val isoText: String
+        get() = "${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+
     fun plusDays(days: Long): CalendarDate = fromEpochDay(epochDay + days)
 
     override fun compareTo(other: CalendarDate): Int = epochDay.compareTo(other.epochDay)

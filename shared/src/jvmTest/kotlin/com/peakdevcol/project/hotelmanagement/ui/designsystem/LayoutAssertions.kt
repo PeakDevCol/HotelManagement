@@ -61,10 +61,12 @@ private const val TOLERANCE_PX = 1f
 
 /**
  * RNF-18, "Contenido que no cabe": nothing leaves the box that holds it, no text is cut without an
- * ellipsis, nothing collapses to nothing, and everything that is touched is at least 48 dp.
+ * ellipsis, nothing collapses to nothing, and everything that is touched is at least 48 dp. With
+ * [checkSplitWords], no word is broken in two lines either; it is off by default until the screens
+ * listed in S11 of the PRD stop breaking them.
  */
 @OptIn(ExperimentalTestApi::class)
-internal fun ComposeUiTest.assertNothingSpills(context: String) {
+internal fun ComposeUiTest.assertNothingSpills(context: String, checkSplitWords: Boolean = false) {
     val problems = mutableListOf<String>()
     val minimumTouch = with(density) { MajesticSizes.control.toPx() } - TOLERANCE_PX
     val frame = onNodeWithTag(FRAME_TAG, useUnmergedTree = true).fetchSemanticsNode()
@@ -88,7 +90,7 @@ internal fun ComposeUiTest.assertNothingSpills(context: String) {
             if (!insideScroll && (visible.width < bounds.width - TOLERANCE_PX || visible.height < bounds.height - TOLERANCE_PX)) {
                 problems += "$name queda cortado: se ve ${visible.short()} de ${bounds.short()}"
             }
-            node.textLayout()?.let { layout -> problems += layout.problems(name, bounds) }
+            node.textLayout()?.let { layout -> problems += layout.problems(name, bounds, checkSplitWords) }
             if (node.config.contains(SemanticsActions.OnClick) && node.config.getOrNull(SemanticsProperties.Disabled) == null) {
                 val touch = node.touchBoundsInRoot
                 if (touch.width < minimumTouch || touch.height < minimumTouch) problems += "$name: área táctil de ${touch.short()}, menor de 48 dp"
@@ -110,7 +112,7 @@ internal fun ComposeUiTest.assertNothingSpills(context: String) {
  * offered, so its own overflow flags are not reliable: each line is measured instead. A text set
  * to end with an ellipsis may be shortened; any other text must show whole.
  */
-private fun TextLayoutResult.problems(name: String, bounds: Rect): List<String> {
+private fun TextLayoutResult.problems(name: String, bounds: Rect, checkSplitWords: Boolean): List<String> {
     val problems = mutableListOf<String>()
     if (bounds.width < TOLERANCE_PX || bounds.height < TOLERANCE_PX) problems += "$name: el texto quedó colapsado"
     val shortensWithEllipsis = layoutInput.overflow == TextOverflow.Ellipsis
@@ -125,7 +127,18 @@ private fun TextLayoutResult.problems(name: String, bounds: Rect): List<String> 
     val shownUpTo = if (lineCount == 0) 0 else getLineEnd(lineCount - 1, visibleEnd = true)
     if (!shortensWithEllipsis && shownUpTo < text.length) problems += "$name: el texto se corta sin puntos suspensivos"
     if (!shortensWithEllipsis && multiParagraph.height > size.height + TOLERANCE_PX) problems += "$name: el texto se corta en alto"
+    if (checkSplitWords) splitWord(text)?.let { word -> problems += "$name: la palabra \"$word\" se parte en dos líneas" }
     return problems
+}
+
+/** A word that did not fit its line and was broken between two letters or digits, like `21/11/202` and `5`. */
+private fun TextLayoutResult.splitWord(text: String): String? {
+    val breaks = (0 until lineCount - 1).map { line -> getLineEnd(line) }
+    val splitAt = breaks.firstOrNull { end -> end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() }
+        ?: return null
+    val wordStart = text.lastIndexOfAny(charArrayOf(' ', '\n'), startIndex = splitAt - 1) + 1
+    val wordEnd = text.indexOfAny(charArrayOf(' ', '\n'), startIndex = splitAt).takeIf { it >= 0 } ?: text.length
+    return text.substring(wordStart, wordEnd)
 }
 
 private fun Rect.contains(other: Rect) =
