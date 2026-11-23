@@ -3,12 +3,16 @@ package com.peakdevcol.project.hotelmanagement.data
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.ReservationDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.RoomNightDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toDto
+import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toEvent
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toGuest
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toNewDto
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toReservation
 import com.peakdevcol.project.hotelmanagement.data.firebase.dto.toRoomNight
 import com.peakdevcol.project.hotelmanagement.domain.model.DocumentType
 import com.peakdevcol.project.hotelmanagement.domain.model.Guest
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationEvent
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationEventType
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationSnapshot
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationSource
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationState
 import com.peakdevcol.project.hotelmanagement.fakes.day
@@ -71,5 +75,29 @@ class ReservationDtoTest {
         assertEquals(RoomNightDto(roomId = "r-204", date = "2026-11-30", reservationId = "r1", arrival = true), night.toDto())
         assertEquals(night, night.toDto().toRoomNight())
         assertEquals(day("2026-11-30"), night.date)
+    }
+}
+
+/** Decision 1A of the second PR of M11: the history of a reservation, as the rules check it. */
+class ReservationEventDtoTest {
+    @Test
+    fun aModificationKeepsWhatTheReservationWasAndBecame() {
+        val before = reservation("r1", roomId = "r-204", checkIn = "2026-11-30", checkOut = "2026-12-02")
+        val after = before.copy(roomNumber = 305, adults = 1)
+        val event = ReservationEvent(
+            id = "e1",
+            type = ReservationEventType.MODIFIED,
+            by = "reception",
+            before = ReservationSnapshot(before.stay, 204, 2, 0, 250_000, 500_000, ReservationSource.PHONE, ""),
+            after = ReservationSnapshot(after.stay, 305, 1, 0, 250_000, 500_000, ReservationSource.PHONE, ""),
+        )
+
+        val dto = event.toNewDto()
+
+        assertEquals("modified", dto.type)
+        assertEquals(Timestamp.ServerTimestamp, dto.at)
+        assertEquals("2026-11-30", dto.before?.checkInDate)
+        assertEquals(305, dto.after?.roomNumber)
+        assertEquals(event, dto.copy(at = null).toEvent("e1"))
     }
 }

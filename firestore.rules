@@ -693,7 +693,7 @@ service cloud.firestore {
             'adults', 'children', 'nightlyRates', 'taxAmount', 'total', 'paidAmount', 'source', 'state', 'notes'])
           && reservation.keys().hasOnly(['guestId', 'guestName', 'roomId', 'roomNumber', 'checkInDate', 'checkOutDate',
             'adults', 'children', 'nightlyRates', 'taxAmount', 'total', 'paidAmount', 'source', 'state', 'notes',
-            'createdBy', 'createdAt'])
+            'createdBy', 'createdAt', 'updatedBy', 'updatedAt', 'lastEventId'])
           && reservation.guestId is string
           && reservation.guestName is string
           && reservation.roomId is string
@@ -724,29 +724,96 @@ service cloud.firestore {
           && reservation.notes.size() <= 500;
       }
 
-      // An active room, for no more people than its type takes, at the base rate of its type unless
-      // an administrator changed it (RF-RES-02). The days were checked by the app with the
-      // operational day; here, only that the arrival is not long gone.
-      function isNewReservation(reservation) {
+      // An active room, for no more people than its type takes. The days were checked by the app
+      // with the operational day; here, only that the arrival is not long gone.
+      function isStayInRoom(reservation) {
         let room = get(/databases/$(database)/documents/Rooms/$(reservation.roomId)).data;
         let type = get(/databases/$(database)/documents/RoomTypes/$(room.roomTypeId)).data;
+        return room.active == true
+          && room.number == reservation.roomNumber
+          && reservation.adults + reservation.children <= type.capacity
+          && request.time < startOfDay(reservation.checkInDate) + duration.value(2, 'd');
+      }
+
+      function baseRateOf(reservation) {
+        let room = get(/databases/$(database)/documents/Rooms/$(reservation.roomId)).data;
+        return get(/databases/$(database)/documents/RoomTypes/$(room.roomTypeId)).data.baseRate;
+      }
+
+      // At the base rate of its type unless an administrator changed it (RF-RES-02).
+      function isNewReservation(reservation) {
         return isValidReservation(reservation)
           && reservation.state == 'confirmed'
           && reservation.paidAmount == 0
-          && room.active == true
-          && room.number == reservation.roomNumber
-          && reservation.adults + reservation.children <= type.capacity
-          && (reservation.nightlyRates[0] == type.baseRate || isAdmin())
+          && isStayInRoom(reservation)
+          && (reservation.nightlyRates[0] == baseRateOf(reservation) || isAdmin())
           && exists(/databases/$(database)/documents/Guests/$(reservation.guestId))
-          && request.time < startOfDay(reservation.checkInDate) + duration.value(2, 'd')
           && reservation.createdBy == request.auth.uid
-          && reservation.createdAt == request.time;
+          && reservation.createdAt == request.time
+          && reservation.get('updatedBy', null) == null
+          && reservation.get('lastEventId', null) == null;
+      }
+
+      // Decision 1A: every change is signed and writes its event to the history in the same transaction.
+      function isSignedWith(eventType) {
+        let after = request.resource.data;
+        return after.updatedBy == request.auth.uid
+          && after.updatedAt == request.time
+          && after.lastEventId is string
+          && after.lastEventId != resource.data.get('lastEventId', null)
+          && getAfter(/databases/$(database)/documents/Reservations/$(reservationId)/events/$(after.lastEventId)).data.type == eventType;
+      }
+
+      // RF-RES-05 with decisions 2A and 3A: the days, the people, the room, the notes and the source
+      // of a confirmed reservation; never the guest. The rate is the one it had, the base rate of the
+      // new type, or what an administrator gives.
+      function isModification() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return before.state == 'confirmed'
+          && isValidReservation(after)
+          && after.diff(before).affectedKeys().hasOnly(['roomId', 'roomNumber', 'checkInDate', 'checkOutDate', 'adults',
+            'children', 'nightlyRates', 'taxAmount', 'total', 'source', 'notes', 'updatedBy', 'updatedAt', 'lastEventId'])
+          && isStayInRoom(after)
+          && (after.nightlyRates[0] == before.nightlyRates[0] || after.nightlyRates[0] == baseRateOf(after) || isAdmin())
+          && isSignedWith('modified');
+      }
+
+      // RF-RES-06 and RF-RES-07: a confirmed reservation is cancelled, or marked as not arrived once
+      // the day of its arrival is over; the app waits for the end of the operational day.
+      function isClosing() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return before.state == 'confirmed'
+          && after.diff(before).affectedKeys().hasOnly(['state', 'updatedBy', 'updatedAt', 'lastEventId'])
+          && ((after.state == 'cancelled' && isSignedWith('cancelled'))
+            || (after.state == 'no_show'
+              && request.time > startOfDay(before.checkInDate) + duration.value(1, 'd')
+              && isSignedWith('no_show')));
       }
 
       allow read: if isReceptionOrAdmin();
       allow create: if isReceptionOrAdmin() && isNewReservation(request.resource.data);
-      // Modifying, cancelling and no show come in the second PR of M11. Reservations are never deleted (RNF-11).
-      allow update, delete: if false;
+      allow update: if isReceptionOrAdmin() && (isModification() || isClosing());
+      // Reservations are never deleted (RNF-11): they are cancelled with a reason.
+      allow delete: if false;
+
+      // Decision 1A: the history. An event is written together with the change it explains, and is never changed.
+      match /events/{eventId} {
+        function isEventOfTheChange(event) {
+          return event.keys().hasAll(['type', 'by', 'at'])
+            && event.keys().hasOnly(['type', 'by', 'at', 'reason', 'before', 'after'])
+            && event.type in ['modified', 'cancelled', 'no_show']
+            && event.by == request.auth.uid
+            && event.at == request.time
+            && (event.type != 'cancelled' || (event.reason is string && event.reason.size() > 0 && event.reason.size() <= 500))
+            && getAfter(/databases/$(database)/documents/Reservations/$(reservationId)).data.lastEventId == eventId;
+        }
+
+        allow read: if isReceptionOrAdmin();
+        allow create: if isReceptionOrAdmin() && isEventOfTheChange(request.resource.data);
+        allow update, delete: if false;
+      }
     }
 
     // RF-RES-03: one document per room and night, created in the same transaction as its
@@ -766,10 +833,23 @@ service cloud.firestore {
           && night.arrival == (night.date == reservation.checkInDate);
       }
 
+      // RF-RES-05 to RF-RES-07: a night is released in the same transaction as the change that
+      // leaves it out: its reservation was cancelled, not arrived, or no longer covers it.
+      function isReleasedByItsReservation(night) {
+        let reservation = getAfter(/databases/$(database)/documents/Reservations/$(night.reservationId)).data;
+        return reservation.state in ['cancelled', 'no_show']
+          || reservation.roomId != night.roomId
+          || night.date < reservation.checkInDate
+          || night.date >= reservation.checkOutDate;
+      }
+
       allow read: if isActiveEmployee();
       allow create: if isReceptionOrAdmin() && isNightOfItsReservation(request.resource.data);
-      // Releasing nights comes with cancelling and modifying, in the second PR of M11.
-      allow update, delete: if false;
+      // RF-RES-05: when the arrival moves, only the mark of the first night changes.
+      allow update: if isReceptionOrAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['arrival'])
+        && isNightOfItsReservation(request.resource.data);
+      allow delete: if isReceptionOrAdmin() && isReleasedByItsReservation(resource.data);
     }
 
     // RF-EMP-06: the parameters of the hotel. Every active employee reads them, because they

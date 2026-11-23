@@ -15,6 +15,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.RoomNight
 import com.peakdevcol.project.hotelmanagement.domain.repository.ReservationRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.RoomNightRepository
 import dev.gitlive.firebase.firestore.FirebaseFirestore
+import dev.gitlive.firebase.firestore.QuerySnapshot
 import dev.gitlive.firebase.firestore.ServerTimestampBehavior
 import dev.gitlive.firebase.firestore.Source
 import kotlinx.coroutines.CancellationException
@@ -44,7 +45,35 @@ internal class FirestoreReservationRepository(
             .orderBy(RESERVATION_CHECK_IN_FIELD)
             .limit(UPCOMING_LIMIT)
             .snapshots
-            .map { snapshot -> snapshot.documents.mapNotNull { it.data<ReservationDto>(ServerTimestampBehavior.ESTIMATE).toReservation(it.id) } }
+            .map { it.toReservations() }
+
+    // RF-RES-07 and RF-RES-09: what arrives today and what should have arrived already, a handful
+    // of documents. The same index as the upcoming ones.
+    override fun observeConfirmedUntil(date: CalendarDate): Flow<List<Reservation>> =
+        reservations
+            .where {
+                all(
+                    RESERVATION_STATE_FIELD equalTo ReservationState.CONFIRMED.code(),
+                    RESERVATION_CHECK_IN_FIELD lessThanOrEqualTo date.isoText,
+                )
+            }
+            .snapshots
+            .map { it.toReservations() }
+
+    // At most one per room: a single field, no composite index.
+    override fun observeCheckedIn(): Flow<List<Reservation>> =
+        reservations.where { RESERVATION_STATE_FIELD equalTo ReservationState.CHECKED_IN.code() }.snapshots.map { it.toReservations() }
+
+    override suspend fun reservation(reservationId: String): Result<Reservation?> = guarded {
+        withTimeoutOrNull(serverWait) { reservations.document(reservationId).get(Source.SERVER) }
+            ?.let { snapshot ->
+                Result.success(if (snapshot.exists) snapshot.data<ReservationDto>(ServerTimestampBehavior.ESTIMATE).toReservation(snapshot.id) else null)
+            }
+            ?: Result.failure(ReservationError.NoConnection)
+    }
+
+    private fun QuerySnapshot.toReservations(): List<Reservation> =
+        documents.mapNotNull { it.data<ReservationDto>(ServerTimestampBehavior.ESTIMATE).toReservation(it.id) }
 
     // A transaction, and not a batch, because a transaction fails without connection instead of
     // waiting on the device (RNF-04). The rules reject a night that already exists, which undoes all.
@@ -83,7 +112,7 @@ internal class FirestoreRoomNightRepository(
     }
 }
 
-private inline fun <T> guarded(block: () -> Result<T>): Result<T> = try {
+internal inline fun <T> guarded(block: () -> Result<T>): Result<T> = try {
     block()
 } catch (e: CancellationException) {
     throw e

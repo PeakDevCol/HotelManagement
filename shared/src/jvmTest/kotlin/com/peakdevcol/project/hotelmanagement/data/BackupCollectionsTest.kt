@@ -16,9 +16,9 @@ class BackupCollectionsTest {
             .filter { Modifier.isStatic(it.modifiers) && it.type == String::class.java }
             .map { it.get(null) as String }
             .toSet()
-        // The history of each order goes inside its order.
+        // The history of each order and of each reservation goes inside it.
         val expected = collections - FirestorePaths.ORDER_EVENTS
 
-        assertEquals(expected, WHOLE_COLLECTIONS.toSet() + DATED_COLLECTIONS.keys + DAY_COLLECTIONS.keys + FirestorePaths.ORDERS)
+        assertEquals(expected, WHOLE_COLLECTIONS.toSet() + DATED_COLLECTIONS.keys + DAY_COLLECTIONS.keys + FirestorePaths.ORDERS + FirestorePaths.RESERVATIONS)
     }
 }

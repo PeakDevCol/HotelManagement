@@ -189,6 +189,16 @@ import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationDetailF
 import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsContent
 import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsState
 import com.peakdevcol.project.hotelmanagement.ui.reservations.RoomSearch
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationEvent
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationEventType
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationHistory
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationHistoryEntry
+import com.peakdevcol.project.hotelmanagement.domain.model.TodayArrival
+import com.peakdevcol.project.hotelmanagement.domain.model.TodayReservations
+import com.peakdevcol.project.hotelmanagement.domain.model.snapshot
+import com.peakdevcol.project.hotelmanagement.ui.reservations.HistoryLoad
+import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationDetailContent
+import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsTab
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -887,9 +897,65 @@ class ScreensLayoutTest {
         ),
     )
 
+    private val longToday = TodayReservations(
+        today = CalendarDate(2026, 12, 28),
+        arrivals = listOf(TodayArrival(reservationsList.first(), RoomStatus.CLEANING), TodayArrival(reservationsList.last(), null)),
+        overdue = listOf(reservationsList.first().copy(id = "late", stay = Stay(CalendarDate(2026, 12, 24), CalendarDate(2026, 12, 30)))),
+    )
+    private val longHistory = ReservationHistory(
+        createdByName = admin.fullName,
+        entries = listOf(
+            ReservationHistoryEntry(
+                ReservationEvent(
+                    id = "e1",
+                    type = ReservationEventType.MODIFIED,
+                    by = "admin",
+                    at = Instant.parse("2026-12-20T15:00:00Z"),
+                    before = reservationsList.first().snapshot().copy(stay = Stay(CalendarDate(2026, 12, 1), CalendarDate(2026, 12, 31)), roomNumber = 9999, adults = 1),
+                    after = reservationsList.first().snapshot(),
+                ),
+                byName = employeeName,
+            ),
+            ReservationHistoryEntry(ReservationEvent(id = "e2", type = ReservationEventType.CANCELLED, by = "x", at = null, reason = reservationsList.first().notes), byName = null),
+        ),
+    )
+
     @Test
     fun reservations() = checkEveryFrame("reservas") {
-        ReservationsContent(state = ReservationsState(isLoading = false, reservations = reservationsList, query = "Ana María Rojas Restrepo de la Cruz"), onIntent = {}, onBack = {})
+        ReservationsContent(
+            state = ReservationsState(tab = ReservationsTab.UPCOMING, isLoading = false, reservations = reservationsList, query = "Ana María Rojas Restrepo de la Cruz"),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun reservationsToday() = checkEveryFrame("reservas de hoy") {
+        ReservationsContent(state = ReservationsState(isLoading = false, reservations = reservationsList, today = longToday), onIntent = {})
+    }
+
+    @Test
+    fun reservationsTodayEmpty() = checkEveryFrame("reservas de hoy vacías") {
+        ReservationsContent(state = ReservationsState(isLoading = false, today = TodayReservations(CalendarDate(2026, 12, 28))), onIntent = {})
+    }
+
+    @Test
+    fun overdueReservationDetail() = checkEveryFrame("reserva sin llegar") {
+        val state = ReservationsState(isLoading = false, today = longToday, openReservationId = "late", history = HistoryLoad.Loaded(longHistory), closeError = ReservationError.Changed)
+        EditorFrame { ReservationDetailContent(reservation = state.openReservation!!, state = state, onIntent = {}) }
+    }
+
+    @Test
+    fun reservationBeingCancelled() = checkEveryFrame("reserva por cancelar") {
+        val state = ReservationsState(
+            isLoading = false,
+            reservations = reservationsList,
+            openReservationId = "r1",
+            history = HistoryLoad.Failed,
+            cancelReason = reservationsList.first().notes,
+            isClosing = true,
+        )
+        EditorFrame { ReservationDetailContent(reservation = state.openReservation!!, state = state, onIntent = {}) }
     }
 
     @Test
@@ -923,6 +989,31 @@ class ScreensLayoutTest {
             onIntent = {},
             onBack = {},
         )
+    }
+
+    @Test
+    fun reservationBeingChanged() = checkEveryFrame("modificar reserva") {
+        NewReservationContent(
+            state = NewReservationState(
+                isStarting = false,
+                changing = reservationsList.first(),
+                today = CalendarDate(2026, 12, 28),
+                stay = longStay,
+                adults = 12,
+                children = 8,
+                roomSearch = RoomSearch.Found(freeRooms),
+                roomId = "r-1204",
+                guest = longGuest,
+                rateText = "1284000",
+            ),
+            onIntent = {},
+            onBack = {},
+        )
+    }
+
+    @Test
+    fun reservationThatCouldNotBeChanged() = checkEveryFrame("reserva que no se pudo abrir") {
+        NewReservationContent(state = NewReservationState(isStarting = false, loadError = ReservationError.Changed), onIntent = {}, onBack = {})
     }
 
     @Test

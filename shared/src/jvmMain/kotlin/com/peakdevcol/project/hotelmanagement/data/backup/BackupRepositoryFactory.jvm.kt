@@ -3,6 +3,7 @@ package com.peakdevcol.project.hotelmanagement.data.backup
 import com.peakdevcol.project.hotelmanagement.data.firebase.CLOCK_IN_AT_FIELD
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestorePaths
 import com.peakdevcol.project.hotelmanagement.data.firebase.RESERVATION_CHECK_OUT_FIELD
+import com.peakdevcol.project.hotelmanagement.data.firebase.RESERVATION_EVENTS
 import com.peakdevcol.project.hotelmanagement.data.firebase.ROOM_NIGHT_DATE_FIELD
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupError
 import com.peakdevcol.project.hotelmanagement.domain.model.BackupSummary
@@ -64,18 +65,26 @@ internal class DesktopBackupRepository(
         WHOLE_COLLECTIONS.associateWith { name -> documentsOf(name, dateField = null, since = null) } +
             DATED_COLLECTIONS.mapValues { (name, dateField) -> documentsOf(name, dateField, since) } +
             DAY_COLLECTIONS.mapValues { (name, dayField) -> documentsFromDay(name, dayField, since) } +
-            mapOf(FirestorePaths.ORDERS to ordersWithHistory(since))
+            mapOf(FirestorePaths.ORDERS to ordersWithHistory(since), FirestorePaths.RESERVATIONS to reservationsWithHistory(since))
 
     // Source.SERVER: a backup made from the cache of the device could silently miss documents.
     private suspend fun documentsOf(collection: String, dateField: String?, since: Instant?): Map<String, Any?> =
         snapshotsOf(collection, dateField, since).associate { it.id to it.plainData() }
 
+    private suspend fun documentsFromDay(collection: String, dayField: String, since: Instant?): Map<String, Any?> =
+        snapshotsFromDay(collection, dayField, since).associate { it.id to it.plainData() }
+
     // Days are written as `2026-11-22`, so the ones from the day of [since] on compare as text.
-    private suspend fun documentsFromDay(collection: String, dayField: String, since: Instant?): Map<String, Any?> {
+    private suspend fun snapshotsFromDay(collection: String, dayField: String, since: Instant?): List<DocumentSnapshot> {
         val all = firestore.value.collection(collection)
         val query = if (since != null) all.where { dayField greaterThanOrEqualTo operationalDateOf(since, dayStartMinutes = 0).isoText } else all
-        return query.get(Source.SERVER).documents.associate { it.id to it.plainData() }
+        return query.get(Source.SERVER).documents
     }
+
+    // Decision 1A of M11: each reservation brings its history, like each order. A reservation goes
+    // if it ends on the day of [since] or later.
+    private suspend fun reservationsWithHistory(since: Instant?): Map<String, Any?> =
+        withSubcollection(snapshotsFromDay(FirestorePaths.RESERVATIONS, RESERVATION_CHECK_OUT_FIELD, since), RESERVATION_EVENTS)
 
     private suspend fun snapshotsOf(collection: String, dateField: String?, since: Instant?): List<DocumentSnapshot> {
         val all = firestore.value.collection(collection)
@@ -88,14 +97,17 @@ internal class DesktopBackupRepository(
     }
 
     // The history of an order lives in its own subcollection, so each order brings its events (RF-CUR-11).
-    private suspend fun ordersWithHistory(since: Instant?): Map<String, Any?> = coroutineScope {
-        snapshotsOf(FirestorePaths.ORDERS, dateField = "dateOrder", since = since)
-            .chunked(PARALLEL_ORDERS)
-            .flatMap { orders ->
-                orders.map { order ->
+    private suspend fun ordersWithHistory(since: Instant?): Map<String, Any?> =
+        withSubcollection(snapshotsOf(FirestorePaths.ORDERS, dateField = "dateOrder", since = since), FirestorePaths.ORDER_EVENTS)
+
+    private suspend fun withSubcollection(documents: List<DocumentSnapshot>, subcollection: String): Map<String, Any?> = coroutineScope {
+        documents
+            .chunked(PARALLEL_READS)
+            .flatMap { chunk ->
+                chunk.map { document ->
                     async {
-                        val events = order.reference.collection(FirestorePaths.ORDER_EVENTS).get(Source.SERVER).documents
-                        order.id to order.plainData() + (FirestorePaths.ORDER_EVENTS to events.associate { it.id to it.plainData() })
+                        val children = document.reference.collection(subcollection).get(Source.SERVER).documents
+                        document.id to document.plainData() + (subcollection to children.associate { it.id to it.plainData() })
                     }
                 }.awaitAll()
             }
@@ -127,7 +139,7 @@ internal class DesktopBackupRepository(
     }
 
     private companion object {
-        const val PARALLEL_ORDERS = 10
+        const val PARALLEL_READS = 10
         val FILE_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
     }
 }
@@ -159,9 +171,8 @@ internal val DATED_COLLECTIONS = mapOf(
 
 /**
  * Decision 6A of M11: the collections that grow every day and say when with a day of Colombia
- * written as text. A reservation goes if it ends on that day or later, and a night if it is on it or later.
+ * written as text: a night goes if it is on that day or later. The reservations go apart, with their history.
  */
 internal val DAY_COLLECTIONS = mapOf(
-    FirestorePaths.RESERVATIONS to RESERVATION_CHECK_OUT_FIELD,
     FirestorePaths.ROOM_NIGHTS to ROOM_NIGHT_DATE_FIELD,
 )

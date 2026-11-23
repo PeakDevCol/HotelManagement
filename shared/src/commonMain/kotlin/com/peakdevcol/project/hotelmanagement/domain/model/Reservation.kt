@@ -117,6 +117,15 @@ sealed class ReservationError(message: String) : Exception(message) {
 
     /** RF-RES-03: someone else reserved one of these nights in the meantime. */
     data class NightsTaken(val nights: List<CalendarDate>) : ReservationError("Some nights are no longer free")
+
+    /** Someone else changed, cancelled or checked in the reservation in the meantime. */
+    data object Changed : ReservationError("The reservation changed in the meantime")
+
+    /** RF-RES-06: a cancellation keeps its reason. */
+    data object BlankReason : ReservationError("The reason is required")
+
+    /** RF-RES-07: a guest is marked as not arrived only once the operational day of the arrival is over. */
+    data object NotOverdue : ReservationError("The day of the arrival is not over yet")
     data object NoSession : ReservationError("There is no session")
     data object NotAllowed : ReservationError("Only reception and the administrators make reservations")
 
@@ -133,6 +142,16 @@ fun Reservation.matches(query: String): Boolean {
     val nameWords = guestName.searchable().split(' ')
     return typed.searchable().split(Regex("\\s+")).all { word -> nameWords.any { it.startsWith(word) } }
 }
+
+/** RF-RES-07: confirmed, and the operational day of its arrival is over without a check-in. */
+fun Reservation.isOverdue(today: CalendarDate): Boolean = state == ReservationState.CONFIRMED && stay.checkIn < today
+
+/**
+ * Decision 3A of M11: the rate of each night in a room of [type]. A reservation being changed
+ * keeps its rate while its room is of the same type as before; otherwise, the base rate of the type.
+ */
+fun nightlyRateIn(type: RoomType, changing: Reservation?, typeBefore: String?): Long =
+    if (changing != null && type.id == typeBefore) changing.nightlyRates.first() else type.baseRate
 
 /** RF-RES-02 and decision 4A: a stay that starts today or later and lasts from 1 to 30 nights. */
 fun Stay.check(today: CalendarDate): ReservationError? = when {

@@ -26,6 +26,8 @@ import com.peakdevcol.project.hotelmanagement.resources.guest_error_unknown
 import com.peakdevcol.project.hotelmanagement.resources.new_reservation_guest_without_document
 import com.peakdevcol.project.hotelmanagement.resources.reservation_adults
 import com.peakdevcol.project.hotelmanagement.resources.reservation_children
+import com.peakdevcol.project.hotelmanagement.resources.reservation_error_blank_reason
+import com.peakdevcol.project.hotelmanagement.resources.reservation_error_changed
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_dates
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_missing_guest
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_missing_room
@@ -34,6 +36,7 @@ import com.peakdevcol.project.hotelmanagement.resources.reservation_error_no_adu
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_no_connection
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_no_session
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_not_allowed
+import com.peakdevcol.project.hotelmanagement.resources.reservation_error_not_overdue
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_over_capacity
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_past
 import com.peakdevcol.project.hotelmanagement.resources.reservation_error_rate
@@ -74,6 +77,9 @@ fun ReservationError.text(): String = when (this) {
     ReservationError.InvalidRate -> stringResource(Res.string.reservation_error_rate)
     ReservationError.RateNotAllowed -> stringResource(Res.string.reservation_error_rate_not_allowed)
     is ReservationError.NightsTaken -> stringResource(Res.string.reservation_error_nights_taken, nights.joinToString(", ") { formatWeekday(it) })
+    ReservationError.Changed -> stringResource(Res.string.reservation_error_changed)
+    ReservationError.BlankReason -> stringResource(Res.string.reservation_error_blank_reason)
+    ReservationError.NotOverdue -> stringResource(Res.string.reservation_error_not_overdue)
     ReservationError.NoSession -> stringResource(Res.string.reservation_error_no_session)
     ReservationError.NotAllowed -> stringResource(Res.string.reservation_error_not_allowed)
     ReservationError.NoConnection -> stringResource(Res.string.reservation_error_no_connection)

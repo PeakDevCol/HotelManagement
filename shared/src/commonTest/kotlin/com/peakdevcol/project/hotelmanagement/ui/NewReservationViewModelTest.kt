@@ -13,6 +13,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.FindAvailableRoomsU
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetReservationContextUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveGuestUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SearchGuestsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.StayPlanner
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeGuestRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeReservationRepository
@@ -32,6 +33,10 @@ import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationEffe
 import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationIntent
 import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationViewModel
 import com.peakdevcol.project.hotelmanagement.ui.reservations.RoomSearch
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationState
+import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadReservationToChangeUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ModifyReservationUseCase
+import com.peakdevcol.project.hotelmanagement.fakes.reservation
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -58,14 +63,18 @@ class NewReservationViewModelTest : MainDispatcherTest() {
     private val nov22 = day("2026-11-22").epochDay
     private val nov24 = day("2026-11-24").epochDay
 
-    private fun viewModel(userId: String = "reception"): NewReservationViewModel {
+    private fun viewModel(userId: String = "reception", reservationId: String? = null): NewReservationViewModel {
         val auth = FakeAuthRepository(userId)
+        val planner = StayPlanner(rooms, types, taxes, reservations, settings, clock)
         return NewReservationViewModel(
+            reservationId = reservationId,
             getReservationContext = GetReservationContextUseCase(auth, users, settings, clock),
             findAvailableRooms = FindAvailableRoomsUseCase(rooms, types, taxes, reservations, settings, clock),
             searchGuests = SearchGuestsUseCase(guests),
             saveGuest = SaveGuestUseCase(auth, guests),
-            createReservation = CreateReservationUseCase(auth, users, rooms, types, taxes, reservations, reservations, settings, clock),
+            createReservation = CreateReservationUseCase(auth, users, planner, reservations),
+            loadReservationToChange = LoadReservationToChangeUseCase(reservations, guests),
+            modifyReservation = ModifyReservationUseCase(auth, users, planner, reservations),
             guestSearchDelay = Duration.ZERO,
         )
     }
@@ -216,6 +225,55 @@ class NewReservationViewModelTest : MainDispatcherTest() {
 
         assertNull(viewModel.state.value.guestForm)
         assertEquals("ana@correo.com", viewModel.state.value.guest?.email)
+    }
+
+    // ---- RF-RES-05: the same screen changes a reservation
+
+    private fun anaReserved() = reservation("ana-res", roomId = "r-204", checkIn = "2026-11-22", checkOut = "2026-11-24", roomNumber = 204, rate = 100_000)
+        .copy(guestId = "g-ana", guestName = ana.fullName)
+
+    @Test
+    fun aChangeStartsFromTheReservationWithItsGuestFixedAndItsRoomFree() {
+        reservations.reservations.value += anaReserved()
+        reservations.nights.value += anaReserved().roomNights
+
+        val viewModel = viewModel(reservationId = "ana-res")
+
+        val state = viewModel.state.value
+        assertTrue(state.isChange)
+        assertEquals(Stay(day("2026-11-22"), day("2026-11-24")), state.stay)
+        assertEquals("r-204", state.roomId, "its own nights count as free")
+        assertEquals(100_000, state.nightlyRate, "the same type keeps the rate of the reservation")
+        assertEquals("Ana María Rojas", state.guest?.fullName)
+
+        viewModel.onIntent(NewReservationIntent.ChangeGuest)
+        assertEquals("Ana María Rojas", viewModel.state.value.guest?.fullName, "the guest does not change")
+    }
+
+    @Test
+    fun savingTheChangeMovesTheNightsAndSaysSo() = runTest {
+        reservations.reservations.value += anaReserved()
+        reservations.nights.value += anaReserved().roomNights
+        val viewModel = viewModel(reservationId = "ana-res")
+
+        viewModel.onIntent(NewReservationIntent.DatesChosen(day("2026-11-23").epochDay, day("2026-11-26").epochDay))
+        viewModel.onIntent(NewReservationIntent.SelectRoom("r-204"))
+        viewModel.onIntent(NewReservationIntent.Reserve)
+
+        assertEquals(NewReservationEffect.Changed("Ana María Rojas", 204), viewModel.effects.first())
+        val changed = reservations.reservations.value.single { it.id == "ana-res" }
+        assertEquals(listOf(100_000L, 100_000L, 100_000L), changed.nightlyRates)
+        assertEquals(listOf("2026-11-23", "2026-11-24", "2026-11-25"), reservations.nights.value.filter { it.reservationId == "ana-res" }.map { it.date.isoText })
+    }
+
+    @Test
+    fun aReservationThatIsNoLongerConfirmedIsNotOpenedForAChange() {
+        reservations.reservations.value += anaReserved().copy(state = ReservationState.CANCELLED)
+
+        val state = viewModel(reservationId = "ana-res").state.value
+
+        assertEquals(ReservationError.Changed, state.loadError)
+        assertFalse(state.isChange)
     }
 
     @Test

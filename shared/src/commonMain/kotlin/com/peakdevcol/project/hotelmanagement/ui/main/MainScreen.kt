@@ -215,9 +215,14 @@ private fun MainNavHost(
         }
         composable<RoomTypesRoute> { RoomTypesScreen(onBack = back) }
         composable<ReservationsRoute> {
-            ReservationsScreen(onNewReservation = { navController.navigate(NewReservationRoute) }, onBack = backToMore(AppSection.RESERVATIONS))
+            ReservationsScreen(
+                onNewReservation = { navController.navigate(NewReservationRoute) },
+                onChangeReservation = { reservationId -> navController.navigate(ChangeReservationRoute(reservationId)) },
+                onBack = backToMore(AppSection.RESERVATIONS),
+            )
         }
         composable<NewReservationRoute> { NewReservationScreen(onBack = back) }
+        composable<ChangeReservationRoute> { entry -> NewReservationScreen(onBack = back, reservationId = entry.toRoute<ChangeReservationRoute>().reservationId) }
         composable<AttendanceRoute> { AttendanceScreen(onBack = backToMore(AppSection.ATTENDANCE)) }
         composable<SchedulesRoute> { SchedulesScreen(onBack = backToMore(AppSection.SCHEDULES)) }
         composable<AttendanceReviewRoute> {
