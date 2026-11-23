@@ -920,6 +920,9 @@ Las decisiones anteriores al 2026-11-17 llaman v1.0 a v1.3 a lo que hoy son las 
 | 2026-11-22 | Cada cambio de una reserva queda en su historial (`Reservations/{id}/events`), como el de los pedidos: modificó (qué cambió, antes y después), canceló (con su motivo) y no llegó. La creación la dicen `createdBy` y `createdAt`. El historial se lee al abrir el detalle. | Decisión 1A del segundo PR de M11 (RNF-11) |
 | 2026-11-22 | De una reserva confirmada se modifican las fechas, las personas, la habitación, las notas y el origen. El huésped no cambia: si es otra persona, es otra reserva. | Decisión 2A del segundo PR de M11 (RF-RES-05) |
 | 2026-11-22 | "Reservas" abre en "Hoy": llegadas de hoy con el estado de su habitación, salidas de hoy y reservas sin llegar, que se marcan como "No llegó". Modificar, cancelar (con motivo) y "No llegó" los hacen recepción y administradores, y liberan o mueven las noches en la misma transacción. | Plan del segundo PR de M11 (RF-RES-05 a 07 y RF-RES-09) |
+| 2026-11-22 | El calendario de ocupación (RF-RES-04) es la pestaña "Calendario" de "Reservas": habitaciones por día, cada reserva como una barra, en vistas de dos semanas o del mes, con flechas y "Hoy". Lee solo las reservas que llegan desde 30 días antes del periodo hasta su final, que por la decisión 4A son todas las que lo tocan. | Plan del tercer PR de M11 |
+| 2026-11-22 | Tocar una noche libre del calendario abre "Nueva reserva" con esa habitación y esa noche elegidas; tocar una barra abre el detalle de la reserva | Decisión 1A del tercer PR de M11 |
+| 2026-11-22 | El calendario abre en dos semanas desde hoy | Decisión 2A del tercer PR de M11 |
 
 ## 14. Riesgos
 
