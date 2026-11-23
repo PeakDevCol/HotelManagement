@@ -21,6 +21,8 @@ internal const val RESERVATION_STATE_FIELD = "state"
 internal const val RESERVATION_CHECK_IN_FIELD = "checkInDate"
 internal const val RESERVATION_CHECK_OUT_FIELD = "checkOutDate"
 internal const val ROOM_NIGHT_DATE_FIELD = "date"
+internal const val ROOM_NIGHT_ARRIVAL_FIELD = "arrival"
+internal const val RESERVATION_EVENTS = "events"
 
 /** How long a reservation waits for the server: it needs connection (RNF-04), so it never stays waiting. */
 internal val RESERVATION_SERVER_WAIT: Duration = 15.seconds

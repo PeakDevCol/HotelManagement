@@ -31,6 +31,12 @@ internal class FirestoreGuestRepository(
             ?: Result.failure(GuestError.NoConnection)
     }
 
+    override suspend fun guest(guestId: String): Result<Guest?> = guarded {
+        withTimeoutOrNull(serverWait) { guests.document(guestId).get(Source.SERVER) }
+            ?.let { snapshot -> Result.success(if (snapshot.exists) snapshot.data<GuestDto>(ServerTimestampBehavior.ESTIMATE).toGuest(snapshot.id) else null) }
+            ?: Result.failure(GuestError.NoConnection)
+    }
+
     override suspend fun create(guest: Guest, createdBy: String): Result<Unit> = guarded {
         withTimeoutOrNull(serverWait) { guests.document(guest.id).set(guest.toNewDto(createdBy)) }
         Result.success(Unit)

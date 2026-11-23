@@ -13,6 +13,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.FindAvailableRoomsU
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetReservationContextUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveGuestUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SearchGuestsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.StayPlanner
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeGuestRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeReservationRepository
@@ -65,7 +66,7 @@ class NewReservationViewModelTest : MainDispatcherTest() {
             findAvailableRooms = FindAvailableRoomsUseCase(rooms, types, taxes, reservations, settings, clock),
             searchGuests = SearchGuestsUseCase(guests),
             saveGuest = SaveGuestUseCase(auth, guests),
-            createReservation = CreateReservationUseCase(auth, users, rooms, types, taxes, reservations, reservations, settings, clock),
+            createReservation = CreateReservationUseCase(auth, users, StayPlanner(rooms, types, taxes, reservations, settings, clock), reservations),
             guestSearchDelay = Duration.ZERO,
         )
     }

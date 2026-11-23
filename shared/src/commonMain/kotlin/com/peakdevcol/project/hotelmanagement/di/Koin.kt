@@ -15,6 +15,8 @@ import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreOrderReposi
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestorePaymentRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreHousekeepingRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreProductRepository
+import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreReservationChangeRepository
+import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreReservationHistoryRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreReservationRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreRoomNightRepository
 import com.peakdevcol.project.hotelmanagement.data.firebase.FirestoreRoomRepository
@@ -45,6 +47,8 @@ import com.peakdevcol.project.hotelmanagement.domain.repository.PaymentRepositor
 import com.peakdevcol.project.hotelmanagement.domain.repository.PendingAdditionRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ProductRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ReceptionMarkingRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.ReservationChangeRepository
+import com.peakdevcol.project.hotelmanagement.domain.repository.ReservationHistoryRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.ReservationRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.RoomNightRepository
 import com.peakdevcol.project.hotelmanagement.domain.repository.RoomRepository
@@ -62,7 +66,14 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.ChargeOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CloseOrderUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CopyPreviousWeekUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CorrectMarkUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.CancelReservationUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CreateReservationUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadReservationHistoryUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadReservationToChangeUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.MarkNoShowUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ModifyReservationUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveTodayReservationsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.StayPlanner
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CreateEmployeeUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DeleteCategoryUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.DeleteShiftUseCase
@@ -197,6 +208,8 @@ private val dataModule = module {
     single<GuestRepository> { FirestoreGuestRepository(firestore = lazy { Firebase.firestore }) }
     single<ReservationRepository> { FirestoreReservationRepository(firestore = lazy { Firebase.firestore }) }
     single<RoomNightRepository> { FirestoreRoomNightRepository(firestore = lazy { Firebase.firestore }) }
+    single<ReservationChangeRepository> { FirestoreReservationChangeRepository(firestore = lazy { Firebase.firestore }) }
+    single<ReservationHistoryRepository> { FirestoreReservationHistoryRepository(firestore = lazy { Firebase.firestore }) }
     single<ReceptionMarkingRepository> {
         val config = get<AppConfig>()
         FirebaseReceptionMarkingRepository(
@@ -297,17 +310,15 @@ private val domainModule = module {
     factoryOf(::SearchGuestsUseCase)
     factoryOf(::SaveGuestUseCase)
     factory {
-        CreateReservationUseCase(
-            authRepository = get(),
-            userRepository = get(),
-            roomRepository = get(),
-            roomTypeRepository = get(),
-            taxRepository = get(),
-            roomNightRepository = get(),
-            reservationRepository = get(),
-            settingsRepository = get(),
-        )
+        StayPlanner(roomRepository = get(), roomTypeRepository = get(), taxRepository = get(), roomNightRepository = get(), settingsRepository = get())
     }
+    factoryOf(::CreateReservationUseCase)
+    factoryOf(::ModifyReservationUseCase)
+    factoryOf(::CancelReservationUseCase)
+    factory { MarkNoShowUseCase(authRepository = get(), userRepository = get(), changeRepository = get(), settingsRepository = get()) }
+    factory { ObserveTodayReservationsUseCase(reservationRepository = get(), roomRepository = get(), settingsRepository = get()) }
+    factoryOf(::LoadReservationToChangeUseCase)
+    factoryOf(::LoadReservationHistoryUseCase)
     factory { ObserveUpcomingReservationsUseCase(reservationRepository = get(), settingsRepository = get()) }
 }
 

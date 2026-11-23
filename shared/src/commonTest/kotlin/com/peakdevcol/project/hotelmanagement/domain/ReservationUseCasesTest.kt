@@ -17,6 +17,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveUpcomingRese
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReservationRequest
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveGuestUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SearchGuestsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.StayPlanner
 import com.peakdevcol.project.hotelmanagement.fakes.FakeAuthRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeGuestRepository
 import com.peakdevcol.project.hotelmanagement.fakes.FakeReservationRepository
@@ -66,7 +67,7 @@ class ReservationUseCasesTest {
     private fun findRooms() = FindAvailableRoomsUseCase(rooms, types, taxes, reservations, settings, clock)
 
     private fun createReservation(userId: String = "reception") =
-        CreateReservationUseCase(FakeAuthRepository(userId), users, rooms, types, taxes, reservations, reservations, settings, clock)
+        CreateReservationUseCase(FakeAuthRepository(userId), users, StayPlanner(rooms, types, taxes, reservations, settings, clock), reservations)
 
     private fun request(
         checkIn: String = "2026-11-22",
@@ -156,7 +157,7 @@ class ReservationUseCasesTest {
     @Test
     fun aBasicEmployeeDoesNotReserve() = runTest {
         assertEquals(ReservationError.NotAllowed, createReservation("ana")(request()).exceptionOrNull())
-        assertEquals(ReservationError.NoSession, CreateReservationUseCase(FakeAuthRepository(null), users, rooms, types, taxes, reservations, reservations, settings, clock)(request()).exceptionOrNull())
+        assertEquals(ReservationError.NoSession, CreateReservationUseCase(FakeAuthRepository(null), users, StayPlanner(rooms, types, taxes, reservations, settings, clock), reservations)(request()).exceptionOrNull())
     }
 
     @Test

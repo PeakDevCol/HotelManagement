@@ -92,6 +92,10 @@ internal data class ReservationDto(
     val notes: String = "",
     val createdBy: String? = null,
     val createdAt: BaseTimestamp? = null,
+    val updatedBy: String? = null,
+    val updatedAt: BaseTimestamp? = null,
+    /** The last event of its history: the rules check that each change writes one (decision 1A). */
+    val lastEventId: String? = null,
 )
 
 /** A new reservation, with the time of the server. */

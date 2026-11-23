@@ -881,4 +881,7 @@
     <string name="reservation_error_not_allowed">Solo recepción y los administradores hacen reservas.</string>
     <string name="reservation_error_no_connection">Sin conexión. Las reservas necesitan conexión para que no se crucen.</string>
     <string name="reservation_error_unknown">Algo salió mal. Inténtalo de nuevo.</string>
+    <string name="reservation_error_changed">Alguien cambió esta reserva mientras tanto. Ábrela de nuevo para ver cómo quedó.</string>
+    <string name="reservation_error_blank_reason">Escribe por qué se cancela.</string>
+    <string name="reservation_error_not_overdue">Solo se marca "No llegó" cuando termina el día de la llegada.</string>
 </resources>
