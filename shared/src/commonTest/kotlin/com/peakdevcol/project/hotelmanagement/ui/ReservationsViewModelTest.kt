@@ -26,6 +26,13 @@ import com.peakdevcol.project.hotelmanagement.ui.reservations.HistoryLoad
 import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsTab
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import com.peakdevcol.project.hotelmanagement.domain.model.OccupancyPeriod
+import com.peakdevcol.project.hotelmanagement.domain.model.OccupancySpan
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationStart
+import com.peakdevcol.project.hotelmanagement.domain.usecase.GetReservationContextUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOccupancyUseCase
+import com.peakdevcol.project.hotelmanagement.fakes.FakeRoomTypeRepository
+import com.peakdevcol.project.hotelmanagement.fakes.roomType
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -43,6 +50,7 @@ class ReservationsViewModelTest : MainDispatcherTest() {
 
     private val clock = clockAt("2026-11-22T15:00:00Z")
     private val settings = FakeSettingsRepository()
+    private val types = FakeRoomTypeRepository(roomType("double", "Doble"))
     private val rooms = FakeRoomRepository(room("r-204", 204), room("r-305", 305).copy(housekeeping = Housekeeping.DIRTY), room("r-101", 101))
     private val users = FakeUserRepository(employee("reception", "Carlos Gómez", UserType.RECEPTION))
     private val auth = FakeAuthRepository("reception")
@@ -53,6 +61,8 @@ class ReservationsViewModelTest : MainDispatcherTest() {
         loadReservationHistory = LoadReservationHistoryUseCase(reservations, users),
         cancelReservation = CancelReservationUseCase(auth, users, reservations),
         markNoShow = MarkNoShowUseCase(auth, users, reservations, settings, clock),
+        observeOccupancy = ObserveOccupancyUseCase(reservations, rooms, types),
+        getReservationContext = GetReservationContextUseCase(auth, users, settings, clock),
     )
 
     @Test
@@ -99,7 +109,7 @@ class ReservationsViewModelTest : MainDispatcherTest() {
 
         viewModel.onIntent(ReservationsIntent.NewReservation)
 
-        assertEquals(ReservationsEffect.NavigateToNewReservation, viewModel.effects.first())
+        assertEquals(ReservationsEffect.NavigateToNewReservation(), viewModel.effects.first())
     }
 
     @Test
@@ -169,6 +179,60 @@ class ReservationsViewModelTest : MainDispatcherTest() {
 
         assertEquals(ReservationsEffect.NavigateToChange("luis"), viewModel.effects.first())
         assertNull(viewModel.state.value.openReservationId)
+    }
+
+    // ---- RF-RES-04, with decisions 1A and 2A of the third PR of M11
+
+    @Test
+    fun theCalendarIsReadOnlyWhenItsTabOpensFromTwoWeeksFromToday() {
+        val viewModel = viewModel()
+        assertNull(viewModel.state.value.occupancy)
+
+        viewModel.onIntent(ReservationsIntent.SelectTab(ReservationsTab.CALENDAR))
+
+        val state = viewModel.state.value
+        assertEquals(OccupancyPeriod(OccupancySpan.TWO_WEEKS, day("2026-11-22")), state.calendarPeriod)
+        assertEquals(listOf(101, 204, 305), state.occupancy?.rooms?.map { it.room.number })
+        assertEquals(listOf("ana"), state.occupancy?.rooms?.first { it.room.number == 204 }?.reservations?.map { it.id })
+    }
+
+    @Test
+    fun theArrowsTheSpanAndTodayMoveThePeriod() {
+        val viewModel = viewModel()
+        viewModel.onIntent(ReservationsIntent.SelectTab(ReservationsTab.CALENDAR))
+
+        viewModel.onIntent(ReservationsIntent.NextPeriod)
+        assertEquals(day("2026-12-06"), viewModel.state.value.calendarPeriod?.firstDay)
+
+        viewModel.onIntent(ReservationsIntent.SelectSpan(OccupancySpan.MONTH))
+        assertEquals(OccupancyPeriod(OccupancySpan.MONTH, day("2026-12-01")), viewModel.state.value.calendarPeriod)
+
+        viewModel.onIntent(ReservationsIntent.PreviousPeriod)
+        assertEquals(day("2026-11-01"), viewModel.state.value.calendarPeriod?.firstDay)
+
+        viewModel.onIntent(ReservationsIntent.CalendarToday)
+        assertEquals(OccupancyPeriod(OccupancySpan.MONTH, day("2026-11-01")), viewModel.state.value.calendarPeriod)
+    }
+
+    @Test
+    fun aBarOfTheCalendarOpensItsReservation() {
+        val viewModel = viewModel()
+        viewModel.onIntent(ReservationsIntent.SelectTab(ReservationsTab.CALENDAR))
+
+        viewModel.onIntent(ReservationsIntent.OpenReservation("luis"))
+
+        assertEquals("Luis Pérez", viewModel.state.value.openReservation?.guestName)
+    }
+
+    @Test
+    fun aFreeNightStartsAReservationThereButNotANightThatIsOver() = runTest {
+        val viewModel = viewModel()
+        viewModel.onIntent(ReservationsIntent.SelectTab(ReservationsTab.CALENDAR))
+
+        viewModel.onIntent(ReservationsIntent.ReserveNight("r-101", day("2026-11-21")))
+        viewModel.onIntent(ReservationsIntent.ReserveNight("r-101", day("2026-11-23")))
+
+        assertEquals(ReservationsEffect.NavigateToNewReservation(ReservationStart("r-101", day("2026-11-23"))), viewModel.effects.first())
     }
 
     @Test

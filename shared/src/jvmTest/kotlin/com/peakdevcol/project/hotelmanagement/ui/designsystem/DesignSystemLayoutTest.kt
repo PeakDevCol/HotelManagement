@@ -57,6 +57,11 @@ import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.OrderSu
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.PendingToSendBadge
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ProductTile
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ProductTileMinWidth
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.OccupancyBar
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.OccupancyDay
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.OccupancyGrid
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.OccupancyRow
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.OccupancyTone
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.QuantityStepper
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.CountStepper
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.RoomStatusBadge
@@ -172,6 +177,40 @@ class DesignSystemLayoutTest {
             )
             OrderSummaryBar(detail = "Habitación 1204 · 14 productos sin enviar todavía", totalAmount = 1_284_000, actionText = "Confirmar", onAction = {})
         }
+    }
+
+    // RF-RES-04: two weeks with today, past nights, bars of one night and of more than the period,
+    // long names, a four-digit room and a long type.
+    @Test
+    fun occupancyGrid() = checkEveryFrame("calendario de ocupación") {
+        val weekdays = listOf("lun", "mar", "mié", "jue", "vie", "sáb", "dom")
+        OccupancyGrid(
+            days = (0 until 14).map { OccupancyDay(weekday = weekdays[it % 7], day = (21 + it).toString(), isToday = it == 2, isPast = it < 2) },
+            rows = listOf(
+                OccupancyRow(
+                    "r-9999",
+                    "9999",
+                    "Suite presidencial con jacuzzi y vista al mar",
+                    listOf(
+                        OccupancyBar("a", "Ana María Rojas Restrepo de la Cruz", "Ana, 20 nov – 10 dic", 0, 13, OccupancyTone.InHouse, continuesBefore = true, continuesAfter = true),
+                    ),
+                ),
+                OccupancyRow(
+                    "r-204",
+                    "204",
+                    "Doble",
+                    listOf(
+                        OccupancyBar("b", "Luis", "Luis, 23 – 24 nov", 2, 2, OccupancyTone.Confirmed),
+                        OccupancyBar("c", "Marta Gómez", "Marta, 25 – 28 nov", 4, 6, OccupancyTone.Confirmed),
+                    ),
+                ),
+                OccupancyRow("r-101", "101", null, emptyList()),
+            ),
+            onBarClick = {},
+            onFreeNightClick = { _, _ -> },
+            freeNightDescription = { row, column -> "Reservar la habitación ${row.title} la noche $column" },
+            modifier = Modifier.height(320.dp),
+        )
     }
 
     // RF-HAB-04: every state, a number of four digits, a long type and an inactive room.

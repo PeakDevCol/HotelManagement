@@ -109,6 +109,10 @@ class FakeReservationRepository(vararg reservations: Reservation) :
         readFailure?.let { error -> flow { throw error } }
             ?: reservations.map { all -> all.filter { it.state == ReservationState.CONFIRMED && it.stay.checkIn <= date } }
 
+    override fun observeArrivingBetween(from: CalendarDate, until: CalendarDate): Flow<List<Reservation>> =
+        readFailure?.let { error -> flow { throw error } }
+            ?: reservations.map { all -> all.filter { it.stay.checkIn >= from && it.stay.checkIn < until } }
+
     override fun observeCheckedIn(): Flow<List<Reservation>> = reservations.map { all -> all.filter { it.state == ReservationState.CHECKED_IN } }
 
     override suspend fun reservation(reservationId: String): Result<Reservation?> {

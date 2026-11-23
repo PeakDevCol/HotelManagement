@@ -60,6 +60,14 @@ internal class FirestoreReservationRepository(
             .snapshots
             .map { it.toReservations() }
 
+    // RF-RES-04: a range on a single field, no composite index. Cancelled ones come too and are
+    // left out on the device: a state filter would need an index for a handful of documents.
+    override fun observeArrivingBetween(from: CalendarDate, until: CalendarDate): Flow<List<Reservation>> =
+        reservations
+            .where { all(RESERVATION_CHECK_IN_FIELD greaterThanOrEqualTo from.isoText, RESERVATION_CHECK_IN_FIELD lessThan until.isoText) }
+            .snapshots
+            .map { it.toReservations() }
+
     // At most one per room: a single field, no composite index.
     override fun observeCheckedIn(): Flow<List<Reservation>> =
         reservations.where { RESERVATION_STATE_FIELD equalTo ReservationState.CHECKED_IN.code() }.snapshots.map { it.toReservations() }
