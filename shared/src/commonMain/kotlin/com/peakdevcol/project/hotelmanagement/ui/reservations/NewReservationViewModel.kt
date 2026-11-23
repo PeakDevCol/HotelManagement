@@ -11,6 +11,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.GuestError
 import com.peakdevcol.project.hotelmanagement.domain.model.GuestFields
 import com.peakdevcol.project.hotelmanagement.domain.model.MAX_RESERVATION_NOTES_LENGTH
 import com.peakdevcol.project.hotelmanagement.domain.model.MAX_ROOM_CAPACITY
+import com.peakdevcol.project.hotelmanagement.domain.model.Reservation
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationError
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationSource
 import com.peakdevcol.project.hotelmanagement.domain.model.Stay
@@ -18,9 +19,13 @@ import com.peakdevcol.project.hotelmanagement.domain.model.StayPrice
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CreateReservationUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.FindAvailableRoomsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.GetReservationContextUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadReservationToChangeUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ModifyReservationUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ReservationChangeRequest
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ReservationRequest
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SaveGuestUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.SearchGuestsUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.StayRequest
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -71,6 +76,10 @@ data class GuestForm(
 
 data class NewReservationState(
     val isStarting: Boolean = true,
+    /** RF-RES-05: the reservation being changed, as the server had it; null for a new one. */
+    val changing: Reservation? = null,
+    /** Why the reservation to change could not be opened. */
+    val loadError: ReservationError? = null,
     /** The first day a reservation can take: the operational day (P17). */
     val today: CalendarDate? = null,
     /** RF-RES-02: only an administrator changes the base rate. */
@@ -109,6 +118,8 @@ data class NewReservationState(
         }
 
     val canReserve: Boolean get() = price != null && guest != null && !isReserving
+
+    val isChange: Boolean get() = changing != null
 }
 
 sealed interface NewReservationIntent {
@@ -140,19 +151,24 @@ sealed interface NewReservationIntent {
 
 sealed interface NewReservationEffect {
     data class Reserved(val guestName: String, val roomNumber: Int) : NewReservationEffect
+    data class Changed(val guestName: String, val roomNumber: Int) : NewReservationEffect
     data class GuestFailed(val error: GuestError) : NewReservationEffect
 }
 
 /**
  * RF-RES-01 to RF-RES-03: a reservation in one screen. The days and the people find the free
- * rooms; the guest is searched, or created with the name and the phone (decision 5A).
+ * rooms; the guest is searched, or created with the name and the phone (decision 5A). With a
+ * [reservationId], the same screen changes that reservation (RF-RES-05), whose guest stays (decision 2A).
  */
 class NewReservationViewModel(
+    private val reservationId: String?,
     private val getReservationContext: GetReservationContextUseCase,
     private val findAvailableRooms: FindAvailableRoomsUseCase,
     private val searchGuests: SearchGuestsUseCase,
     private val saveGuest: SaveGuestUseCase,
     private val createReservation: CreateReservationUseCase,
+    private val loadReservationToChange: LoadReservationToChangeUseCase,
+    private val modifyReservation: ModifyReservationUseCase,
     /** RNF-12: each search reads up to 20 guests, so it waits for a pause in the typing. */
     private val guestSearchDelay: Duration = GUEST_SEARCH_DELAY,
 ) : ViewModel() {
@@ -169,8 +185,36 @@ class NewReservationViewModel(
     init {
         viewModelScope.launch {
             val context = getReservationContext()
-            _state.update { it.copy(isStarting = false, today = context.today, canChangeRate = context.canChangeRate) }
+            _state.update { it.copy(today = context.today, canChangeRate = context.canChangeRate) }
+            if (reservationId == null) {
+                _state.update { it.copy(isStarting = false) }
+            } else {
+                startChange(reservationId)
+            }
         }
+    }
+
+    private suspend fun startChange(reservationId: String) {
+        loadReservationToChange(reservationId).fold(
+            onSuccess = { (reservation, guest) ->
+                _state.update {
+                    it.copy(
+                        isStarting = false,
+                        changing = reservation,
+                        stay = reservation.stay,
+                        adults = reservation.adults,
+                        children = reservation.children,
+                        roomId = reservation.roomId,
+                        guest = guest,
+                        source = reservation.source,
+                        notes = reservation.notes,
+                        rateText = reservation.nightlyRates.first().toString(),
+                    )
+                }
+                searchRooms()
+            },
+            onFailure = { error -> _state.update { it.copy(isStarting = false, loadError = error as? ReservationError ?: ReservationError.Unknown) } },
+        )
     }
 
     fun onIntent(intent: NewReservationIntent) {
@@ -184,7 +228,7 @@ class NewReservationViewModel(
             is NewReservationIntent.SelectRoom -> selectRoom(intent.roomId)
             is NewReservationIntent.GuestQueryChange -> typeGuestQuery(intent.text)
             is NewReservationIntent.SelectGuest -> selectGuest(intent.guestId)
-            NewReservationIntent.ChangeGuest -> _state.update { it.copy(guest = null, error = null) }
+            NewReservationIntent.ChangeGuest -> _state.update { if (it.isChange) it else it.copy(guest = null, error = null) }
             NewReservationIntent.NewGuest -> _state.update { it.copy(guestForm = newGuestForm(it.guestQuery)) }
             NewReservationIntent.EditGuest -> _state.update { state -> state.copy(guestForm = state.guest?.let(::formOf)) }
             is NewReservationIntent.GuestNameChange -> editGuestForm { it.copy(fullName = intent.text) }
@@ -220,7 +264,7 @@ class NewReservationViewModel(
         roomJob?.cancel()
         _state.update { it.copy(roomSearch = RoomSearch.Searching) }
         roomJob = viewModelScope.launch {
-            val search = findAvailableRooms(stay, state.adults, state.children).fold(
+            val search = findAvailableRooms(stay, state.adults, state.children, changing = state.changing).fold(
                 onSuccess = { RoomSearch.Found(it) },
                 onFailure = { RoomSearch.Failed(it as? ReservationError ?: ReservationError.Unknown) },
             )
@@ -309,20 +353,22 @@ class NewReservationViewModel(
         if (!state.canReserve) return
         _state.update { it.copy(isReserving = true, error = null) }
         viewModelScope.launch {
-            val request = ReservationRequest(
-                guest = state.guest,
-                roomId = state.roomId,
-                stay = stay,
-                adults = state.adults,
-                children = state.children,
-                nightlyRate = state.nightlyRate,
-                source = state.source,
-                notes = state.notes,
-            )
-            createReservation(request).fold(
+            val stayRequest = StayRequest(state.roomId, stay, state.adults, state.children, state.nightlyRate)
+            val original = state.changing
+            val result = if (original == null) {
+                createReservation(ReservationRequest(state.guest, state.roomId, stay, state.adults, state.children, state.nightlyRate, state.source, state.notes))
+            } else {
+                modifyReservation(original, ReservationChangeRequest(stayRequest, state.source, state.notes))
+            }
+            result.fold(
                 onSuccess = { reservation ->
                     _state.update { it.copy(isReserving = false) }
-                    _effects.send(NewReservationEffect.Reserved(reservation.guestName, reservation.roomNumber))
+                    val done = if (original == null) {
+                        NewReservationEffect.Reserved(reservation.guestName, reservation.roomNumber)
+                    } else {
+                        NewReservationEffect.Changed(reservation.guestName, reservation.roomNumber)
+                    }
+                    _effects.send(done)
                 },
                 onFailure = { failure ->
                     val error = failure as? ReservationError ?: ReservationError.Unknown

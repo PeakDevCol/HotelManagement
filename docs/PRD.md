@@ -386,11 +386,11 @@ confirmed ──check-in──▶ checked_in ──check-out──▶ checked_ou
 | RF-RES-02 | Crear reserva | Huésped, habitación, llegada y salida (la salida es posterior a la llegada), adultos y niños (sin pasar la capacidad), tarifa por noche (la base del tipo, que un administrador puede cambiar), total con impuestos, origen (directo, teléfono, WhatsApp o agencia) y notas | ✅ En la sección "Reservas" (decisión 2A), de 1 a 30 noches desde el día operativo de hoy. Las próximas se ven por día de llegada. |
 | RF-RES-03 | Sin reservas cruzadas | Buscar habitaciones libres por fechas y número de personas. Una noche de una habitación solo puede estar en una reserva o en un bloqueo, aunque dos personas reserven al mismo tiempo (`RoomNights` en una transacción). Necesita conexión. | ✅ Si alguien tomó una noche mientras tanto, la app la nombra y vuelve a buscar. Los bloqueos llegan con M14. |
 | RF-RES-04 | Calendario de ocupación | Habitaciones por días, con cada reserva y cada bloqueo como una barra. Vista de dos semanas y de un mes. | ⬜ |
-| RF-RES-05 | Modificar | Cambiar fechas, ocupantes o habitación con la misma validación de RF-RES-03. El total se recalcula. | ⬜ |
-| RF-RES-06 | Cancelar | Con un motivo. Libera las noches. | ⬜ |
-| RF-RES-07 | No llegó | Si termina el día de llegada sin check-in, la reserva aparece en la lista de recepción para marcarla como `no_show`, lo que libera las noches | ⬜ |
+| RF-RES-05 | Modificar | Cambiar fechas, ocupantes o habitación con la misma validación de RF-RES-03. El total se recalcula. | ✅ Desde el detalle, en la misma pantalla de "Nueva reserva". También notas y origen; el huésped no (decisión 2A). La tarifa sigue la decisión 3A, y cada cambio queda en el historial (1A). |
+| RF-RES-06 | Cancelar | Con un motivo. Libera las noches. | ✅ Desde el detalle; el motivo queda en el historial. |
+| RF-RES-07 | No llegó | Si termina el día de llegada sin check-in, la reserva aparece en la lista de recepción para marcarla como `no_show`, lo que libera las noches | ✅ En "Hoy", bajo "Sin llegar", desde que termina el día operativo de la llegada. |
 | RF-RES-08 | ~~Anticipos~~ | Aplazado por P25: por ahora no se cobran anticipos al reservar | — |
-| RF-RES-09 | Llegadas y salidas del día | Lista de check-ins y check-outs esperados hoy, con el estado de cada habitación | ⬜ |
+| RF-RES-09 | Llegadas y salidas del día | Lista de check-ins y check-outs esperados hoy, con el estado de cada habitación | ✅ En "Hoy", la pestaña con la que abre "Reservas". Las salidas aparecen desde el check-in (M12). |
 
 ### 6.10 Estadías: check-in y check-out (`EST`, fase 3)
 | ID | Requisito | Criterios de aceptación | Estado |

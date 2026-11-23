@@ -3,6 +3,7 @@ package com.peakdevcol.project.hotelmanagement.domain.usecase
 import com.peakdevcol.project.hotelmanagement.domain.model.Guest
 import com.peakdevcol.project.hotelmanagement.domain.model.Reservation
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationError
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationHistory
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationHistoryEntry
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationState
 import com.peakdevcol.project.hotelmanagement.domain.repository.GuestRepository
@@ -29,14 +30,19 @@ class LoadReservationToChangeUseCase(
     }
 }
 
-/** Decision 1A: the history of a reservation, from the oldest change, with who made each one. */
+/** Decision 1A: the history of a reservation, from its creation, with who made each change. */
 class LoadReservationHistoryUseCase(
     private val historyRepository: ReservationHistoryRepository,
     private val userRepository: UserRepository,
 ) {
-    suspend operator fun invoke(reservationId: String): Result<List<ReservationHistoryEntry>> {
-        val events = historyRepository.events(reservationId).getOrElse { return Result.failure(it) }
+    suspend operator fun invoke(reservation: Reservation): Result<ReservationHistory> {
+        val events = historyRepository.events(reservation.id).getOrElse { return Result.failure(it) }
         val names = userRepository.observeEmployees().first().associate { it.id to it.fullName }
-        return Result.success(events.map { ReservationHistoryEntry(it, names[it.by]) })
+        return Result.success(
+            ReservationHistory(
+                createdByName = reservation.createdBy?.let(names::get),
+                entries = events.map { ReservationHistoryEntry(it, names[it.by]) },
+            ),
+        )
     }
 }

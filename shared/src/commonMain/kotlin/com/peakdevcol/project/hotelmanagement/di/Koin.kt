@@ -350,13 +350,16 @@ private val uiModule = module {
     viewModelOf(::RoomsViewModel)
     viewModelOf(::RoomTypesViewModel)
     viewModelOf(::ReservationsViewModel)
-    viewModel {
+    viewModel { parameters ->
         NewReservationViewModel(
+            reservationId = parameters.getOrNull(),
             getReservationContext = get(),
             findAvailableRooms = get(),
             searchGuests = get(),
             saveGuest = get(),
             createReservation = get(),
+            loadReservationToChange = get(),
+            modifyReservation = get(),
         )
     }
     viewModel {

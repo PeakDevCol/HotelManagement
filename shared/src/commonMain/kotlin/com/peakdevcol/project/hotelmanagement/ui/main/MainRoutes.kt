@@ -29,6 +29,10 @@ data object ReservationsRoute
 @Serializable
 data object NewReservationRoute
 
+/** RF-RES-05: the screen of a new reservation, changing this one. */
+@Serializable
+data class ChangeReservationRoute(val reservationId: String)
+
 @Serializable
 data object AttendanceRoute
 
@@ -99,7 +103,7 @@ fun NavDestination.section(): AppSection? = when {
     hasRoute(OrdersRoute::class) || hasRoute(OrderDetailRoute::class) ||
         hasRoute(NewOrderRoute::class) || hasRoute(AddProductsRoute::class) -> AppSection.ORDERS
     hasRoute(RoomsRoute::class) || hasRoute(RoomTypesRoute::class) -> AppSection.ROOMS
-    hasRoute(ReservationsRoute::class) || hasRoute(NewReservationRoute::class) -> AppSection.RESERVATIONS
+    hasRoute(ReservationsRoute::class) || hasRoute(NewReservationRoute::class) || hasRoute(ChangeReservationRoute::class) -> AppSection.RESERVATIONS
     hasRoute(AttendanceRoute::class) -> AppSection.ATTENDANCE
     hasRoute(BalanceRoute::class) || hasRoute(CashClosingRoute::class) -> AppSection.BALANCE
     hasRoute(SchedulesRoute::class) -> AppSection.SCHEDULES

@@ -52,8 +52,41 @@ data class ReservationEvent(
     val after: ReservationSnapshot? = null,
 )
 
+/** What a modification changed, so the history names only that (decision 1A). */
+enum class ReservationField {
+    DAYS,
+    ROOM,
+    PEOPLE,
+    RATE,
+    TOTAL,
+    SOURCE,
+    NOTES,
+}
+
+/** The parts of the reservation that differ between [before] and [after]. */
+val ReservationEvent.changedFields: List<ReservationField>
+    get() {
+        val old = before ?: return emptyList()
+        val new = after ?: return emptyList()
+        return listOfNotNull(
+            ReservationField.DAYS.takeIf { old.stay != new.stay },
+            ReservationField.ROOM.takeIf { old.roomNumber != new.roomNumber },
+            ReservationField.PEOPLE.takeIf { old.adults != new.adults || old.children != new.children },
+            ReservationField.RATE.takeIf { old.nightlyRate != new.nightlyRate },
+            ReservationField.TOTAL.takeIf { old.total != new.total },
+            ReservationField.SOURCE.takeIf { old.source != new.source },
+            ReservationField.NOTES.takeIf { old.notes != new.notes },
+        )
+    }
+
 /** An event of the history with the name of who made it, null when the employee is unknown. */
 data class ReservationHistoryEntry(val event: ReservationEvent, val byName: String?)
+
+/** Decision 1A: who created the reservation and when, and then each change, from the oldest. */
+data class ReservationHistory(
+    val createdByName: String?,
+    val entries: List<ReservationHistoryEntry>,
+)
 
 /** RF-RES-09: an arrival of today, with how its room is now. */
 data class TodayArrival(val reservation: Reservation, val roomStatus: RoomStatus?)

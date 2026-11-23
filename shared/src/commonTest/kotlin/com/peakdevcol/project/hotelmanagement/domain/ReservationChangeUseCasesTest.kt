@@ -2,6 +2,8 @@ package com.peakdevcol.project.hotelmanagement.domain
 
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationError
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationEventType
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationField
+import com.peakdevcol.project.hotelmanagement.domain.model.changedFields
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationSource
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationState
 import com.peakdevcol.project.hotelmanagement.domain.model.RoomNight
@@ -117,6 +119,7 @@ class ReservationChangeUseCasesTest {
 
         val event = reservations.events.getValue("ana").single()
         assertEquals(ReservationEventType.MODIFIED, event.type)
+        assertEquals(listOf(ReservationField.DAYS, ReservationField.PEOPLE, ReservationField.TOTAL), event.changedFields)
         assertEquals("reception", event.by)
         assertEquals(2, event.before?.adults)
         assertEquals(1, event.after?.adults)
@@ -226,9 +229,10 @@ class ReservationChangeUseCasesTest {
     fun theHistorySaysWhoMadeEachChange() = runTest {
         CancelReservationUseCase(FakeAuthRepository("reception"), users, reservations)(luis, "Cambió de planes").getOrThrow()
 
-        val history = LoadReservationHistoryUseCase(reservations, users)("luis").getOrThrow()
+        val history = LoadReservationHistoryUseCase(reservations, users)(luis.copy(createdBy = "admin")).getOrThrow()
 
-        assertEquals("Carlos Gómez", history.single().byName)
-        assertNull(LoadReservationHistoryUseCase(reservations, users)("ana").getOrThrow().firstOrNull())
+        assertEquals("Laura Méndez", history.createdByName)
+        assertEquals("Carlos Gómez", history.entries.single().byName)
+        assertNull(LoadReservationHistoryUseCase(reservations, users)(ana).getOrThrow().entries.firstOrNull())
     }
 }

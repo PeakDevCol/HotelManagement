@@ -30,6 +30,10 @@ import com.peakdevcol.project.hotelmanagement.domain.model.ReservationSource
 import com.peakdevcol.project.hotelmanagement.domain.model.formatDayRange
 import com.peakdevcol.project.hotelmanagement.domain.model.formatPesos
 import com.peakdevcol.project.hotelmanagement.resources.Res
+import com.peakdevcol.project.hotelmanagement.resources.change_reservation_done
+import com.peakdevcol.project.hotelmanagement.resources.change_reservation_error_title
+import com.peakdevcol.project.hotelmanagement.resources.change_reservation_save
+import com.peakdevcol.project.hotelmanagement.resources.change_reservation_title
 import com.peakdevcol.project.hotelmanagement.resources.new_reservation_adults
 import com.peakdevcol.project.hotelmanagement.resources.new_reservation_children
 import com.peakdevcol.project.hotelmanagement.resources.new_reservation_dates
@@ -66,6 +70,7 @@ import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.BannerT
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ButtonSize
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ButtonStyle
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.CountStepper
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.EmptyState
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.FieldLabel
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListDivider
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ListGroup
@@ -92,10 +97,18 @@ import com.peakdevcol.project.hotelmanagement.ui.rooms.capacityLabel
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
-/** RF-RES-01 to RF-RES-03: a new reservation, from the days and the people to the guest. */
+/**
+ * RF-RES-01 to RF-RES-03: a new reservation, from the days and the people to the guest. With a
+ * [reservationId], the same screen changes that reservation (RF-RES-05).
+ */
 @Composable
-fun NewReservationScreen(onBack: () -> Unit, viewModel: NewReservationViewModel = koinViewModel()) {
+fun NewReservationScreen(
+    onBack: () -> Unit,
+    reservationId: String? = null,
+    viewModel: NewReservationViewModel = koinViewModel(key = reservationId ?: NEW_RESERVATION_KEY) { parametersOf(reservationId) },
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val messages = LocalAppMessages.current
 
@@ -104,6 +117,10 @@ fun NewReservationScreen(onBack: () -> Unit, viewModel: NewReservationViewModel 
             when (effect) {
                 is NewReservationEffect.Reserved -> {
                     messages.show(getString(Res.string.new_reservation_done, effect.guestName, effect.roomNumber))
+                    onBack()
+                }
+                is NewReservationEffect.Changed -> {
+                    messages.show(getString(Res.string.change_reservation_done, effect.guestName, effect.roomNumber))
                     onBack()
                 }
                 is NewReservationEffect.GuestFailed -> messages.show(getString(effect.error.message()))
@@ -117,12 +134,22 @@ fun NewReservationScreen(onBack: () -> Unit, viewModel: NewReservationViewModel 
 @Composable
 fun NewReservationContent(state: NewReservationState, onIntent: (NewReservationIntent) -> Unit, onBack: () -> Unit) {
     Scaffold(
-        topBar = { MajesticTopBar(title = stringResource(Res.string.reservations_new), onBack = onBack) },
+        topBar = {
+            MajesticTopBar(title = stringResource(if (state.isChange) Res.string.change_reservation_title else Res.string.reservations_new), onBack = onBack)
+        },
         snackbarHost = { AppMessagesHost() },
         containerColor = MajesticTheme.colors.surface,
     ) { padding ->
+        val loadError = state.loadError
         if (state.isStarting) {
             MajesticLoading(Modifier.padding(padding))
+        } else if (loadError != null) {
+            EmptyState(
+                icon = MajesticIcons.error,
+                title = stringResource(Res.string.change_reservation_error_title),
+                message = loadError.text(),
+                modifier = Modifier.padding(padding),
+            )
         } else {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
                 NewReservationForm(state = state, onIntent = onIntent)
@@ -236,7 +263,7 @@ private fun RoomOption(room: AvailableRoom, selected: Boolean, onClick: () -> Un
 private fun GuestChoice(state: NewReservationState, onIntent: (NewReservationIntent) -> Unit) {
     val guest = state.guest
     if (guest != null) {
-        ChosenGuest(guest = guest, onIntent = onIntent)
+        ChosenGuest(guest = guest, canChange = !state.isChange, onIntent = onIntent)
         return
     }
     SearchField(
@@ -274,19 +301,24 @@ private fun GuestChoice(state: NewReservationState, onIntent: (NewReservationInt
     )
 }
 
+// Decision 2A of the second PR of M11: the guest of a reservation being changed stays.
 @Composable
-private fun ChosenGuest(guest: Guest, onIntent: (NewReservationIntent) -> Unit) {
+private fun ChosenGuest(guest: Guest, canChange: Boolean, onIntent: (NewReservationIntent) -> Unit) {
     ListGroup {
         ListRow(
             title = guest.fullName,
             subtitle = guest.identityLabel(),
             leading = { Avatar(initials = initialsOf(guest.fullName)) },
-            trailing = {
-                MajesticButton(
-                    text = stringResource(Res.string.new_reservation_guest_change),
-                    onClick = { onIntent(NewReservationIntent.ChangeGuest) },
-                    style = ButtonStyle.Text,
-                )
+            trailing = if (canChange) {
+                {
+                    MajesticButton(
+                        text = stringResource(Res.string.new_reservation_guest_change),
+                        onClick = { onIntent(NewReservationIntent.ChangeGuest) },
+                        style = ButtonStyle.Text,
+                    )
+                }
+            } else {
+                null
             },
         )
     }
@@ -351,7 +383,7 @@ private fun Summary(state: NewReservationState, onIntent: (NewReservationIntent)
         }
         state.error?.let { error -> Banner(tone = BannerTone.Danger, message = error.text()) }
         MajesticButton(
-            text = stringResource(Res.string.new_reservation_reserve),
+            text = stringResource(if (state.isChange) Res.string.change_reservation_save else Res.string.new_reservation_reserve),
             onClick = { onIntent(NewReservationIntent.Reserve) },
             size = ButtonSize.Large,
             icon = MajesticIcons.reservation,
@@ -366,3 +398,6 @@ private fun Summary(state: NewReservationState, onIntent: (NewReservationIntent)
 private fun Hint(text: String) {
     Text(text = text, style = MajesticTheme.typography.body, color = MajesticTheme.colors.inkMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
 }
+
+// One screen for a new reservation, apart from the one of each reservation being changed.
+private const val NEW_RESERVATION_KEY = "new-reservation"
