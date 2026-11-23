@@ -23,6 +23,20 @@ service cloud.firestore {
       return isActiveEmployee() && get(profilePath()).data.type == 'admin';
     }
 
+    // RNF-14 and S9: the guests and their reservations are reached only by reception and the administrators.
+    function isReceptionOrAdmin() {
+      return isActiveEmployee() && get(profilePath()).data.type in ['reception', 'admin'];
+    }
+
+    // A day of Colombia written as `2026-11-22`. Written that way, two days compare as text.
+    function isDay(text) {
+      return text is string && text.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}');
+    }
+
+    function startOfDay(text) {
+      return timestamp.date(int(text[0:4]), int(text[5:7]), int(text[8:10]));
+    }
+
     function isValidProfile(profile) {
       return profile.keys().hasAll(['fullName', 'email', 'type', 'area', 'active'])
         && profile.keys().hasOnly(['fullName', 'email', 'type', 'area', 'active', 'createdAt', 'createdBy'])
@@ -619,6 +633,143 @@ service cloud.firestore {
       allow update: if (isAdmin() && isDataChange()) || (isActiveEmployee() && isHousekeepingByHand());
       // A room is deactivated, never deleted: its reservations and tasks point to it.
       allow delete: if false;
+    }
+
+    // Guests (RF-RES-01, M11). Decision 5A: the name and the phone are enough; the type and the
+    // number of the document go together. The authorization of the data comes with the check-in (M12).
+    match /Guests/{guestId} {
+      function isValidGuest(guest) {
+        return guest.keys().hasAll(['fullName', 'phone', 'searchKeys'])
+          && guest.keys().hasOnly(['fullName', 'phone', 'documentType', 'documentNumber', 'nationality', 'email',
+            'dataConsentAt', 'searchKeys', 'createdBy', 'createdAt', 'updatedBy', 'updatedAt'])
+          && guest.fullName is string
+          && guest.fullName.size() > 0
+          && guest.fullName.size() <= 120
+          && guest.phone is string
+          && guest.phone.size() > 0
+          && guest.phone.size() <= 60
+          && ((guest.get('documentType', null) == null && guest.get('documentNumber', null) == null)
+            || (guest.documentType in ['cc', 'ce', 'passport', 'ti', 'ppt', 'other']
+              && guest.documentNumber is string
+              && guest.documentNumber.size() > 0
+              && guest.documentNumber.size() <= 60))
+          && (guest.get('nationality', null) == null || (guest.nationality is string && guest.nationality.size() <= 60))
+          && (guest.get('email', null) == null || (guest.email is string && guest.email.size() <= 120))
+          && guest.searchKeys is list
+          && guest.searchKeys.size() <= 200;
+      }
+
+      function isNewGuest(guest) {
+        return isValidGuest(guest)
+          && guest.get('dataConsentAt', null) == null
+          && guest.get('updatedBy', null) == null
+          && guest.get('updatedAt', null) == null
+          && guest.createdBy == request.auth.uid
+          && guest.createdAt == request.time;
+      }
+
+      // What the reception types, signed; never who created it nor the authorization of the data.
+      function isGuestEdit() {
+        let guest = request.resource.data;
+        return isValidGuest(guest)
+          && guest.diff(resource.data).affectedKeys().hasOnly(['fullName', 'phone', 'documentType', 'documentNumber',
+            'nationality', 'email', 'searchKeys', 'updatedBy', 'updatedAt'])
+          && guest.updatedBy == request.auth.uid
+          && guest.updatedAt == request.time;
+      }
+
+      allow read: if isReceptionOrAdmin();
+      allow create: if isReceptionOrAdmin() && isNewGuest(request.resource.data);
+      allow update: if isReceptionOrAdmin() && isGuestEdit();
+      // A guest is never deleted: their reservations point to them (RNF-11).
+      allow delete: if false;
+    }
+
+    // Reservations (RF-RES-02 and RF-RES-03, M11). One room from the check-in to the morning of
+    // the check-out, 1 to 30 nights (decision 4A), every night at the same rate.
+    match /Reservations/{reservationId} {
+      function isValidReservation(reservation) {
+        return reservation.keys().hasAll(['guestId', 'guestName', 'roomId', 'roomNumber', 'checkInDate', 'checkOutDate',
+            'adults', 'children', 'nightlyRates', 'taxAmount', 'total', 'paidAmount', 'source', 'state', 'notes'])
+          && reservation.keys().hasOnly(['guestId', 'guestName', 'roomId', 'roomNumber', 'checkInDate', 'checkOutDate',
+            'adults', 'children', 'nightlyRates', 'taxAmount', 'total', 'paidAmount', 'source', 'state', 'notes',
+            'createdBy', 'createdAt'])
+          && reservation.guestId is string
+          && reservation.guestName is string
+          && reservation.roomId is string
+          && reservation.roomNumber is int
+          && isDay(reservation.checkInDate)
+          && isDay(reservation.checkOutDate)
+          && reservation.nightlyRates is list
+          && reservation.nightlyRates.size() >= 1
+          && reservation.nightlyRates.size() <= 30
+          // The nights are the days between the check-in and the check-out, one rate each.
+          && (startOfDay(reservation.checkOutDate) - startOfDay(reservation.checkInDate)).seconds()
+            == reservation.nightlyRates.size() * 86400
+          && reservation.nightlyRates[0] is int
+          && reservation.nightlyRates[0] > 0
+          && reservation.nightlyRates.hasOnly([reservation.nightlyRates[0]])
+          && reservation.total == reservation.nightlyRates[0] * reservation.nightlyRates.size()
+          && reservation.taxAmount is int
+          && reservation.taxAmount >= 0
+          && reservation.taxAmount <= reservation.total
+          && reservation.adults is int
+          && reservation.adults >= 1
+          && reservation.children is int
+          && reservation.children >= 0
+          && reservation.paidAmount is int
+          && reservation.source in ['direct', 'phone', 'whatsapp', 'agency']
+          && reservation.state in ['confirmed', 'checked_in', 'checked_out', 'cancelled', 'no_show']
+          && reservation.notes is string
+          && reservation.notes.size() <= 500;
+      }
+
+      // An active room, for no more people than its type takes, at the base rate of its type unless
+      // an administrator changed it (RF-RES-02). The days were checked by the app with the
+      // operational day; here, only that the arrival is not long gone.
+      function isNewReservation(reservation) {
+        let room = get(/databases/$(database)/documents/Rooms/$(reservation.roomId)).data;
+        let type = get(/databases/$(database)/documents/RoomTypes/$(room.roomTypeId)).data;
+        return isValidReservation(reservation)
+          && reservation.state == 'confirmed'
+          && reservation.paidAmount == 0
+          && room.active == true
+          && room.number == reservation.roomNumber
+          && reservation.adults + reservation.children <= type.capacity
+          && (reservation.nightlyRates[0] == type.baseRate || isAdmin())
+          && exists(/databases/$(database)/documents/Guests/$(reservation.guestId))
+          && request.time < startOfDay(reservation.checkInDate) + duration.value(2, 'd')
+          && reservation.createdBy == request.auth.uid
+          && reservation.createdAt == request.time;
+      }
+
+      allow read: if isReceptionOrAdmin();
+      allow create: if isReceptionOrAdmin() && isNewReservation(request.resource.data);
+      // Modifying, cancelling and no show come in the second PR of M11. Reservations are never deleted (RNF-11).
+      allow update, delete: if false;
+    }
+
+    // RF-RES-03: one document per room and night, created in the same transaction as its
+    // reservation. A night that exists cannot be created again, so two reservations never share
+    // one, even if they are made at the same time. No personal data: every employee reads them.
+    match /RoomNights/{nightId} {
+      function isNightOfItsReservation(night) {
+        let reservation = getAfter(/databases/$(database)/documents/Reservations/$(night.reservationId)).data;
+        return night.keys().hasOnly(['roomId', 'date', 'reservationId', 'arrival'])
+          && night.keys().hasAll(['roomId', 'date', 'reservationId', 'arrival'])
+          && isDay(night.date)
+          && nightId == night.roomId + '_' + night.date
+          && reservation.roomId == night.roomId
+          && reservation.state == 'confirmed'
+          && night.date >= reservation.checkInDate
+          && night.date < reservation.checkOutDate
+          && night.arrival == (night.date == reservation.checkInDate);
+      }
+
+      allow read: if isActiveEmployee();
+      allow create: if isReceptionOrAdmin() && isNightOfItsReservation(request.resource.data);
+      // Releasing nights comes with cancelling and modifying, in the second PR of M11.
+      allow update, delete: if false;
     }
 
     // RF-EMP-06: the parameters of the hotel. Every active employee reads them, because they

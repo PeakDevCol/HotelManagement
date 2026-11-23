@@ -39,6 +39,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.peakdevcol.project.hotelmanagement.resources.Res
+import com.peakdevcol.project.hotelmanagement.resources.ds_count_decrease
+import com.peakdevcol.project.hotelmanagement.resources.ds_count_increase
 import com.peakdevcol.project.hotelmanagement.resources.ds_quantity_decrease
 import com.peakdevcol.project.hotelmanagement.resources.ds_quantity_increase
 import com.peakdevcol.project.hotelmanagement.resources.ds_quantity_remove
@@ -92,6 +94,66 @@ fun QuantityStepper(
             tint = colors.primary,
             enabled = quantity < maximum,
         )
+    }
+}
+
+/**
+ * How many of something there are, from [minimum] to [maximum], with its name beside it, like the
+ * adults and the children of a reservation (RF-RES-02). Unlike [QuantityStepper], the minus never
+ * takes anything out: it stops at [minimum].
+ */
+@Composable
+fun CountStepper(
+    label: String,
+    count: Int,
+    onCountChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    minimum: Int = 0,
+    maximum: Int = 99,
+) {
+    val colors = MajesticTheme.colors
+    Row(
+        modifier = modifier.fillMaxWidth().heightIn(min = MajesticSizes.control),
+        horizontalArrangement = Arrangement.spacedBy(MajesticSpacing.space3),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MajesticTheme.typography.bodyLarge,
+            color = colors.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Row(
+            modifier = Modifier
+                .background(colors.surfaceRaised, RoundedCornerShape(MajesticRadius.medium))
+                .border(1.dp, colors.lineStrong, RoundedCornerShape(MajesticRadius.medium)),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            MajesticIconButton(
+                icon = MajesticIcons.remove,
+                contentDescription = stringResource(Res.string.ds_count_decrease, label),
+                onClick = { onCountChange(count - 1) },
+                tint = colors.primary,
+                enabled = count > minimum,
+            )
+            Text(
+                text = count.toString(),
+                style = MajesticTheme.typography.amount.copy(fontSize = MajesticTheme.typography.bodyLarge.fontSize),
+                color = colors.ink,
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(min = 32.dp),
+            )
+            MajesticIconButton(
+                icon = MajesticIcons.add,
+                contentDescription = stringResource(Res.string.ds_count_increase, label),
+                onClick = { onCountChange(count + 1) },
+                tint = colors.primary,
+                enabled = count < maximum,
+            )
+        }
     }
 }
 

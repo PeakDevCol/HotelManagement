@@ -58,6 +58,7 @@ import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.Pending
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ProductTile
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.ProductTileMinWidth
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.QuantityStepper
+import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.CountStepper
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.RoomStatusBadge
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.RoomTile
 import com.peakdevcol.project.hotelmanagement.ui.designsystem.components.RoomTileMinWidth
@@ -146,6 +147,8 @@ class DesignSystemLayoutTest {
             }
             QuantityStepper(quantity = 1, onIncrease = {}, onDecrease = {}, onRemove = {})
             QuantityStepper(quantity = 12, onIncrease = {}, onDecrease = {}, onRemove = {}, modifier = Modifier.fillMaxWidth())
+            CountStepper(label = "Adultos que se quedan en la habitación", count = 1, onCountChange = {}, minimum = 1, maximum = 20)
+            CountStepper(label = "Niños", count = 19, onCountChange = {}, maximum = 19)
         }
     }
 
@@ -251,6 +254,18 @@ class DesignSystemLayoutTest {
                     NavigationDestination("more", "Más", MajesticIcons.menu, MajesticIcons.menu),
                 ),
                 selected = "cash",
+                onSelect = {},
+            )
+            // Decision 2A of M11: the bar of reception, the longest one, with four sections and "Más".
+            MajesticNavigationBar(
+                destinations = listOf(
+                    NavigationDestination("rooms", "Habitaciones", MajesticIcons.room, MajesticIcons.roomFilled),
+                    NavigationDestination("reservations", "Reservas", MajesticIcons.reservation, MajesticIcons.reservationFilled),
+                    NavigationDestination("orders", "Pedidos", MajesticIcons.receipt, MajesticIcons.receiptFilled, badgeCount = 12),
+                    NavigationDestination("attendance", "Asistencia", MajesticIcons.attendance, MajesticIcons.attendanceFilled),
+                    NavigationDestination("more", "Más", MajesticIcons.menu, MajesticIcons.menu),
+                ),
+                selected = "reservations",
                 onSelect = {},
             )
             MajesticTabs(tabs = listOf("Por día", "Por método", "Por empleado", "Por producto"), selectedIndex = 0, onSelect = {})

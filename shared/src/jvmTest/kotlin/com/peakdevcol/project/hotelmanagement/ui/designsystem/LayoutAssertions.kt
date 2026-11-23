@@ -116,9 +116,11 @@ private fun TextLayoutResult.problems(name: String, bounds: Rect, checkSplitWord
     val problems = mutableListOf<String>()
     if (bounds.width < TOLERANCE_PX || bounds.height < TOLERANCE_PX) problems += "$name: el texto quedó colapsado"
     val shortensWithEllipsis = layoutInput.overflow == TextOverflow.Ellipsis
-    // Shortened is fine; shortened down to the "…" alone, less than one letter wide, is not.
+    // Shortened is fine; shortened down to the "…" alone, less than one letter wide, is not. A
+    // word as short as "TI" is that narrow whole, so only a text wider than its space counts.
     val oneLetter = with(layoutInput.density) { layoutInput.style.fontSize.toPx() }
-    if (shortensWithEllipsis && layoutInput.text.length > 1 && size.width < oneLetter) {
+    val shortened = multiParagraph.intrinsics.maxIntrinsicWidth > size.width + TOLERANCE_PX
+    if (shortensWithEllipsis && shortened && layoutInput.text.length > 1 && size.width < oneLetter) {
         problems += "$name: el texto se acorta hasta no dejar nada (${size.width} px)"
     }
     val widestLine = (0 until lineCount).maxOfOrNull { getLineRight(it) - getLineLeft(it) } ?: 0f

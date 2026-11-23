@@ -76,6 +76,8 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.CategoriesScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesScreen
+import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationScreen
+import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsScreen
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomTypesScreen
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomsScreen
 import com.peakdevcol.project.hotelmanagement.ui.schedules.SchedulesScreen
@@ -212,6 +214,10 @@ private fun MainNavHost(
             RoomsScreen(onTypesClick = { navController.navigate(RoomTypesRoute) }, onBack = backToMore(AppSection.ROOMS))
         }
         composable<RoomTypesRoute> { RoomTypesScreen(onBack = back) }
+        composable<ReservationsRoute> {
+            ReservationsScreen(onNewReservation = { navController.navigate(NewReservationRoute) }, onBack = backToMore(AppSection.RESERVATIONS))
+        }
+        composable<NewReservationRoute> { NewReservationScreen(onBack = back) }
         composable<AttendanceRoute> { AttendanceScreen(onBack = backToMore(AppSection.ATTENDANCE)) }
         composable<SchedulesRoute> { SchedulesScreen(onBack = backToMore(AppSection.SCHEDULES)) }
         composable<AttendanceReviewRoute> {
