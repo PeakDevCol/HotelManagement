@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.peakdevcol.project.hotelmanagement.domain.model.Reservation
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationStart
 import com.peakdevcol.project.hotelmanagement.domain.model.formatWeekday
 import com.peakdevcol.project.hotelmanagement.resources.Res
 import com.peakdevcol.project.hotelmanagement.resources.error_check_connection
@@ -54,6 +55,7 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.layout.Column
 import com.peakdevcol.project.hotelmanagement.resources.reservation_cancelled
 import com.peakdevcol.project.hotelmanagement.resources.reservation_marked_no_show
+import com.peakdevcol.project.hotelmanagement.resources.reservations_tab_calendar
 import com.peakdevcol.project.hotelmanagement.resources.reservations_tab_today
 import com.peakdevcol.project.hotelmanagement.resources.reservations_tab_upcoming
 import com.peakdevcol.project.hotelmanagement.resources.today_arrivals
@@ -79,7 +81,7 @@ import org.koin.compose.viewmodel.koinViewModel
  */
 @Composable
 fun ReservationsScreen(
-    onNewReservation: () -> Unit,
+    onNewReservation: (start: ReservationStart?) -> Unit,
     onChangeReservation: (reservationId: String) -> Unit,
     onBack: (() -> Unit)? = null,
     viewModel: ReservationsViewModel = koinViewModel(),
@@ -90,7 +92,7 @@ fun ReservationsScreen(
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                ReservationsEffect.NavigateToNewReservation -> onNewReservation()
+                is ReservationsEffect.NavigateToNewReservation -> onNewReservation(effect.start)
                 is ReservationsEffect.NavigateToChange -> onChangeReservation(effect.reservationId)
                 is ReservationsEffect.Cancelled -> messages.show(getString(Res.string.reservation_cancelled, effect.guestName))
                 is ReservationsEffect.MarkedNoShow -> messages.show(getString(Res.string.reservation_marked_no_show, effect.guestName))
@@ -142,6 +144,8 @@ fun ReservationsContent(state: ReservationsState, onIntent: (ReservationsIntent)
             when (state.tab) {
                 ReservationsTab.TODAY -> TodayReservationsList(state = state, onIntent = onIntent, bottomClearance = bottomClearance, modifier = contentModifier)
                 ReservationsTab.UPCOMING -> UpcomingReservations(state = state, onIntent = onIntent, bottomClearance = bottomClearance, modifier = contentModifier)
+                // The grid takes the whole width: more days fit on a wide window.
+                ReservationsTab.CALENDAR -> OccupancyCalendarTab(state = state, onIntent = onIntent, bottomClearance = bottomClearance)
             }
         }
     }
@@ -151,6 +155,7 @@ fun ReservationsContent(state: ReservationsState, onIntent: (ReservationsIntent)
 private fun ReservationsTab.label(): StringResource = when (this) {
     ReservationsTab.TODAY -> Res.string.reservations_tab_today
     ReservationsTab.UPCOMING -> Res.string.reservations_tab_upcoming
+    ReservationsTab.CALENDAR -> Res.string.reservations_tab_calendar
 }
 
 /** RF-RES-07 and RF-RES-09: the arrivals with their room, the departures and the reservations that did not arrive. */

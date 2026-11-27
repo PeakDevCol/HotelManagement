@@ -12,6 +12,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.GuestFields
 import com.peakdevcol.project.hotelmanagement.domain.model.MAX_RESERVATION_NOTES_LENGTH
 import com.peakdevcol.project.hotelmanagement.domain.model.MAX_ROOM_CAPACITY
 import com.peakdevcol.project.hotelmanagement.domain.model.Reservation
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationStart
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationError
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationSource
 import com.peakdevcol.project.hotelmanagement.domain.model.Stay
@@ -156,12 +157,18 @@ sealed interface NewReservationEffect {
 }
 
 /**
+ * What the screen opens on: a reservation from nothing, from a free night of the calendar
+ * ([start], decision 1A of the third PR of M11), or the change of [reservationId] (RF-RES-05).
+ */
+data class NewReservationArguments(val reservationId: String? = null, val start: ReservationStart? = null)
+
+/**
  * RF-RES-01 to RF-RES-03: a reservation in one screen. The days and the people find the free
  * rooms; the guest is searched, or created with the name and the phone (decision 5A). With a
- * [reservationId], the same screen changes that reservation (RF-RES-05), whose guest stays (decision 2A).
+ * reservation to change, the same screen changes it (RF-RES-05), and its guest stays (decision 2A).
  */
 class NewReservationViewModel(
-    private val reservationId: String?,
+    private val arguments: NewReservationArguments,
     private val getReservationContext: GetReservationContextUseCase,
     private val findAvailableRooms: FindAvailableRoomsUseCase,
     private val searchGuests: SearchGuestsUseCase,
@@ -186,12 +193,20 @@ class NewReservationViewModel(
         viewModelScope.launch {
             val context = getReservationContext()
             _state.update { it.copy(today = context.today, canChangeRate = context.canChangeRate) }
-            if (reservationId == null) {
-                _state.update { it.copy(isStarting = false) }
-            } else {
-                startChange(reservationId)
+            val reservationId = arguments.reservationId
+            val start = arguments.start
+            when {
+                reservationId != null -> startChange(reservationId)
+                start != null && start.checkIn >= context.today -> startFrom(start)
+                else -> _state.update { it.copy(isStarting = false) }
             }
         }
+    }
+
+    // One night in the room touched on the calendar; the free rooms are searched as always.
+    private fun startFrom(start: ReservationStart) {
+        _state.update { it.copy(isStarting = false, stay = Stay(start.checkIn, start.checkIn.plusDays(1)), roomId = start.roomId) }
+        searchRooms()
     }
 
     private suspend fun startChange(reservationId: String) {
@@ -270,7 +285,12 @@ class NewReservationViewModel(
             )
             _state.update { current ->
                 val stillFree = (search as? RoomSearch.Found)?.rooms.orEmpty().any { it.room.id == current.roomId }
-                current.copy(roomSearch = search, roomId = current.roomId.takeIf { stillFree }, rateText = current.rateText.takeIf { stillFree }.orEmpty())
+                val chosen = (search as? RoomSearch.Found)?.rooms?.firstOrNull { it.room.id == current.roomId }
+                current.copy(
+                    roomSearch = search,
+                    roomId = current.roomId.takeIf { stillFree },
+                    rateText = if (chosen == null) "" else current.rateText.ifEmpty { chosen.nightlyRate.toString() },
+                )
             }
         }
     }

@@ -77,6 +77,8 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.InventoryScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormScreen
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesScreen
 import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationScreen
+import com.peakdevcol.project.hotelmanagement.domain.model.CalendarDate
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationStart
 import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsScreen
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomTypesScreen
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomsScreen
@@ -216,12 +218,17 @@ private fun MainNavHost(
         composable<RoomTypesRoute> { RoomTypesScreen(onBack = back) }
         composable<ReservationsRoute> {
             ReservationsScreen(
-                onNewReservation = { navController.navigate(NewReservationRoute) },
+                onNewReservation = { start -> navController.navigate(NewReservationRoute(start?.roomId, start?.checkIn?.isoText)) },
                 onChangeReservation = { reservationId -> navController.navigate(ChangeReservationRoute(reservationId)) },
                 onBack = backToMore(AppSection.RESERVATIONS),
             )
         }
-        composable<NewReservationRoute> { NewReservationScreen(onBack = back) }
+        composable<NewReservationRoute> { entry ->
+            val route = entry.toRoute<NewReservationRoute>()
+            val checkIn = route.checkIn?.let(CalendarDate::parse)
+            val start = if (route.roomId != null && checkIn != null) ReservationStart(route.roomId, checkIn) else null
+            NewReservationScreen(onBack = back, start = start)
+        }
         composable<ChangeReservationRoute> { entry -> NewReservationScreen(onBack = back, reservationId = entry.toRoute<ChangeReservationRoute>().reservationId) }
         composable<AttendanceRoute> { AttendanceScreen(onBack = backToMore(AppSection.ATTENDANCE)) }
         composable<SchedulesRoute> { SchedulesScreen(onBack = backToMore(AppSection.SCHEDULES)) }

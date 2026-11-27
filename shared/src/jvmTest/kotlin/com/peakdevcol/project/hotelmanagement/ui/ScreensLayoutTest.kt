@@ -199,6 +199,11 @@ import com.peakdevcol.project.hotelmanagement.domain.model.snapshot
 import com.peakdevcol.project.hotelmanagement.ui.reservations.HistoryLoad
 import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationDetailContent
 import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsTab
+import com.peakdevcol.project.hotelmanagement.domain.model.OccupancyCalendar
+import com.peakdevcol.project.hotelmanagement.domain.model.OccupancyPeriod
+import com.peakdevcol.project.hotelmanagement.domain.model.OccupancyRoom
+import com.peakdevcol.project.hotelmanagement.domain.model.OccupancySpan
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationState
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -932,6 +937,28 @@ class ScreensLayoutTest {
     @Test
     fun reservationsToday() = checkEveryFrame("reservas de hoy") {
         ReservationsContent(state = ReservationsState(isLoading = false, reservations = reservationsList, today = longToday), onIntent = {})
+    }
+
+    @Test
+    fun reservationsCalendar() = checkEveryFrame("calendario de reservas") {
+        val period = OccupancyPeriod.from(CalendarDate(2026, 12, 28), OccupancySpan.MONTH)
+        val suiteRoom = freeRooms.first().room
+        ReservationsContent(
+            state = ReservationsState(
+                tab = ReservationsTab.CALENDAR,
+                isLoading = false,
+                calendarToday = CalendarDate(2026, 12, 28),
+                calendarPeriod = period,
+                occupancy = OccupancyCalendar(
+                    period = period,
+                    rooms = listOf(
+                        OccupancyRoom(suiteRoom, suite.name, listOf(reservationsList.first().copy(state = ReservationState.CHECKED_IN))),
+                        OccupancyRoom(freeRooms.last().room, null, listOf(reservationsList.last())),
+                    ),
+                ),
+            ),
+            onIntent = {},
+        )
     }
 
     @Test

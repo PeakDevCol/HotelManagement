@@ -72,6 +72,7 @@ import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadReservationHist
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadReservationToChangeUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.MarkNoShowUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ModifyReservationUseCase
+import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveOccupancyUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ObserveTodayReservationsUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.StayPlanner
 import com.peakdevcol.project.hotelmanagement.domain.usecase.CreateEmployeeUseCase
@@ -156,6 +157,7 @@ import com.peakdevcol.project.hotelmanagement.ui.inventory.ProductFormViewModel
 import com.peakdevcol.project.hotelmanagement.ui.inventory.TaxesViewModel
 import com.peakdevcol.project.hotelmanagement.ui.login.LoginViewModel
 import com.peakdevcol.project.hotelmanagement.ui.main.MainViewModel
+import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationArguments
 import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationViewModel
 import com.peakdevcol.project.hotelmanagement.ui.reservations.ReservationsViewModel
 import com.peakdevcol.project.hotelmanagement.ui.rooms.RoomTypesViewModel
@@ -319,6 +321,7 @@ private val domainModule = module {
     factory { ObserveTodayReservationsUseCase(reservationRepository = get(), roomRepository = get(), settingsRepository = get()) }
     factoryOf(::LoadReservationToChangeUseCase)
     factoryOf(::LoadReservationHistoryUseCase)
+    factoryOf(::ObserveOccupancyUseCase)
     factory { ObserveUpcomingReservationsUseCase(reservationRepository = get(), settingsRepository = get()) }
 }
 
@@ -349,10 +352,20 @@ private val uiModule = module {
     viewModelOf(::DevicesViewModel)
     viewModelOf(::RoomsViewModel)
     viewModelOf(::RoomTypesViewModel)
-    viewModelOf(::ReservationsViewModel)
+    viewModel {
+        ReservationsViewModel(
+            observeUpcomingReservations = get(),
+            observeTodayReservations = get(),
+            loadReservationHistory = get(),
+            cancelReservation = get(),
+            markNoShow = get(),
+            observeOccupancy = get(),
+            getReservationContext = get(),
+        )
+    }
     viewModel { parameters ->
         NewReservationViewModel(
-            reservationId = parameters.getOrNull(),
+            arguments = parameters.getOrNull() ?: NewReservationArguments(),
             getReservationContext = get(),
             findAvailableRooms = get(),
             searchGuests = get(),

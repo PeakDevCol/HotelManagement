@@ -29,6 +29,12 @@ interface ReservationRepository {
     /** RF-RES-07 and RF-RES-09: the confirmed reservations that arrive on [date] or before, and their changes. */
     fun observeConfirmedUntil(date: CalendarDate): Flow<List<Reservation>>
 
+    /**
+     * RF-RES-04: every reservation, in any state, that arrives from [from] until the day before
+     * [until], and their changes.
+     */
+    fun observeArrivingBetween(from: CalendarDate, until: CalendarDate): Flow<List<Reservation>>
+
     /** RF-RES-09: the guests in the hotel, whose check-in comes with M12, and their changes. */
     fun observeCheckedIn(): Flow<List<Reservation>>
 

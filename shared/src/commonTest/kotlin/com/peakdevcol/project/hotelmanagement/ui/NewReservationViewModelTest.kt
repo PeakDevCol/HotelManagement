@@ -37,6 +37,8 @@ import com.peakdevcol.project.hotelmanagement.domain.model.ReservationState
 import com.peakdevcol.project.hotelmanagement.domain.usecase.LoadReservationToChangeUseCase
 import com.peakdevcol.project.hotelmanagement.domain.usecase.ModifyReservationUseCase
 import com.peakdevcol.project.hotelmanagement.fakes.reservation
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationStart
+import com.peakdevcol.project.hotelmanagement.ui.reservations.NewReservationArguments
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -63,11 +65,11 @@ class NewReservationViewModelTest : MainDispatcherTest() {
     private val nov22 = day("2026-11-22").epochDay
     private val nov24 = day("2026-11-24").epochDay
 
-    private fun viewModel(userId: String = "reception", reservationId: String? = null): NewReservationViewModel {
+    private fun viewModel(userId: String = "reception", reservationId: String? = null, start: ReservationStart? = null): NewReservationViewModel {
         val auth = FakeAuthRepository(userId)
         val planner = StayPlanner(rooms, types, taxes, reservations, settings, clock)
         return NewReservationViewModel(
-            reservationId = reservationId,
+            arguments = NewReservationArguments(reservationId, start),
             getReservationContext = GetReservationContextUseCase(auth, users, settings, clock),
             findAvailableRooms = FindAvailableRoomsUseCase(rooms, types, taxes, reservations, settings, clock),
             searchGuests = SearchGuestsUseCase(guests),
@@ -274,6 +276,27 @@ class NewReservationViewModelTest : MainDispatcherTest() {
 
         assertEquals(ReservationError.Changed, state.loadError)
         assertFalse(state.isChange)
+    }
+
+    // ---- Decision 1A of the third PR of M11: from a free night of the calendar
+
+    @Test
+    fun aFreeNightOfTheCalendarStartsWithThatRoomAndThatNight() {
+        val viewModel = viewModel("admin", start = ReservationStart("r-101", day("2026-11-23")))
+
+        val state = viewModel.state.value
+        assertEquals(Stay(day("2026-11-23"), day("2026-11-24")), state.stay)
+        assertEquals("r-101", state.roomId)
+        assertEquals("600000", state.rateText, "an administrator sees the rate of the room chosen for them")
+        assertEquals(600_000, state.price?.total)
+    }
+
+    @Test
+    fun aNightThatIsOverStartsFromNothing() {
+        val state = viewModel(start = ReservationStart("r-101", day("2026-11-20"))).state.value
+
+        assertNull(state.stay)
+        assertNull(state.roomId)
     }
 
     @Test

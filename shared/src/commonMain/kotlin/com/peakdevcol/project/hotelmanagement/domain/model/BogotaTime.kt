@@ -37,11 +37,12 @@ fun minuteOfDayIn(instant: Instant): Int {
 }
 
 /** A day with its weekday, the way a schedule reads it: `lun 16 nov`. */
-fun formatWeekday(date: CalendarDate): String {
+fun formatWeekday(date: CalendarDate): String = "${formatShortWeekday(date)} ${date.day} ${MONTHS[date.month - 1]}"
+
+/** Only the weekday of a day: `lun`. */
+fun formatShortWeekday(date: CalendarDate): String =
     // 1970-01-01 was a Thursday, three days after a Monday.
-    val weekday = WEEKDAYS[(date.epochDay + 3).mod(7L).toInt()]
-    return "$weekday ${date.day} ${MONTHS[date.month - 1]}"
-}
+    WEEKDAYS[(date.epochDay + 3).mod(7L).toInt()]
 
 /**
  * Reads a time of a 24-hour clock, in minutes after midnight: `6`, `18`, `6:30` and `18:30`, or

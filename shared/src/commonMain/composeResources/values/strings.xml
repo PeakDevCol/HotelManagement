@@ -922,4 +922,16 @@
     <string name="change_reservation_save">Guardar cambios</string>
     <string name="change_reservation_done">Reserva de %1$s actualizada, en la habitación %2$d.</string>
     <string name="change_reservation_error_title">No se pudo abrir la reserva</string>
+    <string name="reservations_tab_calendar">Calendario</string>
+    <string name="calendar_two_weeks">2 semanas</string>
+    <string name="calendar_month">Mes</string>
+    <string name="calendar_today">Hoy</string>
+    <string name="calendar_previous">Periodo anterior</string>
+    <string name="calendar_next">Periodo siguiente</string>
+    <string name="calendar_hint">Toca una noche libre para reservarla, o una reserva para ver su detalle.</string>
+    <string name="calendar_error">No se pudo cargar el calendario.</string>
+    <string name="calendar_no_rooms_title">Aún no hay habitaciones</string>
+    <string name="calendar_no_rooms_message">El administrador las agrega desde Habitaciones.</string>
+    <string name="calendar_bar_description">%1$s, %2$s</string>
+    <string name="calendar_free_night">Reservar la habitación %1$d la noche del %2$s</string>
 </resources>

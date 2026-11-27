@@ -26,8 +26,9 @@ data object RoomTypesRoute
 @Serializable
 data object ReservationsRoute
 
+/** A reservation from nothing, or from a free night of the calendar: [roomId] and [checkIn] (`2026-11-22`). */
 @Serializable
-data object NewReservationRoute
+data class NewReservationRoute(val roomId: String? = null, val checkIn: String? = null)
 
 /** RF-RES-05: the screen of a new reservation, changing this one. */
 @Serializable

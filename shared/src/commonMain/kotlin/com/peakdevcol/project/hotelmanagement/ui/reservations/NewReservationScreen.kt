@@ -27,6 +27,7 @@ import com.peakdevcol.project.hotelmanagement.domain.model.AvailableRoom
 import com.peakdevcol.project.hotelmanagement.domain.model.Guest
 import com.peakdevcol.project.hotelmanagement.domain.model.MAX_ROOM_CAPACITY
 import com.peakdevcol.project.hotelmanagement.domain.model.ReservationSource
+import com.peakdevcol.project.hotelmanagement.domain.model.ReservationStart
 import com.peakdevcol.project.hotelmanagement.domain.model.formatDayRange
 import com.peakdevcol.project.hotelmanagement.domain.model.formatPesos
 import com.peakdevcol.project.hotelmanagement.resources.Res
@@ -100,14 +101,17 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 /**
- * RF-RES-01 to RF-RES-03: a new reservation, from the days and the people to the guest. With a
- * [reservationId], the same screen changes that reservation (RF-RES-05).
+ * RF-RES-01 to RF-RES-03: a new reservation, from the days and the people to the guest, or from a
+ * free night of the calendar ([start]). With a [reservationId], the same screen changes that reservation (RF-RES-05).
  */
 @Composable
 fun NewReservationScreen(
     onBack: () -> Unit,
     reservationId: String? = null,
-    viewModel: NewReservationViewModel = koinViewModel(key = reservationId ?: NEW_RESERVATION_KEY) { parametersOf(reservationId) },
+    start: ReservationStart? = null,
+    viewModel: NewReservationViewModel = koinViewModel(key = screenKey(reservationId, start)) {
+        parametersOf(NewReservationArguments(reservationId, start))
+    },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val messages = LocalAppMessages.current
@@ -399,5 +403,9 @@ private fun Hint(text: String) {
     Text(text = text, style = MajesticTheme.typography.body, color = MajesticTheme.colors.inkMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
 }
 
-// One screen for a new reservation, apart from the one of each reservation being changed.
-private const val NEW_RESERVATION_KEY = "new-reservation"
+// One screen for each way it opens, so a reservation being changed never shows another one.
+private fun screenKey(reservationId: String?, start: ReservationStart?): String = when {
+    reservationId != null -> "change-$reservationId"
+    start != null -> "new-${start.roomId}-${start.checkIn.isoText}"
+    else -> "new-reservation"
+}
